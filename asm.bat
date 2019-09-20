@@ -1,0 +1,1 @@
+tools\nask.exe dickos.nas dickos.img
