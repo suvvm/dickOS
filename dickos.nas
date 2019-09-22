@@ -1,48 +1,67 @@
-;dick-os
-;TAB=4
+; hello-os
+; TAB=4
 
-;FAT12è½¯ç›˜æ ¼å¼
+		ORG		0x7c00			; Ö¸Ã÷³ÌÐòµÄ×°ÔØµØÖ·(Æô¶¯ÇøÄÚÈÝµÄ×°ÔØµØÖ·0x00007c00-0x00007dff)
 
+; FAT12ÈíÅÌ¸ñÊ½
 
-	DB 		0xeb,0x4e,0x90
-	DB 		"DICKIPL"	;å¯åŠ¨åˆ†åŒºåç§°
-	DW 		512			;æ‰‡åŒº(sector)å¤§å°é”å®š512å­—èŠ‚
-	DB 		1			;ç°‡(cluster)å¤§å°é”å®šä¸€ä¸ªæ‰‡åŒº
-	DW 		1			;FATçš„èµ·å§‹ä½ç½®ï¼ˆä»Žç¬¬ä¸€ä¸ªæ‰‡åŒºå¼€å§‹ï¼‰
-	DB 		2			;FATçš„ä¸ªæ•°é”å®š2
-	DW		224			;æ ¹ç›®å½•å¤§å°(224é¡¹)
-	DW 		2880		;ç£ç›˜å¤§å°(æŒ‰è½¯ç›˜æ ‡å‡†ç®—å¿…å®šä¸º2880æ‰‡åŒº)
-	DB		0xf0		;ç£ç›˜ç§ç±»é”å®š0xf0
-	DW		9			;FATé•¿åº¦é”å®š9æ‰‡åŒº
-	DW		18			;1ä¸ªç£é“(track)æœ‰å‡ ä¸ªæ‰‡åŒºé”å®š18
-	DW		2			;ç£å¤´æ•°(é”å®š2)
-	DD		0			;ä¸ä½¿ç”¨åˆ†åŒºé”å®š0
-	DD		2880		;é‡å†™ç£ç›˜å¤§å°
-	DB		0,0,0x29	;ä¸çŸ¥é“ä»€ä¹ˆæ„æ€
-	DD		0xffffffff	;(å¯èƒ½)å·æ ‡å·ç 
-	DB 		"DICK-OS     "	;ç£ç›˜åç§°(11å­—èŠ‚)
-	DB  	"FAT12   "		;ç£ç›˜æ ¼å¼(8å­—èŠ‚)
-	RESB 	18				;ç©ºå‡º18å­—èŠ‚
+		JMP		entry
+		DB		0x90
+		DB		"DICKSIPL"		; Æô¶¯·ÖÇøÃû³Æ
+		DW		512				; ÉÈÇø(sector)´óÐ¡Ëø¶¨512×Ö½Ú
+		DB		1				; ´Ø(cluster)´óÐ¡Ëø¶¨Ò»¸öÉÈÇø
+		DW		1				; FATµÄÆðÊ¼Î»ÖÃ£¨´ÓµÚÒ»¸öÉÈÇø¿ªÊ¼£©
+		DB		2				; FATµÄ¸öÊýËø¶¨2
+		DW		224				; ¸ùÄ¿Â¼´óÐ¡(224Ïî)
+		DW		2880			; ´ÅÅÌ´óÐ¡(°´ÈíÅÌ±ê×¼Ëã±Ø¶¨Îª2880ÉÈÇø)
+		DB		0xf0			; ´ÅÅÌÖÖÀàËø¶¨0xf0
+		DW		9				; FAT³¤¶ÈËø¶¨9ÉÈÇø
+		DW		18				; 1¸ö´ÅµÀ(track)ÓÐ¼¸¸öÉÈÇøËø¶¨18
+		DW		2				; ´ÅÍ·Êý(Ëø¶¨2)
+		DD		0				; ²»Ê¹ÓÃ·ÖÇøËø¶¨0
+		DD		2880			; ÖØÐ´´ÅÅÌ´óÐ¡
+		DB		0,0,0x29		; ²»ÖªµÀÊ²Ã´ÒâË¼
+		DD		0xffffffff		; (¿ÉÄÜ)¾í±êºÅÂë
+		DB		"DICK-OS    "	; ´ÅÅÌÃû³Æ(11×Ö½Ú)
+		DB		"FAT12   "		; ´ÅÅÌ¸ñÊ½(8×Ö½Ú)
+		RESB	18				; ¿Õ³ö18×Ö½Ú
 
-;ç¨‹åºä¸»ä½“
-	DB		0xb8, 0x00, 0x00, 0x8e, 0xd0, 0xbc, 0x00, 0x7c
-	DB 		0x8e, 0xd8, 0x8e, 0xc0, 0xbe, 0x74, 0x7c, 0x8a
-	DB 		0x04, 0x83,	0xc6, 0x01, 0x3c, 0x00, 0x74, 0x09
-	DB 		0xb4, 0x0e, 0xbb, 0x0f, 0x00, 0xcd, 0x10, 0xeb
-	DB 		0xee, 0xf4, 0xeb, 0xfd
-	
-;ä¿¡æ¯æ˜¾ç¤º
-	
-	DB 		0x0a, 0x0a	;æ¢è¡Œç¬¦ä¸¤ä¸ª
-	DB		"deep dark fantasy"
-	DB		0x0a		;æ¢è¡Œ
-	DB 		0
-	
-	RESB	0x1fe-$	;å¡«å†™0x00ç›´åˆ°0x001fe
-	DB		0x55, 0xaa
-	
-;å¯åŠ¨åŒºä»¥å¤–éƒ¨åˆ†çš„è¾“å‡º
-	DB		0xf0, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00
-	RESB	4600
-	DB		0xf0, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00
-	RESB	1469432
+; ³ÌÐòÖ÷Ìå
+
+entry:
+		MOV		AX,0			; ³õÊ¼»¯¼Ä´æÆ÷
+		MOV		SS,AX
+		MOV		SP,0x7c00
+		MOV		DS,AX
+		MOV		ES,AX
+
+		MOV		SI,msg
+putloop:
+		MOV		AL,[SI]
+		ADD		SI,1			; SI¼Ó1
+		CMP		AL,0
+		JE		fin
+		MOV		AH,0x0e			; ÏÔÊ¾Ò»¸öÎÄ×Ö
+		MOV		BX,15			; Ö¸¶¨×Ö·ûÑÕÉ«
+		INT		0x10			; µ÷ÓÃbios 16ºÅº¯Êý£¨µ÷ÓÃÏÔ¿¨£©
+		JMP		putloop
+fin:
+		HLT						; ÈÃcpuÍ£Ö¹µÈ´ýÖ¸Áî
+		JMP		fin				; ÎÞÏÞÑ­»·
+
+msg:
+		DB		0x0a, 0x0a		; Á½¸ö»»ÐÐ·û
+		DB		"deep dark fantasy"
+		DB		0x0a			; »»ÐÐ
+		DB		0
+
+		RESB	0x7dfe-$		; ÌîÐ´0x00Ö±µ½0x001fe
+
+		DB		0x55, 0xaa
+
+; Æô¶¯ÇøÒÔÍâ²¿·ÖµÄÊä³ö
+
+		DB		0xf0, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00
+		RESB	4600
+		DB		0xf0, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00
+		RESB	1469432
