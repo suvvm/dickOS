@@ -21,3 +21,13 @@ install :
 	tools/make.exe img
 	tools/imgtol.com w a: dickos.img
 
+#删除中间生成文件	
+clean :
+	-del ipl.bin
+	-del ipl.lst
+
+#删除除nas源文件之外所有生成结果
+src_only :
+	tools/make.exe clean
+	-del dickos.img
+
