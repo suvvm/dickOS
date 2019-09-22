@@ -1,1 +1,0 @@
-tools\imgtol.com w a: dickos.img
