@@ -10,7 +10,7 @@ asm :
 	tools/make.exe -r ipl.bin
 
 img :
-	tools/make.exe r dickos.img
+	tools/make.exe -r dickos.img
 
 run : 
 	tools/make.exe img
