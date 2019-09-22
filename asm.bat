@@ -1,1 +1,1 @@
-tools\nask.exe dickos.nas dickos.img
+tools\nask.exe ipl.nas ipl.bin ipl.lst
