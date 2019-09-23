@@ -33,9 +33,30 @@ entry:
 		MOV		SS,AX
 		MOV		SP,0x7c00
 		MOV		DS,AX
-		MOV		ES,AX
+		
+;添加部分
 
-		MOV		SI,msg
+		MOV		AX,0x0820
+		MOV 	ES,AX
+		MOV		CH,0			; 柱面0
+		MOV		DH,0			; 磁头0
+		MOV		CL,2			; 扇区2
+		
+		MOV 	AH,0x02			; AH=0x02 : 读盘
+		MOV		AL,1			; 一个扇区
+		MOV		BX,0			
+		MOV		DL,0x00			; A驱动器
+		INT		0x13			; 调用bios 19号函数（磁盘操作 0x02:读盘）
+		JC		error
+		
+		
+		
+fin:
+		HLT						; 让cpu停止等待指令
+		JMP		fin				; 无限循环
+		
+error:
+		MOV 	SI,msg
 putloop:
 		MOV		AL,[SI]
 		ADD		SI,1			; SI加1
@@ -45,13 +66,9 @@ putloop:
 		MOV		BX,15			; 指定字符颜色
 		INT		0x10			; 调用bios 16号函数（调用显卡）
 		JMP		putloop
-fin:
-		HLT						; 让cpu停止等待指令
-		JMP		fin				; 无限循环
-
 msg:
 		DB		0x0a, 0x0a		; 两个换行符
-		DB		"deep dark fantasy"
+		DB		"load error"
 		DB		0x0a			; 换行
 		DB		0
 
