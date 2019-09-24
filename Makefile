@@ -1,33 +1,46 @@
-# 文件生成规则
+TOOLPATH = tools/
+MAKE     = $(TOOLPATH)make.exe -r
+NASK     = $(TOOLPATH)nask.exe
+EDIMG    = $(TOOLPATH)edimg.exe
+IMGTOL   = $(TOOLPATH)imgtol.com
+COPY     = copy
+DEL      = del
+
+# �f�t�H���g����
+
+default :
+	$(MAKE) img
+
+# �t�@�C�������K��
+
 ipl.bin : ipl.nas Makefile
-	tools/nask.exe ipl.nas ipl.bin ipl.lst
+	$(NASK) ipl.nas ipl.bin ipl.lst
 
 dickos.img : ipl.bin Makefile
-	tools/edimg.exe	imgin:tools/fdimg0at.tek wbinimg src:ipl.bin len:512 from:0 to:0	imgout:dickos.img
+	$(EDIMG)   imgin:tools/fdimg0at.tek \
+		wbinimg src:ipl.bin len:512 from:0 to:0   imgout:dickos.img
 
-#命令
+# �R�}���h
+
 asm :
-	tools/make.exe -r ipl.bin
+	$(MAKE) ipl.bin
 
 img :
-	tools/make.exe -r dickos.img
+	$(MAKE) dickos.img
 
-run : 
-	tools/make.exe img
-	copy dickos.img tools\qemu\fdimage0.bin
-	tools/make.exe -C tools/qemu
+run :
+	$(MAKE) img
+	$(COPY) dickos.img tools\qemu\fdimage0.bin
+	$(MAKE) -C tools/qemu
 
 install :
-	tools/make.exe img
-	tools/imgtol.com dickos.img a:
+	$(MAKE) img
+	$(IMGTOL) w a: dickos.img
 
-#删除中间生成文件	
 clean :
-	-del ipl.bin
-	-del ipl.lst
+	-$(DEL) ipl.bin
+	-$(DEL) ipl.lst
 
-#删除除nas源文件之外所有生成结果
 src_only :
-	tools/make.exe clean
-	-del dickos.img
-
+	$(MAKE) clean
+	-$(DEL) dickos.img
