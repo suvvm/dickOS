@@ -1,84 +1,91 @@
-; hello-os
+; dickos-os
 ; TAB=4
 
-		ORG		0x7c00			; 指明程序的装载地址(启动区内容的装载地址0x00007c00-0x00007dff)
+		ORG		0x7c00			; 巜柧掱彉揑憰?抧毈(??嬫撪梕揑憰?抧毈0x00007c00-0x00007dff)
 
-; FAT12软盘格式
+; FAT12??奿幃
 
 		JMP		entry
 		DB		0x90
-		DB		"DICKSIPL"		; 启动分区名称
-		DW		512				; 扇区(sector)大小锁定512字节
-		DB		1				; 簇(cluster)大小锁定一个扇区
-		DW		1				; FAT的起始位置（从第一个扇区开始）
-		DB		2				; FAT的个数锁定2
-		DW		224				; 根目录大小(224项)
-		DW		2880			; 磁盘大小(按软盘标准算必定为2880扇区)
-		DB		0xf0			; 磁盘种类锁定0xf0
-		DW		9				; FAT长度锁定9扇区
-		DW		18				; 1个磁道(track)有几个扇区锁定18
-		DW		2				; 磁头数(锁定2)
-		DD		0				; 不使用分区锁定0
-		DD		2880			; 重写磁盘大小
-		DB		0,0,0x29		; 不知道什么意思
-		DD		0xffffffff		; (可能)卷标号码
-		DB		"DICK-OS    "	; 磁盘名称(11字节)
-		DB		"FAT12   "		; 磁盘格式(8字节)
-		RESB	18				; 空出18字节
+		DB		"DICKSIPL"		; ??暘嬫柤徧乮8帤?乯
+		DW		512				; 愵嬫(sector)戝彫?掕512帤?
+		DB		1				; 馄(cluster)戝彫?掕堦槩愵嬫
+		DW		1				; FAT揑婲巒埵抲乮樃戞堦槩愵嬫?巒乯
+		DB		2				; FAT揑槩悢?掕2
+		DW		224				; 崻栚?戝彫(224?)
+		DW		2880			; 帴?戝彫乮埪???弝嶼昁掕?2880愵嬫乯
+		DB		0xf0			; 帴????掕0xf0
+		DW		9				; FAT?搙?掕9愵嬫
+		DW		18				; 1槩帴摴(track)桳檣槩愵嬫?掕18
+		DW		2				; 帴?悢(?掕2)
+		DD		0				; 晄巊梡暘嬫?掕0
+		DD		2880			; 廳幨帴?戝彫
+		DB		0,0,0x29		; 晄抦摴廦?堄巚
+		DD		0xffffffff		; (壜擻)櫳?崋?
+		DB		"DICK-OS    "	; 帴?柤徧(11帤?)
+		DB		"FAT12   "		; 帴?奿幃(8帤?)
+		RESB	18				; 嬻弌18帤?
 
-; 程序主体
+; 掱彉庡懱
 
 entry:
-		MOV		AX,0			; 初始化寄存器
+		MOV		AX,0			; 弶巒壔婑懚婍
 		MOV		SS,AX
 		MOV		SP,0x7c00
 		MOV		DS,AX
-		
-;添加部分
+
+; 杮師揧壛
 
 		MOV		AX,0x0820
-		MOV 	ES,AX
-		MOV		CH,0			; 柱面0
-		MOV		DH,0			; 磁头0
-		MOV		CL,2			; 扇区2
-		
-		MOV		SI,0			; 记录失败次数的寄存器
+		MOV		ES,AX
+		MOV		CH,0			; 拰柺0
+		MOV		DH,0			; 帴?0
+		MOV		CL,2			; 愵嬫2
+readloop:
+		MOV		SI,0			; ??幐?師悢揑婑懚婍
 retry:
-		MOV 	AH,0x02			; AH=0x02 : 读盘
-		MOV		AL,1			; 一个扇区
-		MOV		BX,0			
-		MOV		DL,0x00			; A驱动器
-		INT		0x13			; 调用bios 19号函数（磁盘操作 0x02:读盘）
-		JNC		fin				; 没有出错则跳转到fin
-		ADD		SI,1			; 出错次数SI加一
-		CMP		SI,5			; SI与5比较
-		JAE		error			; SI >= 5 跳转至error
-		MOV		AH,0x00			; AH设为0x00
-		MOV		DL,0x00			; A驱动器
-		INT		0x13			; 调用bios 19号函数（磁盘操作 0x00:重置驱动器）
+		MOV		AH,0x02			; AH=0x02 : ??
+		MOV		AL,1			; 堦槩愵嬫
+		MOV		BX,0
+		MOV		DL,0x00			; A??婍
+		INT		0x13			; ?梡bios 19崋敓悢乮帴?憖嶌 0x02:??乯
+		JNC		next			; 杤桳弌??挼?摓next丆?壓堦槩愵嬫
+		ADD		SI,1			; 弌?師悢SI壛堦
+		CMP		SI,5			; SI梌5斾?
+		JAE		error			; SI >= 5 挼?帄error
+		MOV		AH,0x00			; AH??0x00
+		MOV		DL,0x00			; A??婍
+		INT		0x13			; ?梡bios 19崋敓悢乮帴?憖嶌 0x00:廳抲??婍乯
 		JMP		retry
+next:
+		MOV		AX,ES			; 撪懚抧毈岪堏0x200
+		ADD		AX,0x0020		; AX堦槩愵嬫512帤?512揑16?惂?20丆?壓堦槩愵嬫扅廀嵼尨抧毈壛0x20懄壜
+		MOV		ES,AX			; 桼槹晄擻捈愙?ES?峴ADD巜椷丆強埲棙梡AX?ES??
+		ADD		CL,1			; CL壛堦
+		CMP		CL,18			; 斾?CL梌18
+		JBE		readloop		; 擛壥CL<=18挼?帄readloop
 
 fin:
-		HLT						; 让cpu停止等待指令
-		JMP		fin				; 无限循环
-		
+		HLT						; ?cpu掆巭摍懸巜椷
+		JMP		fin				; 澷尷弞?
+
 error:
-		MOV 	SI,msg
+		MOV		SI,msg
 putloop:
 		MOV		AL,[SI]
-		ADD		SI,1			; SI加1
+		ADD		SI,1			; SI壛1
 		CMP		AL,0
 		JE		fin
-		MOV		AH,0x0e			; 显示一个文字
-		MOV		BX,15			; 指定字符颜色
-		INT		0x10			; 调用bios 16号函数（调用显卡）
+		MOV		AH,0x0e			; ?帵堦槩暥帤
+		MOV		BX,15			; 巜掕帤晞?怓
+		INT		0x10			; ?梡bios 16崋敓悢乮?梡??乯
 		JMP		putloop
 msg:
-		DB		0x0a, 0x0a		; 两个换行符
+		DB		0x0a, 0x0a		; ?槩?峴晞
 		DB		"load error"
-		DB		0x0a			; 换行
+		DB		0x0a			; ?峴
 		DB		0
 
-		RESB	0x7dfe-$		; 填写0x00直到0x001fe
+		RESB	0x7dfe-$		; 揢幨0x00捈摓0x001fe
 
 		DB		0x55, 0xaa
