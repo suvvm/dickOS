@@ -19,7 +19,7 @@ run :
 
 install :
 	tools/make.exe img
-	tools/imgtol.com w a: dickos.img
+	tools/imgtol.com dickos.img a:
 
 #删除中间生成文件	
 clean :
