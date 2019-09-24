@@ -42,15 +42,22 @@ entry:
 		MOV		DH,0			; 磁头0
 		MOV		CL,2			; 扇区2
 		
+		MOV		SI,0			; 记录失败次数的寄存器
+retry:
 		MOV 	AH,0x02			; AH=0x02 : 读盘
 		MOV		AL,1			; 一个扇区
 		MOV		BX,0			
 		MOV		DL,0x00			; A驱动器
 		INT		0x13			; 调用bios 19号函数（磁盘操作 0x02:读盘）
-		JC		error
-		
-		
-		
+		JNC		fin				; 没有出错则跳转到fin
+		ADD		SI,1			; 出错次数SI加一
+		CMP		SI,5			; SI与5比较
+		JAE		error			; SI >= 5 跳转至error
+		MOV		AH,0x00			; AH设为0x00
+		MOV		DL,0x00			; A驱动器
+		INT		0x13			; 调用bios 19号函数（磁盘操作 0x00:重置驱动器）
+		JMP		retry
+
 fin:
 		HLT						; 让cpu停止等待指令
 		JMP		fin				; 无限循环
