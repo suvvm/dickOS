@@ -6,24 +6,26 @@ IMGTOL   = $(TOOLPATH)imgtol.com
 COPY     = copy
 DEL      = del
 
-# デフォルト動作
+# 默??作
 
 default :
 	$(MAKE) img
 
-# ファイル生成規則
+# 文件生成??
 
 ipl.bin : ipl.nas Makefile
 	$(NASK) ipl.nas ipl.bin ipl.lst
 
-dickos.img : ipl.bin Makefile
+dickos.sys : dickos.nas Makefile
+	$(NASK) dickos.nas dickos.sys dickos.lst
+	
+dickos.img : ipl.bin dickos.sys Makefile
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
-		wbinimg src:ipl.bin len:512 from:0 to:0   imgout:dickos.img
+		wbinimg src:ipl.bin len:512 from:0 to:0 \
+		copy from:dickos.sys to:@: \
+		imgout:dickos.img
 
-# コマンド
-
-asm :
-	$(MAKE) ipl.bin
+# 命令
 
 img :
 	$(MAKE) dickos.img
@@ -40,6 +42,8 @@ install :
 clean :
 	-$(DEL) ipl.bin
 	-$(DEL) ipl.lst
+	-$(DEL) dickos.sys
+	-$(DEL) dickos.lst
 
 src_only :
 	$(MAKE) clean
