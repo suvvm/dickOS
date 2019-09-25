@@ -63,9 +63,6 @@ next:
 		MOV		ES,AX			; 由于不能直接对ES执行ADD指令，所以利用AX对EX进行赋值
 		ADD		CL,1			; CL加一
 		CMP		CL,18			; 比较CL与18
-		
-; 本次添加
-
 		JBE		readloop		; 如果CL<=18跳转至readloop
 		MOV		CL,1			; 扇区CL重置为1
 		ADD		DH,1			; 磁头DH为1
@@ -75,6 +72,11 @@ next:
 		ADD		CH,1			; 柱面CH加一
 		CMP		CH,CYLS			; 比较柱面CH与CYLS
 		JB		readloop		; 柱面CH小于10跳转至readloop
+		
+; 本次添加
+		
+		MOV		[0x0ff0],CH		; 记录IPL读到的位置
+		JMP		0xc200			; 之前磁盘内容装载至0x8000号地址 dickos.sys内容在0x8000+0x4200=0xc200号地址
 
 fin:
 		HLT						; cpu停止等待指令
