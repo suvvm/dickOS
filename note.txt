@@ -32,7 +32,8 @@
 	JNC 进位标致是0时跳转
 	JAE 大于等于时跳转
 	JBE 小于等于时跳转
+	JBE	小于时跳转
 	HLT 让CPU待机
 	INT 软件中断指令
 	ORG 指定程序开始的地址
-	
+	EQU equal相当于C语言#define
