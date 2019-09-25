@@ -35,7 +35,7 @@ run :
 
 install :
 	$(MAKE) img
-	$(IMGTOL) w a: dickos.img
+	$(IMGTOL) dickos.img a:
 
 clean :
 	-$(DEL) ipl.bin
