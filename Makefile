@@ -1,23 +1,49 @@
 TOOLPATH = tools/
+INCPATH  = tools/include/
+
 MAKE     = $(TOOLPATH)make.exe -r
 NASK     = $(TOOLPATH)nask.exe
+CC1		 = $(TOOLPATH)cc1.exe -I$(INCPATH) -Os -Wall -quiet
+GAS2NASK = $(TOOLPATH)gas2nask.exe -a
+OBJ2BIM  = $(TOOLPATH)obj2bim.exe
+BIM2HRB  = $(TOOLPATH)bim2hrb.exe
+RULEFILE = $(TOOLPATH)include/haribote.rul
 EDIMG    = $(TOOLPATH)edimg.exe
 IMGTOL   = $(TOOLPATH)imgtol.com
 COPY     = copy
 DEL      = del
 
-# ‡“??çÏ
+# ÈªòËÆ§Âä®‰Ωú
 
 default :
 	$(MAKE) img
 
-# ï∂åèê∂ê¨??
+# Êñá‰ª∂ÁîüÊàêËßÑÂàô
 
 ipl.bin : ipl.nas Makefile
 	$(NASK) ipl.nas ipl.bin ipl.lst
+	
+asmhead.bin : asmhead.nas Makefile
+	$(NASK) asmhead.nas asmhead.bin asmhead.lst
+	
+bootpack.gas : bootpack.c Makefile
+	$(CC1) -o bootpack.gas bootpack.c
 
-dickos.sys : dickos.nas Makefile
-	$(NASK) dickos.nas dickos.sys dickos.lst
+bootpack.nas : bootpack.gas Makefile
+	$(GAS2NASK) bootpack.gas bootpack.nas
+
+bootpack.obj : bootpack.nas Makefile
+	$(NASK) bootpack.nas bootpack.obj bootpack.lst
+	
+bootpack.bim : bootpack.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:bootpack.bim stack:3136k map:bootpack.map \
+		bootpack.obj
+# 3MB+64KB=3136KB
+bootpack.hrb : bootpack.bim Makefile
+	$(BIM2HRB) bootpack.bim bootpack.hrb 0
+
+dickos.sys :  asmhead.bin bootpack.hrb Makefile
+	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
 dickos.img : ipl.bin dickos.sys Makefile
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
@@ -25,7 +51,7 @@ dickos.img : ipl.bin dickos.sys Makefile
 		copy from:dickos.sys to:@: \
 		imgout:dickos.img
 
-# ñΩóﬂ
+# ÂëΩ‰ª§
 
 img :
 	$(MAKE) dickos.img
@@ -40,10 +66,15 @@ install :
 	$(IMGTOL) dickos.img a:
 
 clean :
-	-$(DEL) ipl.bin
-	-$(DEL) ipl.lst
+	-$(DEL) *.bin
+	-$(DEL) *.lst
+	-$(DEL) *.gas
+	-$(DEL) *.obj
+	-$(DEL) bootpack.nas
+	-$(DEL) bootpack.map
+	-$(DEL) bootpack.bim
+	-$(DEL) bootpack.hrb
 	-$(DEL) dickos.sys
-	-$(DEL) dickos.lst
 
 src_only :
 	$(MAKE) clean
