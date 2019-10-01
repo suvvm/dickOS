@@ -1,7 +1,12 @@
 void io_hlt(void);	/*函数声明*/
+void write_mem8(int addr, int data);
+
 void HariMain(void){
-    fin:
-        /*执行halt.nas里的io_hlt*/
+	int i;
+	for(i = 0xa0000; i <= 0xaffff; i++){
+		write_mem8(i,15);	/*MOV BYTE [i],15*/
+	}
+	for(;;){
 		io_hlt();
-        goto fin;
+	}
 }
