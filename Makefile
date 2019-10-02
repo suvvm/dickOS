@@ -35,12 +35,12 @@ bootpack.nas : bootpack.gas Makefile
 bootpack.obj : bootpack.nas Makefile
 	$(NASK) bootpack.nas bootpack.obj bootpack.lst
 
-halt.obj: halt.nas Makefile
-	$(NASK) halt.nas halt.obj halt.lst
+func.obj: func.nas Makefile
+	$(NASK) func.nas func.obj func.lst
 
-bootpack.bim : bootpack.obj halt.obj Makefile
+bootpack.bim : bootpack.obj func.obj Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:bootpack.bim stack:3136k map:bootpack.map \
-		bootpack.obj halt.obj
+		bootpack.obj func.obj
 # 3MB+64KB=3136KB
 bootpack.hrb : bootpack.bim Makefile
 	$(BIM2HRB) bootpack.bim bootpack.hrb 0
