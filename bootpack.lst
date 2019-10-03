@@ -14,14 +14,16 @@
     14 00000003 53                              	PUSH	EBX
     15 00000004 BB 000A0000                     	MOV	EBX,655360
     16 00000009                                 L6:
-    17 00000009 6A 0F                           	PUSH	15
-    18 0000000B 53                              	PUSH	EBX
-    19 0000000C 43                              	INC	EBX
-    20 0000000D E8 [00000000]                   	CALL	_write_mem8
-    21 00000012 81 FB 000AFFFF                  	CMP	EBX,720895
-    22 00000018 58                              	POP	EAX
-    23 00000019 5A                              	POP	EDX
-    24 0000001A 7E ED                           	JLE	L6
-    25 0000001C                                 L7:
-    26 0000001C E8 [00000000]                   	CALL	_io_hlt
-    27 00000021 EB F9                           	JMP	L7
+    17 00000009 89 D8                           	MOV	EAX,EBX
+    18 0000000B 83 E0 0F                        	AND	EAX,15
+    19 0000000E 50                              	PUSH	EAX
+    20 0000000F 53                              	PUSH	EBX
+    21 00000010 43                              	INC	EBX
+    22 00000011 E8 [00000000]                   	CALL	_write_mem8
+    23 00000016 81 FB 000AFFFF                  	CMP	EBX,720895
+    24 0000001C 58                              	POP	EAX
+    25 0000001D 5A                              	POP	EDX
+    26 0000001E 7E E9                           	JLE	L6
+    27 00000020                                 L7:
+    28 00000020 E8 [00000000]                   	CALL	_io_hlt
+    29 00000025 EB F9                           	JMP	L7
