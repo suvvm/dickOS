@@ -3,27 +3,21 @@
      3 00000000                                 [OPTIMIZE 1]
      4 00000000                                 [OPTION 1]
      5 00000000                                 [BITS 32]
-     6 00000000                                 	EXTERN	_write_mem8
-     7 00000000                                 	EXTERN	_io_hlt
-     8 00000000                                 [FILE "bootpack.c"]
-     9                                          [SECTION .text]
-    10 00000000                                 	GLOBAL	_HariMain
-    11 00000000                                 _HariMain:
-    12 00000000 55                              	PUSH	EBP
-    13 00000001 89 E5                           	MOV	EBP,ESP
-    14 00000003 53                              	PUSH	EBX
-    15 00000004 BB 000A0000                     	MOV	EBX,655360
-    16 00000009                                 L6:
-    17 00000009 89 D8                           	MOV	EAX,EBX
-    18 0000000B 83 E0 0F                        	AND	EAX,15
-    19 0000000E 50                              	PUSH	EAX
-    20 0000000F 53                              	PUSH	EBX
-    21 00000010 43                              	INC	EBX
-    22 00000011 E8 [00000000]                   	CALL	_write_mem8
-    23 00000016 81 FB 000AFFFF                  	CMP	EBX,720895
-    24 0000001C 58                              	POP	EAX
-    25 0000001D 5A                              	POP	EDX
-    26 0000001E 7E E9                           	JLE	L6
-    27 00000020                                 L7:
-    28 00000020 E8 [00000000]                   	CALL	_io_hlt
-    29 00000025 EB F9                           	JMP	L7
+     6 00000000                                 	EXTERN	_io_hlt
+     7 00000000                                 [FILE "bootpack.c"]
+     8                                          [SECTION .text]
+     9 00000000                                 	GLOBAL	_HariMain
+    10 00000000                                 _HariMain:
+    11 00000000 55                              	PUSH	EBP
+    12 00000001 BA 000A0000                     	MOV	EDX,655360
+    13 00000006 89 E5                           	MOV	EBP,ESP
+    14 00000008                                 L6:
+    15 00000008 88 D0                           	MOV	AL,DL
+    16 0000000A 83 E0 0F                        	AND	EAX,15
+    17 0000000D 88 02                           	MOV	BYTE [EDX],AL
+    18 0000000F 42                              	INC	EDX
+    19 00000010 81 FA 000AFFFF                  	CMP	EDX,720895
+    20 00000016 7E F0                           	JLE	L6
+    21 00000018                                 L7:
+    22 00000018 E8 [00000000]                   	CALL	_io_hlt
+    23 0000001D EB F9                           	JMP	L7
