@@ -6,7 +6,11 @@
 
 当前运行后会读取磁盘10个柱面并执行dickos.sys加载boot引导程序包。
 
-使用指针操作VRAM显示全屏指定颜色条纹进入HALT状态
+设定16色调色板
+
+调用函数boxFill8使用指针操作VRAM显示桌面GUI
+
+进入HALT状态
 
 # Build
 
