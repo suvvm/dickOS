@@ -37,6 +37,7 @@
 	INT 软件中断指令
 	ORG 指定程序开始的地址
 	EQU equal相当于C语言#define
+	RET 子程序返回
 	
 	WORD 16位（2字节）
 	DWORD 32位（4字节）
