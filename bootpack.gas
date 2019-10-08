@@ -121,23 +121,90 @@ _init_palette:
 	leave
 	ret
 	.balign 2
+.globl _boxFill8
+	.def	_boxFill8;	.scl	2;	.type	32;	.endef
+_boxFill8:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%edi
+	pushl	%esi
+	pushl	%ebx
+	pushl	%edi
+	pushl	%edi
+	movb	16(%ebp), %al
+	movl	24(%ebp), %ecx
+	movl	28(%ebp), %edi
+	movb	%al, -13(%ebp)
+	cmpl	32(%ebp), %ecx
+	jg	L22
+	movl	12(%ebp), %ebx
+	imull	%ecx, %ebx
+L20:
+	movl	20(%ebp), %edx
+	cmpl	%edi, %edx
+	jg	L24
+	movl	8(%ebp), %esi
+	addl	%ebx, %esi
+	addl	%edx, %esi
+	movl	%esi, -20(%ebp)
+L19:
+	movl	-20(%ebp), %esi
+	movb	-13(%ebp), %al
+	incl	%edx
+	movb	%al, (%esi)
+	incl	%esi
+	movl	%esi, -20(%ebp)
+	cmpl	%edi, %edx
+	jle	L19
+L24:
+	incl	%ecx
+	addl	12(%ebp), %ebx
+	cmpl	32(%ebp), %ecx
+	jle	L20
+L22:
+	popl	%ebx
+	popl	%esi
+	popl	%ebx
+	popl	%esi
+	popl	%edi
+	popl	%ebp
+	ret
+	.balign 2
 .globl _HariMain
 	.def	_HariMain;	.scl	2;	.type	32;	.endef
 _HariMain:
 	pushl	%ebp
 	movl	%esp, %ebp
 	call	_init_palette
-	xorl	%edx, %edx
-L15:
-	movb	%dl, %al
-	andl	$15, %eax
-	movb	%al, 655360(%edx)
-	incl	%edx
-	cmpl	$65535, %edx
-	jle	L15
-L16:
+	pushl	$120
+	pushl	$120
+	pushl	$20
+	pushl	$20
+	pushl	$1
+	pushl	$320
+	pushl	$655360
+	call	_boxFill8
+	pushl	$150
+	pushl	$170
+	pushl	$50
+	pushl	$70
+	pushl	$2
+	pushl	$320
+	pushl	$655360
+	call	_boxFill8
+	addl	$56, %esp
+	pushl	$180
+	pushl	$220
+	pushl	$80
+	pushl	$120
+	pushl	$5
+	pushl	$320
+	pushl	$655360
+	call	_boxFill8
+	addl	$28, %esp
+L26:
 	call	_io_hlt
-	jmp	L16
+	jmp	L26
 	.def	_io_hlt;	.scl	2;	.type	32;	.endef
 	.def	_io_store_eflags;	.scl	2;	.type	32;	.endef
 	.def	_io_out8;	.scl	2;	.type	32;	.endef
