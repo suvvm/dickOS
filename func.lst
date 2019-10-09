@@ -51,7 +51,7 @@
     51 00000025 C3                              		RET
     52 00000026                                 
     53 00000026                                 _io_out8:						; void io_out8(int port, int data);
-    54 00000026 8B 54 24 04                     		MOV 	EDX,[ESP+4]		; 端口port
+    54 00000026 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口port
     55 0000002A 8A 44 24 08                     		MOV		AL,[ESP+8]		; 数据data
     56 0000002E EE                              		OUT		DX,AL			; 将AL值写入端口
     57 0000002F C3                              		RET
@@ -74,7 +74,7 @@
     74 00000047 C3                              		RET
     75 00000048                                 
     76 00000048                                 _io_store_eflags:				; void io_store_eflags(int eflags);
-    77 00000048 8B 44 24 04                     		MOV 	EAX,[ESP+4]
-    78 0000004C 50                              		PUSH	EAX
+    77 00000048 8B 44 24 04                     		MOV			EAX,[ESP+4]
+    78 0000004C 50                              		PUSH		EAX
     79 0000004D 9D                              		POPFD					; POP EFLAGS
     80 0000004E C3                              		RET
