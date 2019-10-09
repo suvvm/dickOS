@@ -10,9 +10,9 @@
     10  = 00000FF1                              LEDS	EQU		0x0ff1			; （不确定）键盘指示灯LED状态数
     11  = 00000FF2                              VMODE	EQU		0x0ff2			; 颜色数目信息 颜色的位数
     12  = 00000FF4                              SCRNX	EQU		0x0ff4			; 分辨率X（screen X）像素数
-    13  = 00000FF6                              SCRNY 	EQU 	0x0ff6			; 分辨率Y（screen Y）像素数
-    14  = 00000FF8                              VRAM	EQU 	0x0ff8			; 图像缓冲区开始地址
-    15 00000000                                 		
+    13  = 00000FF6                              SCRNY 	EQU		0x0ff6			; 分辨率Y（screen Y）像素数
+    14  = 00000FF8                              VRAM	EQU		0x0ff8			; 图像缓冲区开始地址
+    15 00000000                                 
     16                                          		ORG		0xc200			; 程序被装载的内存位置
     17 0000C200                                 
     18 0000C200                                 ; 画面模式设定
@@ -20,16 +20,16 @@
     20 0000C200 B0 13                           		MOV		AL,0x13
     21 0000C202 B4 00                           		MOV		AH,0x00
     22 0000C204 CD 10                           		INT		0x10			; 调用bios16号函数（调用显卡）
-    23 0000C206 C6 06 0FF2 08                   		MOV 	BYTE [VMODE],8	; 记录画面模式
-    24 0000C20B C7 06 0FF4 0140                 		MOV 	WORD [SCRNX],320
+    23 0000C206 C6 06 0FF2 08                   		MOV		BYTE [VMODE],8	; 记录画面模式
+    24 0000C20B C7 06 0FF4 0140                 		MOV		WORD [SCRNX],320
     25 0000C211 C7 06 0FF6 00C8                 		MOV		WORD [SCRNY],200
-    26 0000C217 66 C7 06 0FF8 000A0000          		MOV  	DWORD [VRAM],0x000a0000
+    26 0000C217 66 C7 06 0FF8 000A0000          		MOV		DWORD [VRAM],0x000a0000
     27 0000C220                                 		
     28 0000C220                                 ;BIOS获得键盘LED指示灯状态
     29 0000C220                                 
-    30 0000C220 B4 02                           		MOV 	AH,0x02
+    30 0000C220 B4 02                           		MOV		AH,0x02
     31 0000C222 CD 16                           		INT		0x16			; 调用bios22号函数 （调用键盘）
-    32 0000C224 A2 0FF1                         		MOV 	[LEDS],AL
+    32 0000C224 A2 0FF1                         		MOV		[LEDS],AL
     33 0000C227                                 		
     34 0000C227                                 ; 使PCI不接受一切中断
     35 0000C227                                 
