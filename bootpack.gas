@@ -175,124 +175,154 @@ L22:
 _HariMain:
 	pushl	%ebp
 	movl	%esp, %ebp
+	pushl	%edi
+	pushl	%esi
+	pushl	%ebx
+	subl	$20, %esp
 	call	_init_palette
-	pushl	$171
-	pushl	$319
+	movswl	4086,%ebx
+	movswl	4084,%eax
+	movl	%eax, -20(%ebp)
+	movl	4088, %eax
+	movl	%eax, -16(%ebp)
+	movl	-20(%ebp), %edi
+	leal	-29(%ebx), %eax
+	decl	%edi
+	pushl	%eax
+	pushl	%edi
 	pushl	$0
 	pushl	$0
 	pushl	$14
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
-	pushl	$172
-	pushl	$319
-	pushl	$172
+	leal	-28(%ebx), %eax
+	pushl	%eax
+	pushl	%edi
+	pushl	%eax
 	pushl	$0
 	pushl	$8
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
+	leal	-27(%ebx), %eax
 	addl	$56, %esp
-	pushl	$173
-	pushl	$319
-	pushl	$173
+	pushl	%eax
+	pushl	%edi
+	pushl	%eax
 	pushl	$0
 	pushl	$7
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
-	pushl	$199
-	pushl	$319
-	pushl	$174
+	leal	-1(%ebx), %eax
+	pushl	%eax
+	leal	-26(%ebx), %eax
+	pushl	%edi
+	pushl	%eax
 	pushl	$0
 	pushl	$8
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
+	leal	-24(%ebx), %eax
 	addl	$56, %esp
-	pushl	$176
+	movl	%eax, -24(%ebp)
+	pushl	%eax
 	pushl	$59
-	pushl	$176
+	pushl	%eax
 	pushl	$3
 	pushl	$7
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
-	pushl	$196
+	leal	-4(%ebx), %eax
+	pushl	%eax
+	movl	%eax, -28(%ebp)
 	pushl	$2
-	pushl	$176
+	pushl	-24(%ebp)
 	pushl	$2
 	pushl	$7
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
 	addl	$56, %esp
-	pushl	$196
+	pushl	-28(%ebp)
 	pushl	$59
-	pushl	$196
+	pushl	-28(%ebp)
 	pushl	$3
 	pushl	$15
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
-	pushl	$195
+	leal	-5(%ebx), %eax
+	pushl	%eax
+	leal	-23(%ebx), %eax
 	pushl	$59
-	pushl	$177
+	movl	%eax, -32(%ebp)
+	pushl	%eax
+	subl	$3, %ebx
 	pushl	$59
 	pushl	$15
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
 	addl	$56, %esp
-	pushl	$197
+	pushl	%ebx
 	pushl	$59
-	pushl	$197
+	pushl	%ebx
 	pushl	$2
 	pushl	$0
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
-	pushl	$197
+	pushl	%ebx
 	pushl	$60
-	pushl	$176
+	pushl	-24(%ebp)
 	pushl	$60
 	pushl	$0
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
+	call	_boxFill8
+	movl	-20(%ebp), %edi
+	addl	$56, %esp
+	movl	-20(%ebp), %esi
+	pushl	-24(%ebp)
+	subl	$4, %esi
+	subl	$47, %edi
+	pushl	%esi
+	pushl	-24(%ebp)
+	pushl	%edi
+	pushl	$15
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
+	call	_boxFill8
+	pushl	-28(%ebp)
+	pushl	%edi
+	pushl	-32(%ebp)
+	pushl	%edi
+	pushl	$15
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
 	addl	$56, %esp
-	pushl	$176
-	pushl	$316
-	pushl	$176
-	pushl	$273
-	pushl	$15
-	pushl	$320
-	pushl	$655360
-	call	_boxFill8
-	pushl	$196
-	pushl	$273
-	pushl	$177
-	pushl	$273
-	pushl	$15
-	pushl	$320
-	pushl	$655360
-	call	_boxFill8
-	addl	$56, %esp
-	pushl	$197
-	pushl	$316
-	pushl	$197
-	pushl	$273
+	pushl	%ebx
+	pushl	%esi
+	pushl	%ebx
+	pushl	%edi
 	pushl	$7
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
-	pushl	$197
-	pushl	$317
-	pushl	$176
-	pushl	$317
+	movl	-20(%ebp), %eax
+	pushl	%ebx
+	subl	$3, %eax
+	pushl	%eax
+	pushl	-24(%ebp)
+	pushl	%eax
 	pushl	$7
-	pushl	$320
-	pushl	$655360
+	pushl	-20(%ebp)
+	pushl	-16(%ebp)
 	call	_boxFill8
 	addl	$56, %esp
 L26:
