@@ -170,6 +170,79 @@ L22:
 	popl	%ebp
 	ret
 	.balign 2
+.globl _putfont8
+	.def	_putfont8;	.scl	2;	.type	32;	.endef
+_putfont8:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%edi
+	pushl	%esi
+	xorl	%esi, %esi
+	pushl	%ebx
+	movl	28(%ebp), %edi
+	movb	24(%ebp), %bl
+L38:
+	movl	20(%ebp), %eax
+	movl	16(%ebp), %edx
+	addl	%esi, %eax
+	imull	12(%ebp), %eax
+	addl	8(%ebp), %eax
+	leal	(%edx,%eax), %ecx
+	movb	(%esi,%edi), %dl
+	testb	%dl, %dl
+	jns	L30
+	movb	%bl, (%ecx)
+L30:
+	movb	%dl, %al
+	andl	$64, %eax
+	testb	%al, %al
+	je	L31
+	movb	%bl, 1(%ecx)
+L31:
+	movb	%dl, %al
+	andl	$32, %eax
+	testb	%al, %al
+	je	L32
+	movb	%bl, 2(%ecx)
+L32:
+	movb	%dl, %al
+	andl	$16, %eax
+	testb	%al, %al
+	je	L33
+	movb	%bl, 3(%ecx)
+L33:
+	movb	%dl, %al
+	andl	$8, %eax
+	testb	%al, %al
+	je	L34
+	movb	%bl, 4(%ecx)
+L34:
+	movb	%dl, %al
+	andl	$4, %eax
+	testb	%al, %al
+	je	L35
+	movb	%bl, 5(%ecx)
+L35:
+	movb	%dl, %al
+	andl	$2, %eax
+	testb	%al, %al
+	je	L36
+	movb	%bl, 6(%ecx)
+L36:
+	andl	$1, %edx
+	testb	%dl, %dl
+	je	L28
+	movb	%bl, 7(%ecx)
+L28:
+	incl	%esi
+	cmpl	$15, %esi
+	jle	L38
+	popl	%ebx
+	popl	%esi
+	popl	%edi
+	popl	%ebp
+	ret
+	.balign 2
 .globl _init_GUI
 	.def	_init_GUI;	.scl	2;	.type	32;	.endef
 _init_GUI:
@@ -347,10 +420,61 @@ _HariMain:
 	pushl	%eax
 	pushl	4088
 	call	_init_GUI
-	addl	$12, %esp
-L27:
+	pushl	$_font+1088
+	pushl	$7
+	pushl	$8
+	pushl	$8
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_putfont8
+	addl	$36, %esp
+	pushl	$_font+1168
+	pushl	$7
+	pushl	$8
+	pushl	$16
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_putfont8
+	pushl	$_font+1072
+	pushl	$7
+	pushl	$8
+	pushl	$24
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_putfont8
+	addl	$48, %esp
+	pushl	$_font+1200
+	pushl	$7
+	pushl	$8
+	pushl	$32
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_putfont8
+	pushl	$_font+1264
+	pushl	$7
+	pushl	$8
+	pushl	$40
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_putfont8
+	addl	$48, %esp
+	pushl	$_font+1328
+	pushl	$7
+	pushl	$8
+	pushl	$48
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_putfont8
+	addl	$24, %esp
+L43:
 	call	_io_hlt
-	jmp	L27
+	jmp	L43
 	.def	_io_hlt;	.scl	2;	.type	32;	.endef
 	.def	_io_store_eflags;	.scl	2;	.type	32;	.endef
 	.def	_io_out8;	.scl	2;	.type	32;	.endef
