@@ -6,6 +6,8 @@ NASK     = $(TOOLPATH)nask.exe
 CC1		 = $(TOOLPATH)cc1.exe -I$(INCPATH) -Os -Wall -quiet
 GAS2NASK = $(TOOLPATH)gas2nask.exe -a
 OBJ2BIM  = $(TOOLPATH)obj2bim.exe
+BIN2OBJ  = $(TOOLPATH)bin2obj.exe
+MAKEFONT = $(TOOLPATH)makefont.exe
 BIM2HRB  = $(TOOLPATH)bim2hrb.exe
 RULEFILE = $(TOOLPATH)include/haribote.rul
 EDIMG    = $(TOOLPATH)edimg.exe
@@ -35,12 +37,18 @@ bootpack.nas : bootpack.gas Makefile
 bootpack.obj : bootpack.nas Makefile
 	$(NASK) bootpack.nas bootpack.obj bootpack.lst
 
-func.obj: func.nas Makefile
+func.obj : func.nas Makefile
 	$(NASK) func.nas func.obj func.lst
+	
+font.bin : font.txt Makefile
+	$(MAKEFONT) font.txt font.bin
+	
+font.obj : font.bin Makefile
+	$(BIN2OBJ) font.bin  font.obj _font
 
-bootpack.bim : bootpack.obj func.obj Makefile
+bootpack.bim : bootpack.obj func.obj font.obj Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:bootpack.bim stack:3136k map:bootpack.map \
-		bootpack.obj func.obj
+		bootpack.obj func.obj font.obj
 # 3MB+64KB=3136KB
 bootpack.hrb : bootpack.bim Makefile
 	$(BIM2HRB) bootpack.bim bootpack.hrb 0
