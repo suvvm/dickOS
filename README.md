@@ -10,6 +10,8 @@
 
 调用函数boxFill8使用指针操作VRAM显示桌面GUI
 
+在桌面打印DICKOS
+
 进入HALT状态
 
 # Build
