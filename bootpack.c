@@ -38,7 +38,6 @@ void set_palette(int start, int end, unsigned char *rgb){
 		rgb += 3;
 	}
 	io_store_eflags(eflags);	/*ª÷∏¥œ÷≥°*/
-	return;
 }
 void init_palette(){
 	static unsigned char table_rgb[16 * 3] = {
@@ -60,7 +59,6 @@ void init_palette(){
 		0x84, 0x84, 0x84,	/*15:∞µª“*/
 	};
 	set_palette(0, 15, table_rgb);
-	return;
 }
 void boxFill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1){
 	int x, y;
@@ -69,7 +67,22 @@ void boxFill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 			vram[y * xsize + x] = c;
 		}
 	}
-	return;
+}
+void putfont8(char *vram, int xsize, int x, int y, char c, char *font){
+	int i;
+	char *p, d;
+	for(i = 0; i < 16; i++){
+		p = vram + (y + i) * xsize + x;
+		d = font[i];
+		if((d & 0x80) != 0) p[0] = c;
+		if((d & 0x40) != 0) p[1] = c;
+		if((d & 0x20) != 0) p[2] = c;
+		if((d & 0x10) != 0) p[3] = c;
+		if((d & 0x08) != 0) p[4] = c;
+		if((d & 0x04) != 0) p[5] = c;
+		if((d & 0x02) != 0) p[6] = c;
+		if((d & 0x01) != 0) p[7] = c;
+	}
 }
 void init_GUI(char *vram, int xsize, int ysize){
 	boxFill8(vram, xsize, COL8_008484,  0,         0,          xsize -  1, ysize - 29);
@@ -96,8 +109,15 @@ void HariMain(){
 	
 	init_palette();
 	binfo = (struct BOOTINFO *) 0xff0;
+	extern char font[4096];
 	init_GUI(binfo->vram, binfo->scrnx, binfo->scrny);
 	
+	putfont8(binfo->vram, binfo->scrnx,  8, 8, COL8_FFFFFF, font + 'D' * 16);
+	putfont8(binfo->vram, binfo->scrnx, 16, 8, COL8_FFFFFF, font + 'I' * 16);
+	putfont8(binfo->vram, binfo->scrnx, 24, 8, COL8_FFFFFF, font + 'C' * 16);
+	putfont8(binfo->vram, binfo->scrnx, 32, 8, COL8_FFFFFF, font + 'K' * 16);
+	putfont8(binfo->vram, binfo->scrnx, 40, 8, COL8_FFFFFF, font + 'O' * 16);
+	putfont8(binfo->vram, binfo->scrnx, 48, 8, COL8_FFFFFF, font + 'S' * 16);
 	for(;;){
 		io_hlt();
 	}
