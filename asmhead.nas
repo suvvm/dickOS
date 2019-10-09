@@ -128,7 +128,7 @@ memcpy:
 		SUB		ECX,1
 		JNZ		memcpy			; 如果减法的结果不为0，跳转到memcpy
 		RET
-		ALIGNB	16
+		ALIGNB		16
 GDT0:
 		RESB		8				; 空选择器
 		DW		0xffff,0x0000,0x9200,0x00cf	; I/O段32bit

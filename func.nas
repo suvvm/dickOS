@@ -51,7 +51,7 @@ _io_in32:						; void io_in8(int port);
 		RET
 
 _io_out8:						; void io_out8(int port, int data);
-		MOV 	EDX,[ESP+4]		; 端口port
+		MOV		EDX,[ESP+4]		; 端口port
 		MOV		AL,[ESP+8]		; 数据data
 		OUT		DX,AL			; 将AL值写入端口
 		RET
@@ -74,7 +74,7 @@ _io_load_eflags:				; int io_load_eflags(void);
 		RET
 
 _io_store_eflags:				; void io_store_eflags(int eflags);
-		MOV 	EAX,[ESP+4]
-		PUSH	EAX
+		MOV			EAX,[ESP+4]
+		PUSH		EAX
 		POPFD					; POP EFLAGS
 		RET
