@@ -21,6 +21,11 @@ void io_out8(int port, int data);
 int io_load_eflags();
 void io_store_eflags(int eflags);
 
+struct BOOTINFO{
+	char cyls, leds, vmode, reserve;
+	short scrnx, scrny;
+	char *vram;
+};
 void set_palette(int start, int end, unsigned char *rgb){
 	int i, eflags;
 	eflags = io_load_eflags();	/*保护现场*/
@@ -66,26 +71,7 @@ void boxFill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 	}
 	return;
 }
-void HariMain(){
-	char *vram;
-	int xsize, ysize;
-	short *binfo_scrnx, *binfo_scrny;
-	int *binfo_vram;
-	
-	init_palette();
-	binfo_scrnx = (short *) 0x0ff4;
-	binfo_scrny = (short *) 0x0ff6;
-	binfo_vram = (int *) 0x0ff8;
-	xsize = *binfo_scrnx;
-	ysize = *binfo_scrny;
-	vram = *binfo_vram;
-	
-	/*
-	vram = (char *) 0xa0000;
-	xsize = 320;	
-	ysize = 200;
-	*/
-
+void init_GUI(char *vram, int xsize, int ysize){
 	boxFill8(vram, xsize, COL8_008484,  0,         0,          xsize -  1, ysize - 29);
 	boxFill8(vram, xsize, COL8_C6C6C6,  0,         ysize - 28, xsize -  1, ysize - 28);
 	boxFill8(vram, xsize, COL8_FFFFFF,  0,         ysize - 27, xsize -  1, ysize - 27);
@@ -102,6 +88,16 @@ void HariMain(){
 	boxFill8(vram, xsize, COL8_848484, xsize - 47, ysize - 23, xsize - 47, ysize -  4);
 	boxFill8(vram, xsize, COL8_FFFFFF, xsize - 47, ysize -  3, xsize -  4, ysize -  3);
 	boxFill8(vram, xsize, COL8_FFFFFF, xsize -  3, ysize - 24, xsize -  3, ysize -  3);
+}
+void HariMain(){
+	char *vram;
+	int xsize, ysize;
+	struct BOOTINFO *binfo;
+	
+	init_palette();
+	binfo = (struct BOOTINFO *) 0xff0;
+	init_GUI(binfo->vram, binfo->scrnx, binfo->scrny);
+	
 	for(;;){
 		io_hlt();
 	}
