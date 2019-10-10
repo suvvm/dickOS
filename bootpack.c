@@ -1,3 +1,12 @@
+/********************************************************************************
+* @File name: bootpack.c
+* @Author: suvvm
+* @Version: 1.5.9
+* @Date: 2019-10-10
+* @Description: 包含启动后要使用的功能函数
+********************************************************************************/
+
+
 #define COL8_000000 0
 #define COL8_FF0000 1
 #define COL8_00FF00 2
@@ -15,17 +24,29 @@
 #define COL8_008484 14
 #define COL8_848484 15
 
-void io_hlt();	/*函数声明*/
+/*func.nas函数声明*/
+void io_hlt();	
 void io_cli();
 void io_out8(int port, int data);
 int io_load_eflags();
 void io_store_eflags(int eflags);
 
-struct BOOTINFO{
+/*启动信息*/
+struct BOOTINFO{	
 	char cyls, leds, vmode, reserve;
 	short scrnx, scrny;
 	char *vram;
 };
+
+/*******************************************************
+*
+* Function name:set_palette
+* Description: 设置调色板（在设置前先进行CLI并在处理后恢复中断标准
+* Parameter:
+* 	@start	首位号码
+* 	@end	末位号码
+* 	@rgb	rgb颜色码
+**********************************************************/
 void set_palette(int start, int end, unsigned char *rgb){
 	int i, eflags;
 	eflags = io_load_eflags();	/*保护现场*/
@@ -39,6 +60,13 @@ void set_palette(int start, int end, unsigned char *rgb){
 	}
 	io_store_eflags(eflags);	/*恢复现场*/
 }
+
+/*******************************************************
+*
+* Function name:init_palette
+* Description: 初始化16色调色板
+*
+**********************************************************/
 void init_palette(){
 	static unsigned char table_rgb[16 * 3] = {
 		0x00, 0x00, 0x00,	/*0:黑*/
@@ -60,6 +88,21 @@ void init_palette(){
 	};
 	set_palette(0, 15, table_rgb);
 }
+
+/*******************************************************
+*
+* Function name:boxFill8
+* Description: 绘制矩形
+* Parameter:
+* 	@vram	显存指针
+* 	@xsize	屏幕宽度分辨率
+* 	@c	颜色标号(0~15)
+* 	@x0	x轴起始位置
+* 	@y0	y轴起始位置
+* 	@x1	x轴结束位置
+* 	@y1	y轴结束位置
+*
+**********************************************************/
 void boxFill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1){
 	int x, y;
 	for(y = y0; y <= y1; y++){
@@ -68,6 +111,20 @@ void boxFill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 		}
 	}
 }
+
+/*******************************************************
+*
+* Function name:putFont8
+* Description: 在屏幕中打印单个字符
+* Parameter:
+* 	@vram	显存指针
+* 	@xsize	屏幕宽度分辨率
+* 	@x	x轴起始位置
+* 	@y	y轴起始位置
+* 	@c	颜色标号(0~15)
+* 	@font	字体数据
+*
+**********************************************************/
 void putFont8(char *vram, int xsize, int x, int y, char c, char *font){
 	int i;
 	char *p, d;
@@ -84,6 +141,17 @@ void putFont8(char *vram, int xsize, int x, int y, char c, char *font){
 		if((d & 0x01) != 0) p[7] = c;
 	}
 }
+
+/*******************************************************
+*
+* Function name:init_GUI
+* Description: 绘制桌面图像
+* Parameter:
+* 	@vram	显存指针
+* 	@xsize	屏幕宽度分辨率
+* 	@ysize	屏幕高度分辨率
+*
+**********************************************************/
 void init_GUI(char *vram, int xsize, int ysize){
 	boxFill8(vram, xsize, COL8_008484,  0,         0,          xsize -  1, ysize - 29);
 	boxFill8(vram, xsize, COL8_C6C6C6,  0,         ysize - 28, xsize -  1, ysize - 28);
@@ -102,6 +170,20 @@ void init_GUI(char *vram, int xsize, int ysize){
 	boxFill8(vram, xsize, COL8_FFFFFF, xsize - 47, ysize -  3, xsize -  4, ysize -  3);
 	boxFill8(vram, xsize, COL8_FFFFFF, xsize -  3, ysize - 24, xsize -  3, ysize -  3);
 }
+
+/*******************************************************
+*
+* Function name:putFont8_asc
+* Description: 在屏幕中打印字符串
+* Parameter:
+* 	@vram	显存指针
+* 	@xsize	屏幕宽度分辨率
+* 	@x	x轴起始位置
+* 	@y	y轴起始位置
+* 	@c	颜色标号(0~15)
+* 	@s	字符串首位
+*
+**********************************************************/
 void putFont8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s){
 	extern char font[4096];
 	for(; *s != 0x00; s++){
@@ -109,6 +191,16 @@ void putFont8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s)
 		x += 8;
 	}
 }
+
+/*******************************************************
+*
+* Function name:initMouseCursor8
+* Description: 初始化鼠标图像
+* Parameter:
+* 	@mouse	存储鼠标信息的位置首位
+* 	@bc	背景色
+*
+**********************************************************/
 void initMouseCursor8(char *mouse, char bc){
 	
 	static char cursor[16][16] = {
@@ -141,6 +233,22 @@ void initMouseCursor8(char *mouse, char bc){
 		}
 	}
 }
+
+/*******************************************************
+*
+* Function name:putblock8_8
+* Description: 初始化鼠标图像
+* Parameter:
+* 	@vram	存储鼠标信息的位置首位
+* 	@vxsize	背景色
+* 	@pxsize	鼠标指针宽度
+* 	@pysize	鼠标指针高度
+* 	@px0	x轴起始位置
+* 	@py0	y轴起始位置
+* 	@buf	鼠标图像信息首位
+* 	@bxsize	鼠标图像信息中指针的宽度
+*
+**********************************************************/
 void putblock8_8(char *vram, int vxsize, int pxsize,
 	int pysize, int px0, int py0, char *buf, int bxsize)
 {
@@ -152,6 +260,13 @@ void putblock8_8(char *vram, int vxsize, int pxsize,
 	}
 	return;
 }
+
+/*******************************************************
+*
+* Function name:HariMain
+* Description: 主函数
+*
+**********************************************************/
 void HariMain(){
 	char *vram;
 	int xsize, ysize;
