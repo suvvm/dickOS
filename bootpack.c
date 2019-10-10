@@ -68,7 +68,7 @@ void boxFill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 		}
 	}
 }
-void putfont8(char *vram, int xsize, int x, int y, char c, char *font){
+void putFont8(char *vram, int xsize, int x, int y, char c, char *font){
 	int i;
 	char *p, d;
 	for(i = 0; i < 16; i++){
@@ -102,22 +102,81 @@ void init_GUI(char *vram, int xsize, int ysize){
 	boxFill8(vram, xsize, COL8_FFFFFF, xsize - 47, ysize -  3, xsize -  4, ysize -  3);
 	boxFill8(vram, xsize, COL8_FFFFFF, xsize -  3, ysize - 24, xsize -  3, ysize -  3);
 }
+void putFont8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s){
+	extern char font[4096];
+	for(; *s != 0x00; s++){
+		putFont8(vram, xsize, x, y, c, font + *s * 16);
+		x += 8;
+	}
+}
+void initMouseCursor8(char *mouse, char bc){
+	
+	static char cursor[16][16] = {
+		"*...............",
+		"**..............",
+		"*O*.............",
+		"*OO*............",
+		"*OOO*...........",
+		"*OOOO*..........",
+		"*OOOOO*.........",
+		"*OOOOOO*........",
+		"*OOOOOOO*.......",
+		"*OOOO*****......",
+		"*OO*O*..........",
+		"*O*.*O*.........",
+		"**..*O*.........",
+		"*....*O*........",
+		".....*O*........",
+		"......*........."
+	};
+	int x, y;
+	for(y = 0; y < 16; y++){
+		for(x = 0; x < 16; x++){
+			if(cursor[y][x] == '*')
+				mouse[y * 16 + x] = COL8_000000;
+			if(cursor[y][x] == 'O')
+				mouse[y * 16 + x] = COL8_FFFFFF;
+			if(cursor[y][x] == '.')
+				mouse[y * 16 + x] = bc;
+		}
+	}
+}
+void putblock8_8(char *vram, int vxsize, int pxsize,
+	int pysize, int px0, int py0, char *buf, int bxsize)
+{
+	int x, y;
+	for (y = 0; y < pysize; y++) {
+		for (x = 0; x < pxsize; x++) {
+			vram[(py0 + y) * vxsize + (px0 + x)] = buf[y * bxsize + x];
+		}
+	}
+	return;
+}
 void HariMain(){
 	char *vram;
 	int xsize, ysize;
 	struct BOOTINFO *binfo;
+	char mcursor[256];
+	int mx, my;
+	
 	
 	init_palette();
 	binfo = (struct BOOTINFO *) 0xff0;
 	extern char font[4096];
+	mx = (binfo->scrnx - 16) / 2;
+	my = (binfo->scrny - 28 - 16) / 2;
 	init_GUI(binfo->vram, binfo->scrnx, binfo->scrny);
 	
-	putfont8(binfo->vram, binfo->scrnx,  8, 8, COL8_FFFFFF, font + 'D' * 16);
-	putfont8(binfo->vram, binfo->scrnx, 16, 8, COL8_FFFFFF, font + 'I' * 16);
-	putfont8(binfo->vram, binfo->scrnx, 24, 8, COL8_FFFFFF, font + 'C' * 16);
-	putfont8(binfo->vram, binfo->scrnx, 32, 8, COL8_FFFFFF, font + 'K' * 16);
-	putfont8(binfo->vram, binfo->scrnx, 40, 8, COL8_FFFFFF, font + 'O' * 16);
-	putfont8(binfo->vram, binfo->scrnx, 48, 8, COL8_FFFFFF, font + 'S' * 16);
+	putFont8(binfo->vram, binfo->scrnx,  8, 8, COL8_FFFFFF, font + 'D' * 16);
+	putFont8(binfo->vram, binfo->scrnx, 16, 8, COL8_FFFFFF, font + 'I' * 16);
+	putFont8(binfo->vram, binfo->scrnx, 24, 8, COL8_FFFFFF, font + 'C' * 16);
+	putFont8(binfo->vram, binfo->scrnx, 32, 8, COL8_FFFFFF, font + 'K' * 16);
+	putFont8(binfo->vram, binfo->scrnx, 40, 8, COL8_FFFFFF, font + 'O' * 16);
+	putFont8(binfo->vram, binfo->scrnx, 48, 8, COL8_FFFFFF, font + 'S' * 16);
+	putFont8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_FFFFFF, "SHOWSTRING");
+	
+	initMouseCursor8(mcursor, COL8_008484);
+	putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
 	for(;;){
 		io_hlt();
 	}
