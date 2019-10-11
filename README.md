@@ -8,6 +8,8 @@
 
 设定16色调色板
 
+初始化GDT & IDT
+
 调用函数boxFill8使用指针操作VRAM显示桌面GUI
 
 在桌面打印DICKOS
@@ -26,3 +28,5 @@ windows：在!cons_nt.bat或!cons_9x.bat中输入make run即可调用QEMU运行
 
 - 川合秀实
 - RWFD
+- 平木敬太郎
+- Kiyoto
