@@ -12,69 +12,82 @@
     12 00000000                                 		GLOBAL _io_in8, _io_in16, _io_in32
     13 00000000                                 		GLOBAL _io_out8, _io_out16, _io_out32
     14 00000000                                 		GLOBAL _io_load_eflags, _io_store_eflags
-    15 00000000                                 ; 实际的函数
-    16 00000000                                 
-    17                                          [SECTION .text]					; 目标文件中写了这些后再写程序
-    18 00000000                                 
-    19 00000000                                 _io_hlt:						; void io_hlt();
-    20 00000000 F4                              		HLT
-    21 00000001 C3                              		RET
-    22 00000002                                 
-    23 00000002                                 _io_cli:						; void io_cli();
-    24 00000002 FA                              		CLI
-    25 00000003 C3                              		RET
-    26 00000004                                 
-    27 00000004                                 _io_sti:						; void io_sti();
-    28 00000004 FB                              		STI
-    29 00000005 C3                              		RET
-    30 00000006                                 		
-    31 00000006                                 _io_stihlt:						; void io_stihlt();
-    32 00000006 FB                              		STI
-    33 00000007 F4                              		HLT
-    34 00000008 C3                              		RET
-    35 00000009                                 		
-    36 00000009                                 _io_in8:						; void io_in8(int port);
-    37 00000009 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
-    38 0000000D B8 00000000                     		MOV		EAX,0
-    39 00000012 EC                              		IN		AL,DX			; 从DX端口读取一字节数据到AL
-    40 00000013 C3                              		RET
-    41 00000014                                 		
-    42 00000014                                 _io_in16:						; void io_in16(int port);
-    43 00000014 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
-    44 00000018 B8 00000000                     		MOV		EAX,0
-    45 0000001D 66 ED                           		IN		AX,DX			; 从DX端口读取一字节数据到AX
-    46 0000001F C3                              		RET
-    47 00000020                                 		
-    48 00000020                                 _io_in32:						; void io_in8(int port);
-    49 00000020 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
-    50 00000024 ED                              		IN		EAX,DX			; 从DX端口读取一字节数据到EAX
-    51 00000025 C3                              		RET
-    52 00000026                                 
-    53 00000026                                 _io_out8:						; void io_out8(int port, int data);
-    54 00000026 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口port
-    55 0000002A 8A 44 24 08                     		MOV		AL,[ESP+8]		; 数据data
-    56 0000002E EE                              		OUT		DX,AL			; 将AL值写入端口
-    57 0000002F C3                              		RET
-    58 00000030                                 		
-    59 00000030                                 _io_out16:						; void io_out16(int port, int data);
-    60 00000030 8B 54 24 04                     		MOV 	EDX,[ESP+4]		; 端口port
-    61 00000034 8B 44 24 08                     		MOV		EAX,[ESP+8]		; 数据data
-    62 00000038 66 EF                           		OUT		DX,AX			; 将AL值写入端口
-    63 0000003A C3                              		RET
-    64 0000003B                                 		
-    65 0000003B                                 _io_out32:						; void io_out32(int port, int data);
-    66 0000003B 8B 54 24 04                     		MOV 	EDX,[ESP+4]		; 端口port
-    67 0000003F 8B 44 24 08                     		MOV		EAX,[ESP+8]		; 数据data
-    68 00000043 EF                              		OUT		DX,EAX			; 将AL值写入端口
-    69 00000044 C3                              		RET
-    70 00000045                                 		
-    71 00000045                                 _io_load_eflags:				; int io_load_eflags(void);
-    72 00000045 9C                              		PUSHFD					; PUSH EFLAGS
-    73 00000046 58                              		POP		EAX
-    74 00000047 C3                              		RET
-    75 00000048                                 
-    76 00000048                                 _io_store_eflags:				; void io_store_eflags(int eflags);
-    77 00000048 8B 44 24 04                     		MOV			EAX,[ESP+4]
-    78 0000004C 50                              		PUSH		EAX
-    79 0000004D 9D                              		POPFD					; POP EFLAGS
-    80 0000004E C3                              		RET
+    15 00000000                                 		GLOBAL _loadGdtr, _loadIdtr
+    16 00000000                                 ; 实际的函数
+    17 00000000                                 
+    18                                          [SECTION .text]					; 目标文件中写了这些后再写程序
+    19 00000000                                 
+    20 00000000                                 _io_hlt:						; void io_hlt();
+    21 00000000 F4                              		HLT
+    22 00000001 C3                              		RET
+    23 00000002                                 
+    24 00000002                                 _io_cli:						; void io_cli();
+    25 00000002 FA                              		CLI
+    26 00000003 C3                              		RET
+    27 00000004                                 
+    28 00000004                                 _io_sti:						; void io_sti();
+    29 00000004 FB                              		STI
+    30 00000005 C3                              		RET
+    31 00000006                                 		
+    32 00000006                                 _io_stihlt:						; void io_stihlt();
+    33 00000006 FB                              		STI
+    34 00000007 F4                              		HLT
+    35 00000008 C3                              		RET
+    36 00000009                                 		
+    37 00000009                                 _io_in8:						; void io_in8(int port);
+    38 00000009 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
+    39 0000000D B8 00000000                     		MOV		EAX,0
+    40 00000012 EC                              		IN		AL,DX			; 从DX端口读取一字节数据到AL
+    41 00000013 C3                              		RET
+    42 00000014                                 		
+    43 00000014                                 _io_in16:						; void io_in16(int port);
+    44 00000014 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
+    45 00000018 B8 00000000                     		MOV		EAX,0
+    46 0000001D 66 ED                           		IN		AX,DX			; 从DX端口读取一字节数据到AX
+    47 0000001F C3                              		RET
+    48 00000020                                 		
+    49 00000020                                 _io_in32:						; void io_in8(int port);
+    50 00000020 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
+    51 00000024 ED                              		IN		EAX,DX			; 从DX端口读取一字节数据到EAX
+    52 00000025 C3                              		RET
+    53 00000026                                 
+    54 00000026                                 _io_out8:						; void io_out8(int port, int data);
+    55 00000026 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口port
+    56 0000002A 8A 44 24 08                     		MOV		AL,[ESP+8]		; 数据data
+    57 0000002E EE                              		OUT		DX,AL			; 将AL值写入端口
+    58 0000002F C3                              		RET
+    59 00000030                                 		
+    60 00000030                                 _io_out16:						; void io_out16(int port, int data);
+    61 00000030 8B 54 24 04                     		MOV 	EDX,[ESP+4]		; 端口port
+    62 00000034 8B 44 24 08                     		MOV		EAX,[ESP+8]		; 数据data
+    63 00000038 66 EF                           		OUT		DX,AX			; 将AL值写入端口
+    64 0000003A C3                              		RET
+    65 0000003B                                 		
+    66 0000003B                                 _io_out32:						; void io_out32(int port, int data);
+    67 0000003B 8B 54 24 04                     		MOV 	EDX,[ESP+4]		; 端口port
+    68 0000003F 8B 44 24 08                     		MOV		EAX,[ESP+8]		; 数据data
+    69 00000043 EF                              		OUT		DX,EAX			; 将AL值写入端口
+    70 00000044 C3                              		RET
+    71 00000045                                 		
+    72 00000045                                 _io_load_eflags:				; int io_load_eflags(void);
+    73 00000045 9C                              		PUSHFD					; PUSH EFLAGS
+    74 00000046 58                              		POP		EAX
+    75 00000047 C3                              		RET
+    76 00000048                                 
+    77 00000048                                 _io_store_eflags:				; void io_store_eflags(int eflags);
+    78 00000048 8B 44 24 04                     		MOV		EAX,[ESP+4]
+    79 0000004C 50                              		PUSH		EAX
+    80 0000004D 9D                              		POPFD					; POP EFLAGS
+    81 0000004E C3                              		RET
+    82 0000004F                                 		
+    83 0000004F                                 _loadGdtr:						; void loadGdtr(int limit, int addr);
+    84 0000004F 66 8B 44 24 04                  		MOV		AX,[ESP+4]
+    85 00000054 66 89 44 24 06                  		MOV		[ESP+6],AX
+    86 00000059 0F 01 54 24 06                  		LGDT	[ESP+6]
+    87 0000005E C3                              		RET
+    88 0000005F                                 		
+    89 0000005F                                 _loadIdtr:						; void loadIdtr(int limit, int  addr);
+    90 0000005F 66 8B 44 24 04                  		MOV		AX,[ESP+4]
+    91 00000064 66 89 44 24 06                  		MOV		[ESP+6],AX
+    92 00000069 0F 01 5C 24 06                  		LIDT	[ESP+6]
+    93 0000006E C3                              		RET
