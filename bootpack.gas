@@ -278,79 +278,6 @@ L40:
 	popl	%ebp
 	ret
 	.balign 2
-.globl _putFont8
-	.def	_putFont8;	.scl	2;	.type	32;	.endef
-_putFont8:
-	pushl	%ebp
-	movl	%esp, %ebp
-	pushl	%edi
-	pushl	%esi
-	xorl	%esi, %esi
-	pushl	%ebx
-	movl	28(%ebp), %edi
-	movb	24(%ebp), %bl
-L56:
-	movl	20(%ebp), %eax
-	movl	16(%ebp), %edx
-	addl	%esi, %eax
-	imull	12(%ebp), %eax
-	addl	8(%ebp), %eax
-	leal	(%edx,%eax), %ecx
-	movb	(%esi,%edi), %dl
-	testb	%dl, %dl
-	jns	L48
-	movb	%bl, (%ecx)
-L48:
-	movb	%dl, %al
-	andl	$64, %eax
-	testb	%al, %al
-	je	L49
-	movb	%bl, 1(%ecx)
-L49:
-	movb	%dl, %al
-	andl	$32, %eax
-	testb	%al, %al
-	je	L50
-	movb	%bl, 2(%ecx)
-L50:
-	movb	%dl, %al
-	andl	$16, %eax
-	testb	%al, %al
-	je	L51
-	movb	%bl, 3(%ecx)
-L51:
-	movb	%dl, %al
-	andl	$8, %eax
-	testb	%al, %al
-	je	L52
-	movb	%bl, 4(%ecx)
-L52:
-	movb	%dl, %al
-	andl	$4, %eax
-	testb	%al, %al
-	je	L53
-	movb	%bl, 5(%ecx)
-L53:
-	movb	%dl, %al
-	andl	$2, %eax
-	testb	%al, %al
-	je	L54
-	movb	%bl, 6(%ecx)
-L54:
-	andl	$1, %edx
-	testb	%dl, %dl
-	je	L46
-	movb	%bl, 7(%ecx)
-L46:
-	incl	%esi
-	cmpl	$15, %esi
-	jle	L56
-	popl	%ebx
-	popl	%esi
-	popl	%edi
-	popl	%ebp
-	ret
-	.balign 2
 .globl _init_GUI
 	.def	_init_GUI;	.scl	2;	.type	32;	.endef
 _init_GUI:
@@ -510,6 +437,79 @@ _init_GUI:
 	pushl	8(%ebp)
 	call	_boxFill8
 	leal	-12(%ebp), %esp
+	popl	%ebx
+	popl	%esi
+	popl	%edi
+	popl	%ebp
+	ret
+	.balign 2
+.globl _putFont8
+	.def	_putFont8;	.scl	2;	.type	32;	.endef
+_putFont8:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%edi
+	pushl	%esi
+	xorl	%esi, %esi
+	pushl	%ebx
+	movl	28(%ebp), %edi
+	movb	24(%ebp), %bl
+L57:
+	movl	20(%ebp), %eax
+	movl	16(%ebp), %edx
+	addl	%esi, %eax
+	imull	12(%ebp), %eax
+	addl	8(%ebp), %eax
+	leal	(%edx,%eax), %ecx
+	movb	(%esi,%edi), %dl
+	testb	%dl, %dl
+	jns	L49
+	movb	%bl, (%ecx)
+L49:
+	movb	%dl, %al
+	andl	$64, %eax
+	testb	%al, %al
+	je	L50
+	movb	%bl, 1(%ecx)
+L50:
+	movb	%dl, %al
+	andl	$32, %eax
+	testb	%al, %al
+	je	L51
+	movb	%bl, 2(%ecx)
+L51:
+	movb	%dl, %al
+	andl	$16, %eax
+	testb	%al, %al
+	je	L52
+	movb	%bl, 3(%ecx)
+L52:
+	movb	%dl, %al
+	andl	$8, %eax
+	testb	%al, %al
+	je	L53
+	movb	%bl, 4(%ecx)
+L53:
+	movb	%dl, %al
+	andl	$4, %eax
+	testb	%al, %al
+	je	L54
+	movb	%bl, 5(%ecx)
+L54:
+	movb	%dl, %al
+	andl	$2, %eax
+	testb	%al, %al
+	je	L55
+	movb	%bl, 6(%ecx)
+L55:
+	andl	$1, %edx
+	testb	%dl, %dl
+	je	L47
+	movb	%bl, 7(%ecx)
+L47:
+	incl	%esi
+	cmpl	$15, %esi
+	jle	L57
 	popl	%ebx
 	popl	%esi
 	popl	%edi
@@ -710,57 +710,6 @@ _HariMain:
 	pushl	%eax
 	pushl	4088
 	call	_init_GUI
-	pushl	$_font+1088
-	pushl	$7
-	pushl	$8
-	pushl	$8
-	movswl	4084,%eax
-	pushl	%eax
-	pushl	4088
-	call	_putFont8
-	addl	$36, %esp
-	pushl	$_font+1168
-	pushl	$7
-	pushl	$8
-	pushl	$16
-	movswl	4084,%eax
-	pushl	%eax
-	pushl	4088
-	call	_putFont8
-	pushl	$_font+1072
-	pushl	$7
-	pushl	$8
-	pushl	$24
-	movswl	4084,%eax
-	pushl	%eax
-	pushl	4088
-	call	_putFont8
-	addl	$48, %esp
-	pushl	$_font+1200
-	pushl	$7
-	pushl	$8
-	pushl	$32
-	movswl	4084,%eax
-	pushl	%eax
-	pushl	4088
-	call	_putFont8
-	pushl	$_font+1264
-	pushl	$7
-	pushl	$8
-	pushl	$40
-	movswl	4084,%eax
-	pushl	%eax
-	pushl	4088
-	call	_putFont8
-	addl	$48, %esp
-	pushl	$_font+1328
-	pushl	$7
-	pushl	$8
-	pushl	$48
-	movswl	4084,%eax
-	pushl	%eax
-	pushl	4088
-	call	_putFont8
 	pushl	$LC0
 	pushl	$7
 	pushl	$30
@@ -769,7 +718,7 @@ _HariMain:
 	pushl	%eax
 	pushl	4088
 	call	_putFont8_asc
-	addl	$48, %esp
+	addl	$36, %esp
 	pushl	$14
 	pushl	%ebx
 	call	_initMouseCursor8
