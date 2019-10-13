@@ -222,7 +222,7 @@ void initMouseCursor8(char *mouse, char bc){
 /*******************************************************
 *
 * Function name:putblock8_8
-* Description: 初始化鼠标图像
+* Description: 显示图像
 * Parameter:
 * 	@vram	存储鼠标信息的位置首位
 * 	@vxsize	背景色
