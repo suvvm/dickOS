@@ -5,16 +5,9 @@
 * @Date: 2019-10-10
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
-#include <bootpack.h>
+#include "bootpack.h"
 #include "desctab.c"
 #include "graphic.c"
-
-/*启动信息*/
-struct BOOTINFO{	
-	char cyls, leds, vmode, reserve;
-	short scrnx, scrny;
-	char *vram;
-};
 
 /*******************************************************
 *
