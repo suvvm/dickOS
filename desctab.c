@@ -5,20 +5,7 @@
 * @Date: 2019-10-12
 * @Description: 包含对GDT，IDT等描述符表的处理
 ********************************************************************************/
-#include <bootpack.h>
-
-/*段描述符存放GDT内容*/
-struct SEGMENT_DESCRIPTOR{
-	short limitLow, baseLow;
-	char baseMid, accessRight;
-	char limitHigh, baseHigh;
-};
-/*门描述符存放IDT内容*/
-struct GATE_DESCRIPTOR{
-	short offsetLow, selector;
-	char dwCount, accessRight;
-	short offsetHigh;
-};
+#include "bootpack.h"
 
 /*******************************************************
 *

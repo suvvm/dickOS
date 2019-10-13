@@ -5,7 +5,7 @@
 * @Date: 2019-10-12
 * @Description: 包含绘制图像要使用的功能函数
 ********************************************************************************/
-#include <bootpack.h>
+#include "bootpack.h"
 
 #define COL8_000000		0
 #define COL8_FF0000		1
@@ -23,14 +23,6 @@
 #define COL8_840084		13
 #define COL8_008484		14
 #define COL8_848484		15
-
-
-/*func.nas函数声明*/
-void io_hlt();	
-void io_cli();
-void io_out8(int port, int data);
-int io_load_eflags();
-void io_store_eflags(int eflags);
 
 /*******************************************************
 *
