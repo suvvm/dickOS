@@ -9,6 +9,27 @@
 #ifndef BOOTPACK_H
 #define BOOTPACK_H
 
+/*启动信息*/
+struct BOOTINFO{	
+	char cyls, leds, vmode, reserve;
+	short scrnx, scrny;
+	char *vram;
+};
+
+/*段描述符存放GDT内容*/
+struct SEGMENT_DESCRIPTOR{
+	short limitLow, baseLow;
+	char baseMid, accessRight;
+	char limitHigh, baseHigh;
+};
+
+/*门描述符存放IDT内容*/
+struct GATE_DESCRIPTOR{
+	short offsetLow, selector;
+	char dwCount, accessRight;
+	short offsetHigh;
+};
+
 /*func.nas函数声明*/
 void io_hlt();	
 void io_cli();
