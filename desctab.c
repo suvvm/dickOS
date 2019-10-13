@@ -1,10 +1,11 @@
 /********************************************************************************
 * @File name: desctab.c
 * @Author: suvvm
-* @Version: 1.6.1
+* @Version: 1.0.1
 * @Date: 2019-10-12
 * @Description: 包含对GDT，IDT等描述符表的处理
 ********************************************************************************/
+#include <bootpack.h>
 
 /*段描述符存放GDT内容*/
 struct SEGMENT_DESCRIPTOR{
@@ -18,9 +19,6 @@ struct GATE_DESCRIPTOR{
 	char dwCount, accessRight;
 	short offsetHigh;
 };
-
-void loadGdtr(int limit, int addr);
-void loadIdtr(int limit, int addr);
 
 /*******************************************************
 *
