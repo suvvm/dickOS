@@ -80,7 +80,7 @@ _io_store_eflags:				; void io_store_eflags(int eflags);
 		POPFD					; POP EFLAGS
 		RET
 		
-_loadGdtr:						; void loadGdtr(int limit, int addr);
+_loadGdtr:						; void loadGdtr(int limit, int addr); 将指定段的上限和地址赋值给寄存器GDTR
 		MOV		AX,[ESP+4]
 		MOV		[ESP+6],AX
 		LGDT	[ESP+6]
