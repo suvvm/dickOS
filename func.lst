@@ -80,7 +80,7 @@
     80 0000004D 9D                              		POPFD					; POP EFLAGS
     81 0000004E C3                              		RET
     82 0000004F                                 		
-    83 0000004F                                 _loadGdtr:						; void loadGdtr(int limit, int addr);
+    83 0000004F                                 _loadGdtr:						; void loadGdtr(int limit, int addr); 将指定段的上限和地址赋值给寄存器GDTR
     84 0000004F 66 8B 44 24 04                  		MOV		AX,[ESP+4]
     85 00000054 66 89 44 24 06                  		MOV		[ESP+6],AX
     86 00000059 0F 01 54 24 06                  		LGDT	[ESP+6]
