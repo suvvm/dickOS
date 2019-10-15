@@ -67,3 +67,4 @@
 	accessRight高4位
 		高4位为扩展访问权，由GD00组成 G为Gbit标志位 D为模式位 1代表32位模式 0代表16位模式（即使D为0也不能调用BOIS）
 	所以设计程序中accessRight高4位与低8位直接为4位无效位 xxxx0000xxxxxxxx（x为有效位）
+	
