@@ -31,11 +31,15 @@ windows：在!cons_nt.bat或!cons_9x.bat中输入make run即可调用QEMU运行
 - 平木敬太郎
 - Kiyoto
 
-# RATE
+# LOGS
 
 编写启动设置asmhead.nas
 
 新建汇编函数文件func.nas添加函数io_hlt
+
+新建笔记文件note.txt
+
+新建README.md
 
 新建bootpack.c添加主函数HariMain
 
@@ -72,4 +76,10 @@ bootpack.c -函数段描述符设置函数setSegmdesc 中断描述符设置函�
 新建desctab .c -将bootpack.c中关于描述符表的操作提取至desctab.c
 
 新建bootpack.h -将函数与结构体声明提取至bootpack.h
+
+note.txt -添加对段描述符属性的介绍
+
+bootpack.h -完善对结构体SEGMENT_DESCRIPTOR的注释
+
+desctab .c -修正函数setSegmdesc中不正确的描述
 
