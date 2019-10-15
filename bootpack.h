@@ -16,11 +16,24 @@ struct BOOTINFO{
 	char *vram;
 };
 
-/*段描述符存放GDT内容*/
+/********************************************************************************
+* 段描述符存放GDT内容 
+* base代表32位段的地址（基址）
+* base又分为 low（2字节） mid（1字节） high（1字节）共(2 + 1 + 1) * 8 = 32位
+* 32位操作系统段的最大上限位4GB（32位最大数字）
+* 但不能直接设为4GB，这样会将32位直接占满，导致没有空间存储段的管理属性信息
+* 段的可用上限只有20位，为了解决这个问题inter开发人员在段属性中设置了一个标准位
+* Gbit 当Gbit为1时段上限的单位为4KB 4KB * 1MB（20位）= 4GB
+*
+********************************************************************************/
 struct SEGMENT_DESCRIPTOR{
-	short limitLow, baseLow;
-	char baseMid, accessRight;
-	char limitHigh, baseHigh;
+	short limitLow;	/*limitLow 段上限低地址 2字节 16位*/
+	char limitHigh;	/*limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性*/
+	short baseLow;	/*基址低地址 16位*/
+	char baseMid;	/*基址中地址 8位*/
+	char baseHigh;	/*基址高地址 8位*/
+	char accessRight;	/*段属性低8位（高4位在limitHigh的高4位代表扩展访问权）关于低8位详见note.txt*/
+	/*4位扩展访问权由GD00组成 G为Gbit标志位 D为模式位 1代表32位模式 0代表16位模式（即使D为0也不能调用BOIS）*/
 };
 
 /*门描述符存放IDT内容*/
