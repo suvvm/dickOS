@@ -13,9 +13,9 @@
 * Description: 设置指定GDT段描述符
 * Parameter:
 * 	@sd	指向要修改段描述符内存首地址的指针
-* 	@limit	段描述符所描述内存段基于段基址最大偏移量
+* 	@limit	段描述符所描述内存段的上限
 * 	@base	段描述符所描述内存段基址
-* 	@ar	段描述符特权级,类型等
+* 	@ar	段描述符属性
 *
 **********************************************************/
 void setSegmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, int ar){
@@ -27,7 +27,7 @@ void setSegmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, in
 	sd->baseLow = base & 0xffff;	/*取base低16位*/
 	sd->baseMid = (base >> 16) & 0xff;	/*右移16位取低8位*/
 	sd->accessRight = ar & 0xff;	/*取属性ar的低8位*/
-	sd->limitHigh = ((limit >> 16) & 0xff) | ((ar >> 8) & 0xf0);	/*取limit右移16位后取低4位（就是取limit高4位） | 属性右移8位后取低8位（ar高8位）*/
+	sd->limitHigh = ((limit >> 16) & 0x0f) | ((ar >> 8) & 0xf0);	/*取limit右移16位后取低4位（就是取limit高4位） | 属性右移8位后取低4位（ar高4位）*/
 	sd->baseHigh = (base >> 24) & 0xff;	/*base右移24位后取低8位（base高8位）*/
 }
 
@@ -39,14 +39,14 @@ void setSegmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, in
 * 	@gd	指向要修改IDT描述符内存首地址的指针
 * 	@offset	IDT描述符所在段的偏移地址
 * 	@selector	处理程序所在内存段的段符
-* 	@ar	IDT描述符特权级,类型等
+* 	@ar	IDT描述符属性
 *
 **********************************************************/
 void setGatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar){
 	gd->offsetLow = offset & 0xffff;	/*取offset低16位*/
 	gd->selector = selector;	/*段选择符*/
-	gd->accessRight = ar & 0xff;	/*取ar低8位*/
 	gd->dwCount = (ar >> 8) & 0xff;		/*ar右移8位后取低8位*/
+	gd->accessRight = ar & 0xff;	/*取ar低8位*/
 	gd->offsetHigh = (offset >> 16) & 0xffff;	/*offset右移16位后取低16位（取offset高16位）*/
 }
 
@@ -66,9 +66,9 @@ void initGdtit(){
 	for(i = 0; i < 8192; i++){
 		setSegmdesc(gdt + i, 0, 0, 0);
 	}
-	/*将段号为1的段上限（基于段基址最大偏移量）设为4GB，基址是0，表示的是32位下cpu能管理的全部内存，段属性为0x4092*/
+	/*将段号为1的段上限设为4GB，基址是0，表示的是32位下cpu能管理的全部内存，段属性为0x4092（0100（高4位） 0000（无效位） 10010010（低8位）具体作用见node.txt‬）*/
 	setSegmdesc(gdt + 1, 0xffffffff, 0x00000000, 0x4092);
-	/*将段号为2的段上限设为512KB，基址为0x00280000，为执行bootpack.hrb的段*/
+	/*将段号为2的段上限设为512KB，基址为0x00280000，为执行bootpack.hrb的段 段属性为（0100（高4位） 0000（无效位） 10011010‬）（低8位）*/
 	setSegmdesc(gdt + 2, 0x0007ffff, 0x00280000, 0x409a);
 	/*调用汇编函数向gdtr赋值（将信息加载给寄存器）*/
 	loadGdtr(0xffff, 0x00270000);
