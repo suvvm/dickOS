@@ -87,3 +87,11 @@ desctab .c -修正函数setSegmdesc中不正确的描述
 bug已发现，为结构体内存对齐问题，正在修正
 
 bootpack.h -修正结构体SEGMENT_DESCRIPTOR属性顺序保障内存对齐正确
+
+tools/com_mak.txt -修正内部文件路径配置
+
+tools/edimgopt.txt -修正内部文件路径配置
+
+tools/guigui00/guigui00.rul -修正内部文件路径配置
+
+tools/include/haribote.rul -修正内部文件路径配置
