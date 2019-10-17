@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: desctab.c
 * @Author: suvvm
-* @Version: 1.0.1
-* @Date: 2019-10-12
+* @Version: 1.0.3
+* @Date: 2019-10-17
 * @Description: 包含对GDT，IDT等描述符表的处理
 ********************************************************************************/
 #include "bootpack.h"
@@ -58,24 +58,24 @@ void setGatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar){
 **********************************************************/
 void initGdtit(){
 	/*段描述符表GDT地址为 0x270000~0x27ffff*/
-	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) 0x00270000;
+	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
 	/*中断描述符表IDT地址为 0x26f800~0x26ffff*/
-	struct GATE_DESCRIPTOR *idt = (struct GATE_DESCRIPTOR *) 0x0026f800;
+	struct GATE_DESCRIPTOR *idt = (struct GATE_DESCRIPTOR *) ADR_IDT;
 	int i;
 	/*将GDT内存段（全8192个）初始化为0*/
-	for(i = 0; i < 8192; i++){
+	for(i = 0; i <= LIMIT_GDT / 8; i++){
 		setSegmdesc(gdt + i, 0, 0, 0);
 	}
 	/*将段号为1的段上限设为4GB，基址是0，表示的是32位下cpu能管理的全部内存，段属性为0x4092（0100（高4位） 0000（无效位） 10010010（低8位）具体作用见node.txt‬）*/
-	setSegmdesc(gdt + 1, 0xffffffff, 0x00000000, 0x4092);
+	setSegmdesc(gdt + 1, 0xffffffff, 0x00000000, AR_DATA32_RW);
 	/*将段号为2的段上限设为512KB，基址为0x00280000，为执行bootpack.hrb的段 段属性为（0100（高4位） 0000（无效位） 10011010‬）（低8位）*/
-	setSegmdesc(gdt + 2, 0x0007ffff, 0x00280000, 0x409a);
+	setSegmdesc(gdt + 2, LIMIT_BOTPAK, ADR_BOTPAK, AR_CODE32_ER);
 	/*调用汇编函数向gdtr赋值（将信息加载给寄存器）*/
-	loadGdtr(0xffff, 0x00270000);
+	loadGdtr(LIMIT_GDT, ADR_GDT);
 	/*将IDT描述符（全256个）初始化为0*/
-	for(i = 0; i < 256; i++){
+	for(i = 0; i <= LIMIT_IDT / 8; i++){
 		setGatedesc(idt + i, 0, 0, 0);
 	}
 	/*调用汇编函数向idtr赋值（将信息加载给寄存器）*/
-	loadIdtr(0x7ff, 0x0026f800);
+	loadIdtr(LIMIT_IDT, ADR_IDT);
 }
