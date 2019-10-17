@@ -1,28 +1,11 @@
 /********************************************************************************
 * @File name: graphic.c
 * @Author: suvvm
-* @Version: 1.0.1
-* @Date: 2019-10-12
+* @Version: 1.0.2
+* @Date: 2019-10-17
 * @Description: 包含绘制图像要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
-
-#define COL8_000000		0
-#define COL8_FF0000		1
-#define COL8_00FF00		2
-#define COL8_FFFF00		3
-#define COL8_0000FF		4
-#define COL8_FF00FF		5
-#define COL8_00FFFF		6
-#define COL8_FFFFFF		7
-#define COL8_C6C6C6		8
-#define COL8_840000		9
-#define COL8_008400		10
-#define COL8_848400		11
-#define COL8_000084		12
-#define COL8_840084		13
-#define COL8_008484		14
-#define COL8_848484		15
 
 /*******************************************************
 *
