@@ -677,6 +677,52 @@ L101:
 	popl	%edi
 	popl	%ebp
 	ret
+	.balign 2
+.globl _init_pic
+	.def	_init_pic;	.scl	2;	.type	32;	.endef
+_init_pic:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	$255
+	pushl	$33
+	call	_io_out8
+	pushl	$255
+	pushl	$161
+	call	_io_out8
+	pushl	$17
+	pushl	$32
+	call	_io_out8
+	pushl	$32
+	pushl	$33
+	call	_io_out8
+	addl	$32, %esp
+	pushl	$4
+	pushl	$33
+	call	_io_out8
+	pushl	$1
+	pushl	$33
+	call	_io_out8
+	pushl	$17
+	pushl	$160
+	call	_io_out8
+	pushl	$40
+	pushl	$161
+	call	_io_out8
+	addl	$32, %esp
+	pushl	$2
+	pushl	$161
+	call	_io_out8
+	pushl	$1
+	pushl	$161
+	call	_io_out8
+	pushl	$251
+	pushl	$33
+	call	_io_out8
+	pushl	$255
+	pushl	$161
+	call	_io_out8
+	leave
+	ret
 	.data
 LC0:
 	.ascii "SHOWSTRING\0"
@@ -692,6 +738,7 @@ _HariMain:
 	pushl	%ebx
 	subl	$260, %esp
 	call	_initGdtit
+	call	_init_pic
 	call	_init_palette
 	movl	$2, %ecx
 	movswl	4084,%eax
@@ -735,9 +782,9 @@ _HariMain:
 	pushl	4088
 	call	_putblock8_8
 	addl	$40, %esp
-L105:
+L106:
 	call	_io_hlt
-	jmp	L105
+	jmp	L106
 	.def	_io_hlt;	.scl	2;	.type	32;	.endef
 	.def	_io_store_eflags;	.scl	2;	.type	32;	.endef
 	.def	_io_out8;	.scl	2;	.type	32;	.endef
