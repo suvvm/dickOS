@@ -95,3 +95,13 @@ tools/edimgopt.txt -修正内部文件路径配置
 tools/guigui00/guigui00.rul -修正内部文件路径配置
 
 tools/include/haribote.rul -修正内部文件路径配置
+
+bootpack.h&graphic.c -将色号信息的宏定义转至bootpack.h
+
+bootpack.h&desctab.c -将要初始描述符信息宏定义
+
+bootpack.h -宏定义PIC端口信息
+
+新建interrupt.c -定义初始化可编程中断编译器信息
+
+bootpack.c -调用interrupt.c的init_pic()初始化可编程中断编译器
