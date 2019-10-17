@@ -28,11 +28,11 @@ struct BOOTINFO{
 ********************************************************************************/
 struct SEGMENT_DESCRIPTOR{
 	short limitLow;	/*limitLow 段上限低地址 2字节 16位*/
-	char limitHigh;	/*limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性*/
 	short baseLow;	/*基址低地址 16位*/
 	char baseMid;	/*基址中地址 8位*/
-	char baseHigh;	/*基址高地址 8位*/
 	char accessRight;	/*段属性低8位（高4位在limitHigh的高4位代表扩展访问权）关于低8位详见note.txt*/
+	char limitHigh;	/*limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性*/
+	char baseHigh;	/*基址高地址 8位*/
 	/*4位扩展访问权由GD00组成 G为Gbit标志位 D为模式位 1代表32位模式 0代表16位模式（即使D为0也不能调用BOIS）*/
 };
 
