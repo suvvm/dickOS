@@ -18,15 +18,16 @@ _setSegmdesc:
 L2:
 	movw	%dx, (%ebx)
 	movb	%al, 5(%ebx)
+	shrl	$16, %edx
 	sarl	$8, %eax
+	andl	$15, %edx
 	movw	%cx, 2(%ebx)
 	andl	$-16, %eax
 	sarl	$16, %ecx
-	shrl	$16, %edx
+	orl	%eax, %edx
 	movb	%cl, 4(%ebx)
+	movb	%dl, 6(%ebx)
 	sarl	$8, %ecx
-	orl	%edx, %eax
-	movb	%al, 6(%ebx)
 	movb	%cl, 7(%ebx)
 	popl	%ebx
 	popl	%ebp
@@ -38,17 +39,18 @@ _setGatedesc:
 	pushl	%ebp
 	movl	%esp, %ebp
 	pushl	%ebx
-	movl	8(%ebp), %ecx
-	movl	20(%ebp), %edx
-	movl	12(%ebp), %ebx
+	movl	8(%ebp), %edx
 	movl	16(%ebp), %eax
-	movw	%bx, (%ecx)
-	movb	%dl, 5(%ecx)
-	sarl	$16, %ebx
-	sarl	$8, %edx
-	movw	%ax, 2(%ecx)
-	movb	%dl, 4(%ecx)
-	movw	%bx, 6(%ecx)
+	movl	20(%ebp), %ebx
+	movl	12(%ebp), %ecx
+	movw	%ax, 2(%edx)
+	movb	%bl, 5(%edx)
+	movw	%cx, (%edx)
+	movl	%ebx, %eax
+	sarl	$8, %eax
+	sarl	$16, %ecx
+	movb	%al, 4(%edx)
+	movw	%cx, 6(%edx)
 	popl	%ebx
 	popl	%ebp
 	ret
