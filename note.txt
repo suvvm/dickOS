@@ -47,13 +47,13 @@
 	GLOBAL 全局
 	LOCAL 局部
 	
-16色颜色编号
-	#000000：黑		#00ffff：浅亮蓝		#000084：暗蓝
-	#ff0000：亮红	#ffffff：白			#840084：暗紫
-	#00ff00：亮绿	#c6c6c6：亮灰		#008484：浅暗蓝
-	#ffff00：亮黄	#840000：暗红		#848484：暗灰
-	#0000ff：亮蓝	#008400：暗绿
-	#ff00ff：亮紫	#848400：暗黄
+	16色颜色编号
+		#000000：黑		#00ffff：浅亮蓝		#000084：暗蓝
+		#ff0000：亮红	#ffffff：白			#840084：暗紫
+		#00ff00：亮绿	#c6c6c6：亮灰		#008484：浅暗蓝
+		#ffff00：亮黄	#840000：暗红		#848484：暗灰
+		#0000ff：亮蓝	#008400：暗绿
+		#ff00ff：亮紫	#848400：暗黄
 	
 	GDT 段描述符表(全局描述表)
 	IDT 中断描述符表(每个表项叫做一个门描述符)
@@ -68,3 +68,25 @@
 		高4位为扩展访问权，由GD00组成 G为Gbit标志位 D为模式位 1代表32位模式 0代表16位模式（即使D为0也不能调用BOIS）
 	所以设计程序中accessRight高4位与低8位直接为4位无效位 xxxx0000xxxxxxxx（x为有效位）
 	
+	IRQ interrupt request 中断请求
+	
+	PCI programmable interrupt control 意为可编程中断控制器 是将8个中断信号集合成一个中断信号的装置 
+		分为与CPU直连的主PIC（master PIC）负责IRQ0~IRQ7，与主PIC第2号IRQ连接的从PCI（salve PCI）负责IRQ8~IRQ15
+	
+	IMR interrupt mask register 中断屏蔽寄存器 其8位分别对应8路IRQ信号
+		如果其某一位为1则证明该位对应的IRQ信号被屏蔽，PIC就将忽略该信号
+	
+	ICW
+		ICW为initial control word 意思为 初始化控制数据 ICW共有4个编号为1~4 共4字节数据
+		识别ICW
+			4条ICW命令依次写入
+			ICW1必须写入偶地址端口（A0=0）
+			ICW2必须写入奇地址端口（A0=1）
+			ICW3只有在ICW1中的SNGL=0即级联时写入
+			ICW4只有在ICW1中IC4=1时才写入
+	
+	OCW OCW为operate control word 意思为 操作控制数据 OCW共有3个编号为1~3
+		识别OCW
+			三条OCW命令次序上没有要求
+			但OCW1写入偶地址端口，2、3写入奇地址端口
+			D4、D3位为00时为OCW2，为01时为OCW3
