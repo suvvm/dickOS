@@ -1,26 +1,25 @@
-TOOLPATH = ../z_tools/
-RULEFILE = ../z_tools/guigui00/guigui00.rul
-MAKE     = $(TOOLPATH)make.exe -r
-SJISCONV = $(TOOLPATH)sjisconv.exe -s
-CC1      = $(TOOLPATH)cc1.exe -I$(INCPATH) $(CC1OPT) -Os -Wall -quiet
-GAS2NASK = $(TOOLPATH)gas2nask.exe -a
-NASK     = $(TOOLPATH)nask.exe
-OBJ2BIM  = $(TOOLPATH)obj2bim.exe
-BIM2BIN  = $(TOOLPATH)bim2bin.exe
-CPP0     = $(TOOLPATH)cpp0.exe -P -I$(INCPATH)
-ASKA     = $(TOOLPATH)aska.exe
-NASKCNV  = $(TOOLPATH)naskcnv0.exe -l -s -w
-GOLIB    = $(TOOLPATH)golib00.exe
-LINK     = $(TOOLPATH)ld.exe -s -Bdynamic --stack $(STACKSIZE)
-EDIMG    = $(TOOLPATH)edimg.exe
-SARTOL   = $(TOOLPATH)sartol.exe
+RULEFILE = guigui00/guigui00.rul
+MAKE     = $make.exe -r
+SJISCONV = $sjisconv.exe -s
+CC1      = $cc1.exe -I$(INCPATH) $(CC1OPT) -Os -Wall -quiet
+GAS2NASK = $gas2nask.exe -a
+NASK     = $nask.exe
+OBJ2BIM  = $obj2bim.exe
+BIM2BIN  = $bim2bin.exe
+CPP0     = $cpp0.exe -P -I$(INCPATH)
+ASKA     = $aska.exe
+NASKCNV  = $naskcnv0.exe -l -s -w
+GOLIB    = $golib00.exe
+LINK     = $ld.exe -s -Bdynamic --stack $(STACKSIZE)
+EDIMG    = $edimg.exe
+SARTOL   = $sartol.exe
 DELE     = del
 COPY     = copy
 
 LIBPATH  = $(INCPATH)
 LIBS     = $(LIBPATH)w32clibc.lib $(LIBPATH)golibc.lib $(LIBPATH)libmingw.lib
 
-# 以上の項目はあなたのディレクトリ構成にあわせて書き換える
+# 目?替?完?
 
 ALL:
 	$(MAKE) $(TARGET).$(MODE)
@@ -74,10 +73,10 @@ clean :
 
 run :
 	$(MAKE) $(TARGET).$(MODE)
-	$(COPY) $(TARGET).$(MODE) ..\z_tools\!built.bin
-	$(MAKE) -C $(TOOLPATH)osa_qemu
-	$(EDIMG) @$(TOOLPATH)edimgopt.txt $(EDIMGOPT) imgout:../z_tools/qemu/fdimage0.bin
-	$(MAKE) -C $(TOOLPATH)qemu
+	$(COPY) $(TARGET).$(MODE) !built.bin
+	$(MAKE) -C $osa_qemu
+	$(EDIMG) @$edimgopt.txt $(EDIMGOPT) imgout:qemu/fdimage0.bin
+	$(MAKE) -C $qemu
 
 arc :
 	$(MAKE) $(TARGET).$(MODE)

@@ -8,8 +8,8 @@ file:
 		.objファイル、.libファイルを記載 */
 	/* なお、このセクションはフルパスで書いてもよい。 */
 	/* 例：  c:/osask/gg00libc.lib;  */
-	../z_tools/haribote/harilibc.lib;
-	../z_tools/haribote/golibc.lib;
+	../dickos/tools/include/harilibc.lib;
+	../dickos/tools/include/golibc.lib;
 
 label:
 	/* 必ずリンクしなければいけないラベルを指定 */
