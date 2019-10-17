@@ -84,3 +84,5 @@ bootpack.h -完善对结构体SEGMENT_DESCRIPTOR的注释
 desctab .c -修正函数setSegmdesc中不正确的描述
 
 出现未知差错正在尝试修正
+
+问题以发现，为结构体内存对齐问题，正在修正
