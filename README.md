@@ -82,3 +82,9 @@ note.txt -添加对段描述符属性的介绍
 bootpack.h -完善对结构体SEGMENT_DESCRIPTOR的注释
 
 desctab .c -修正函数setSegmdesc中不正确的描述
+
+出现未知bug正在尝试修正
+
+bug已发现，为结构体内存对齐问题，正在修正
+
+bootpack.h -修正结构体SEGMENT_DESCRIPTOR属性顺序保障内存对齐正确
