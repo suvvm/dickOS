@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.2
-* @Date: 2019-10-17
+* @Version: 1.0.3
+* @Date: 2019-10-18
 * @Description: 函数声明
 ********************************************************************************/
 
@@ -68,16 +68,18 @@ struct BOOTINFO{
 * Gbit 当Gbit为1时段上限的单位为4KB 4KB * 1MB（20位）= 4GB
 *
 ********************************************************************************/
+#pragma pack(push)
+#pragma pack(1)
 struct SEGMENT_DESCRIPTOR{
 	short limitLow;	/*limitLow 段上限低地址 2字节 16位*/
+	char limitHigh;	/*limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性*/
 	short baseLow;	/*基址低地址 16位*/
 	char baseMid;	/*基址中地址 8位*/
-	char accessRight;	/*段属性低8位（高4位在limitHigh的高4位代表扩展访问权）关于低8位详见note.txt*/
-	char limitHigh;	/*limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性*/
 	char baseHigh;	/*基址高地址 8位*/
+	char accessRight;	/*段属性低8位（高4位在limitHigh的高4位代表扩展访问权）关于低8位详见note.txt*/
 	/*4位扩展访问权由GD00组成 G为Gbit标志位 D为模式位 1代表32位模式 0代表16位模式（即使D为0也不能调用BOIS）*/
 };
-
+#pragma pack(pop)
 /*门描述符存放IDT内容*/
 struct GATE_DESCRIPTOR{
 	short offsetLow, selector;
