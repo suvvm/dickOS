@@ -28,18 +28,18 @@
     28 0000001B 0D 00008000                     	OR	EAX,32768
     29 00000020                                 L2:
     30 00000020 66 89 13                        	MOV	WORD [EBX],DX
-    31 00000023 88 43 05                        	MOV	BYTE [5+EBX],AL
+    31 00000023 88 43 07                        	MOV	BYTE [7+EBX],AL
     32 00000026 C1 EA 10                        	SHR	EDX,16
     33 00000029 C1 F8 08                        	SAR	EAX,8
     34 0000002C 83 E2 0F                        	AND	EDX,15
-    35 0000002F 66 89 4B 02                     	MOV	WORD [2+EBX],CX
+    35 0000002F 66 89 4B 03                     	MOV	WORD [3+EBX],CX
     36 00000033 83 E0 F0                        	AND	EAX,-16
     37 00000036 C1 F9 10                        	SAR	ECX,16
     38 00000039 09 C2                           	OR	EDX,EAX
-    39 0000003B 88 4B 04                        	MOV	BYTE [4+EBX],CL
-    40 0000003E 88 53 06                        	MOV	BYTE [6+EBX],DL
+    39 0000003B 88 4B 05                        	MOV	BYTE [5+EBX],CL
+    40 0000003E 88 53 02                        	MOV	BYTE [2+EBX],DL
     41 00000041 C1 F9 08                        	SAR	ECX,8
-    42 00000044 88 4B 07                        	MOV	BYTE [7+EBX],CL
+    42 00000044 88 4B 06                        	MOV	BYTE [6+EBX],CL
     43 00000047 5B                              	POP	EBX
     44 00000048 5D                              	POP	EBP
     45 00000049 C3                              	RET
