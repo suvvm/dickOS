@@ -17,18 +17,18 @@ _setSegmdesc:
 	orl	$32768, %eax
 L2:
 	movw	%dx, (%ebx)
-	movb	%al, 5(%ebx)
+	movb	%al, 7(%ebx)
 	shrl	$16, %edx
 	sarl	$8, %eax
 	andl	$15, %edx
-	movw	%cx, 2(%ebx)
+	movw	%cx, 3(%ebx)
 	andl	$-16, %eax
 	sarl	$16, %ecx
 	orl	%eax, %edx
-	movb	%cl, 4(%ebx)
-	movb	%dl, 6(%ebx)
+	movb	%cl, 5(%ebx)
+	movb	%dl, 2(%ebx)
 	sarl	$8, %ecx
-	movb	%cl, 7(%ebx)
+	movb	%cl, 6(%ebx)
 	popl	%ebx
 	popl	%ebp
 	ret
