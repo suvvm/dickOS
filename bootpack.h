@@ -1,13 +1,15 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.3
-* @Date: 2019-10-18
+* @Version: 1.0.4
+* @Date: 2019-10-19
 * @Description: 函数声明
 ********************************************************************************/
 
 #ifndef BOOTPACK_H
 #define BOOTPACK_H
+
+#include <stdio.h>
 
 /*色号信息*/
 #define COL8_000000		0
@@ -36,6 +38,7 @@
 #define LIMIT_BOTPAK	0x0007ffff
 #define AR_DATA32_RW	0x4092
 #define AR_CODE32_ER	0x409a
+#define AR_INTGATE32	0x008e
 
 /*PIC端口信息*/
 #define PIC0_ICW1		0x0020	// 写主PIC ICW1的端口地址
@@ -50,6 +53,8 @@
 #define PIC1_ICW2		0x00a1	// 写从PIC ICW2的端口地址
 #define PIC1_ICW3		0x00a1	// 写从PIC ICW3的端口地址
 #define PIC1_ICW4		0x00a1	// 写从PIC ICW4的端口地址
+
+#define ADR_BOOTINFO	0x00000ff0
 
 /*启动信息*/
 struct BOOTINFO{	
@@ -68,18 +73,16 @@ struct BOOTINFO{
 * Gbit 当Gbit为1时段上限的单位为4KB 4KB * 1MB（20位）= 4GB
 *
 ********************************************************************************/
-#pragma pack(push)
-#pragma pack(1)
 struct SEGMENT_DESCRIPTOR{
 	short limitLow;	/*limitLow 段上限低地址 2字节 16位*/
-	char limitHigh;	/*limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性*/
 	short baseLow;	/*基址低地址 16位*/
 	char baseMid;	/*基址中地址 8位*/
-	char baseHigh;	/*基址高地址 8位*/
 	char accessRight;	/*段属性低8位（高4位在limitHigh的高4位代表扩展访问权）关于低8位详见note.txt*/
+	char limitHigh;	/*limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性*/
+	char baseHigh;	/*基址高地址 8位*/
 	/*4位扩展访问权由GD00组成 G为Gbit标志位 D为模式位 1代表32位模式 0代表16位模式（即使D为0也不能调用BOIS）*/
 };
-#pragma pack(pop)
+
 /*门描述符存放IDT内容*/
 struct GATE_DESCRIPTOR{
 	short offsetLow, selector;
@@ -95,6 +98,9 @@ int io_load_eflags();
 void io_store_eflags(int eflags);
 void loadGdtr(int limit, int addr);
 void loadIdtr(int limit, int addr);
+void asm_interruptHandler21(void);
+void asm_interruptHandler27(void);
+void asm_interruptHandler2c(void);
 
 /*graphic.c函数声明*/
 void init_palette();
@@ -114,5 +120,8 @@ void setGatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 
 /*interrupt.c函数声明*/
 void init_pic();
+void interruptHandler21(int *esp);
+void interruptHandler27(int *esp);
+void interruptHandler2c(int *esp);
 
 #endif // BOOTPACK_H
