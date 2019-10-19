@@ -1,4 +1,4 @@
-; halt
+; func
 ; TAB=4
 
 [FORMAT "WCOFF"]				; 制作目标文件的模式
@@ -7,12 +7,14 @@
 
 ; 制作目标文件的信息
 
-[FILE "halt.nas"]				; 源文件名
+[FILE "func.nas"]				; 源文件名
 		GLOBAL _io_hlt, _io_cli, _io_sti, _stihlt	; 程序中包含的函数名
 		GLOBAL _io_in8, _io_in16, _io_in32
 		GLOBAL _io_out8, _io_out16, _io_out32
 		GLOBAL _io_load_eflags, _io_store_eflags
 		GLOBAL _loadGdtr, _loadIdtr
+		GLOBAL	_asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
+		EXTERN	_interruptHandler21, _interruptHandler27, _interruptHandler2c
 ; 实际的函数
 
 [SECTION .text]					; 目标文件中写了这些后再写程序
@@ -91,3 +93,51 @@ _loadIdtr:						; void loadIdtr(int limit, int  addr);
 		MOV		[ESP+6],AX
 		LIDT	[ESP+6]
 		RET
+
+_asm_interruptHandler21:
+		PUSH	ES
+		PUSH	DS
+		PUSHAD
+		MOV		EAX,ESP
+		PUSH	EAX
+		MOV		AX,SS
+		MOV		DS,AX
+		MOV		ES,AX
+		CALL	_interruptHandler21
+		POP		EAX
+		POPAD
+		POP		DS
+		POP		ES
+		IRETD
+
+_asm_interruptHandler27:
+		PUSH	ES
+		PUSH	DS
+		PUSHAD
+		MOV		EAX,ESP
+		PUSH	EAX
+		MOV		AX,SS
+		MOV		DS,AX
+		MOV		ES,AX
+		CALL	_interruptHandler27
+		POP		EAX
+		POPAD
+		POP		DS
+		POP		ES
+		IRETD
+
+_asm_interruptHandler2c:
+		PUSH	ES
+		PUSH	DS
+		PUSHAD
+		MOV		EAX,ESP
+		PUSH	EAX
+		MOV		AX,SS
+		MOV		DS,AX
+		MOV		ES,AX
+		CALL	_interruptHandler2c
+		POP		EAX
+		POPAD
+		POP		DS
+		POP		ES
+		IRETD
