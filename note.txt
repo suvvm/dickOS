@@ -69,8 +69,26 @@
 	所以设计程序中accessRight高4位与低8位直接为4位无效位 xxxx0000xxxxxxxx（x为有效位）
 	
 	IRQ interrupt request 中断请求
+	主PIC
+		IRQ0	Time（系统计时器）						不能更改
+		IRQ1	Keyboard（键盘）   						不能更改
+		IRQ2	Redirect IRQ9（重定向 从PIC）			不能更改
+		IRQ3	COM2、COM4（串行设备通讯端口）			内置调制解调器（首选）等串行外设
+		IRQ4	COM1、COM3（串行设备通讯端口）			串行外设
+		IRQ5	LPT2（并行设备通讯端口）				并口打印机（首选）、声卡等并行外设（许多电脑没有LPT2端口所以一般分配给声卡）
+		IRQ6	FDD（软驱）
+		IRQ7	LPT1（并行设备通讯端口）				并口打印机（首选）、声卡等并行外设
+	从PIC
+		IRQ8	CMOS Alert（系统CMOS即时时钟）			不能更改
+		IRQ9 	Redirect IRQ2（重定向至IRQ2）			不建议分配，但可以分配给MPU-401 MDI（混音器）
+		IRQ10	未分配									网卡（首选）等外设
+		IRQ11	未分配									SCSI控制器（首选）或AGP显卡
+		IRQ12	PS/2Mouse鼠标							PS/2鼠标（首选）等外设
+		IRQ13	数学协处理器 如FCU						不能更改
+		IRQ14	Primary IDE（主IDE）					主IDE硬盘（首选）等IDE外设
+		IRQ15	Secondary IDE（第二IDE）				第二IDE硬盘（首选）等IDE外设
 	
-	PCI programmable interrupt control 意为可编程中断控制器 是将8个中断信号集合成一个中断信号的装置 
+	PIC programmable interrupt control 意为可编程中断控制器 是将8个中断信号集合成一个中断信号的装置 
 		分为与CPU直连的主PIC（master PIC）负责IRQ0~IRQ7，与主PIC第2号IRQ连接的从PCI（salve PCI）负责IRQ8~IRQ15
 	
 	IMR interrupt mask register 中断屏蔽寄存器 其8位分别对应8路IRQ信号
