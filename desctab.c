@@ -1,12 +1,12 @@
 /********************************************************************************
 * @File name: desctab.c
 * @Author: suvvm
-* @Version: 1.0.3
-* @Date: 2019-10-17
+* @Version: 1.0.4
+* @Date: 2019-10-19
 * @Description: 包含对GDT，IDT等描述符表的处理
 ********************************************************************************/
 #include "bootpack.h"
-
+#include "interrupt.c"
 /*******************************************************
 *
 * Function name:setSegmdesc
@@ -78,4 +78,9 @@ void initGdtit(){
 	}
 	/*调用汇编函数向idtr赋值（将信息加载给寄存器）*/
 	loadIdtr(LIMIT_IDT, ADR_IDT);
+	
+	//设置IRQ1 IRQ7 IRQ12 的IDT
+	setGatedesc(idt + 0x21, (int) asm_interruptHandler21, 2 * 8, AR_INTGATE32);
+	setGatedesc(idt + 0x27, (int) asm_interruptHandler27, 2 * 8, AR_INTGATE32);
+	setGatedesc(idt + 0x2c, (int) asm_interruptHandler2c, 2 * 8, AR_INTGATE32);
 }
