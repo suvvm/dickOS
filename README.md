@@ -105,3 +105,5 @@ bootpack.h -宏定义PIC端口信息
 新建interrupt.c -定义初始化可编程中断编译器信息
 
 bootpack.c -调用interrupt.c的init_pic()初始化可编程中断编译器
+
+bootpack.h -为SEGMENT_DESCRIPTOR添加内存对齐设置
