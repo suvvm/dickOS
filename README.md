@@ -10,9 +10,13 @@
 
 初始化GDT & IDT
 
+初始化可编程中断控制器PIC
+
 调用函数boxFill8使用指针操作VRAM显示桌面GUI
 
-在桌面打印DICKOS
+在桌面打印DICKOS并显示鼠标坐标
+
+当键盘发送中断时打印中断信息
 
 进入HALT状态
 
@@ -107,3 +111,11 @@ bootpack.h -宏定义PIC端口信息
 bootpack.c -调用interrupt.c的init_pic()初始化可编程中断编译器
 
 bootpack.h -为SEGMENT_DESCRIPTOR添加内存对齐设置
+
+interrupt.c -添加中断处理函数interruptHandler21 interruptHandler2c interruptHandler21
+
+func.nas -添加函数asm_interruptHandler21 _asm_interruptHandler27 _asm_interruptHandler2c 执行IRETD
+
+desctab.c -initGdtit中添加对IRQ1 IRQ7 IRQ12 的IDT设置
+
+bootpack.c -io_sti();
