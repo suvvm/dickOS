@@ -55,6 +55,7 @@
 #define PIC1_ICW4		0x00a1	// 写从PIC ICW4的端口地址
 
 #define ADR_BOOTINFO	0x00000ff0
+#define PORT_KEYDAT		0x0060
 
 /*启动信息*/
 struct BOOTINFO{	
