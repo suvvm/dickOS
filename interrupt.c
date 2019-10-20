@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: interrupt.c
 * @Author: suvvm
-* @Version: 1.0.2
-* @Date: 2019-10-19
+* @Version: 1.0.3
+* @Date: 2019-10-20
 * @Description: 中断操作
 ********************************************************************************/
 
@@ -43,14 +43,15 @@ void init_pic(){
 void interruptHandler21(int *esp){
 	// 获取启动信息
 	struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-	// 显示信息背景
-	boxFill8(binfo->vram, binfo->scrnx, COL8_000000, 0, 0, 32 * 8 - 1, 15);
-	// 显示提示信息
-	putFont8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, "INT 21 (IRQ-1) : PS/2 keyboard");
+	unsigned char data, s[4];
 	
-	for(;;){
-		io_hlt();
-	}
+	io_out8(PIC0_OCW2, 0x61);	//通知PIC IRQ-01 已经受理完毕 0x60 + IRQ编号
+	data = io_in8(PORT_KEYDAT);
+	sprintf(s, "%02X", data);
+	// 显示信息背景
+	boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
+	// 显示提示信息
+	putFont8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
 }
 
 /*******************************************************
