@@ -119,3 +119,12 @@ func.nas -添加函数asm_interruptHandler21 _asm_interruptHandler27 _asm_interr
 desctab.c -initGdtit中添加对IRQ1 IRQ7 IRQ12 的IDT设置
 
 bootpack.c -io_sti();
+
+func.nas -修正了 \_io\_stihlt函数名的错误
+
+bootpack.h -添加部分func.nas函数声明 添加结构体KEYBUF声明全局变量keybuf作为键盘输入缓冲区
+
+interrupt.c -修改键盘中断处理函数interruptHandler21由直接处理改为将键盘码存入缓冲区
+
+bootpack.c -添加对缓冲区数据显示的处理
+
