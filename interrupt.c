@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: interrupt.c
 * @Author: suvvm
-* @Version: 1.0.3
-* @Date: 2019-10-20
+* @Version: 1.0.4
+* @Date: 2019-10-21
 * @Description: 中断操作
 ********************************************************************************/
 
@@ -35,23 +35,24 @@ void init_pic(){
 /*******************************************************
 *
 * Function name:interruptHandler21
-* Description: 接收来自IRQ2 PS/2键盘的中断并显示提示信息
+* Description: 接收来自IRQ2 PS/2键盘的中断并存入缓冲区
 * Parameter:
 * 	@esp	接收指针的值
 *
 *******************************************************/
 void interruptHandler21(int *esp){
-	// 获取启动信息
-	struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-	unsigned char data, s[4];
-	
+	unsigned char data;
 	io_out8(PIC0_OCW2, 0x61);	//通知PIC IRQ-01 已经受理完毕 0x60 + IRQ编号
 	data = io_in8(PORT_KEYDAT);
+	if(!keybuf.flag){
+		keybuf.data = data;
+		keybuf.flag = 1;
+	}
+	/*
 	sprintf(s, "%02X", data);
-	// 显示信息背景
 	boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
-	// 显示提示信息
 	putFont8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
+	*/
 }
 
 /*******************************************************
