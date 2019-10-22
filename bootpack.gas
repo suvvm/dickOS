@@ -58,11 +58,10 @@ _interruptHandler21:
 	pushl	$96
 	call	_io_in8
 	addl	$12, %esp
-	cmpb	$0, _keybuf+1
-	jne	L2
-	movb	%al, _keybuf
-	movb	$1, _keybuf+1
-L2:
+	movl	_keybuf+32, %edx
+	movb	%al, _keybuf(%edx)
+	incl	%edx
+	movl	%edx, _keybuf+32
 	leave
 	ret
 	.balign 2
@@ -888,10 +887,23 @@ _HariMain:
 	addl	$16, %esp
 L113:
 	call	_io_cli
-	cmpb	$0, _keybuf+1
-	je	L118
+	movl	_keybuf+32, %eax
+	testl	%eax, %eax
+	je	L125
+	decl	%eax
+	xorl	%edx, %edx
 	movzbl	_keybuf, %ebx
-	movb	$0, _keybuf+1
+	movl	%eax, _keybuf+32
+	cmpl	%eax, %edx
+	jge	L124
+	movl	%eax, %ecx
+L122:
+	movb	_keybuf+1(%edx), %al
+	movb	%al, _keybuf(%edx)
+	incl	%edx
+	cmpl	%ecx, %edx
+	jl	L122
+L124:
 	call	_io_sti
 	pushl	%ebx
 	pushl	$LC3
@@ -918,14 +930,14 @@ L113:
 	call	_putFont8_asc
 	addl	$24, %esp
 	jmp	L113
-L118:
+L125:
 	call	_io_stihlt
 	jmp	L113
 .globl _keybuf
 	.data
-	.balign 2
+	.balign 16
 _keybuf:
-	.space 2
+	.space 36
 	.def	_io_stihlt;	.scl	2;	.type	32;	.endef
 	.def	_sprintf;	.scl	2;	.type	32;	.endef
 	.def	_io_sti;	.scl	2;	.type	32;	.endef
