@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.5
+* @Version: 1.0.6
 * @Date: 2019-10-22
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -47,14 +47,13 @@ void HariMain(){
 	for(;;){
 		io_cli();
 		
-		if (keybuf.next == 0) {
+		if (keybuf.len == 0) {
 			io_stihlt();
 		} else {
-			keybufval = keybuf.data[0];
-			keybuf.next--;
-			for(i = 0; i < keybuf.next; i++){
-				keybuf.data[i] = keybuf.data[i + 1];
-			}
+			keybufval = keybuf.data[keybuf.next_r];
+			keybuf.len--;
+			keybuf.next_r++;
+			keybuf.next_r %= 32;
 			io_sti();
 			sprintf(s, "%02X", keybufval);
 			boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
