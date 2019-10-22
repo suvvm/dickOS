@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: interrupt.c
 * @Author: suvvm
-* @Version: 1.0.5
+* @Version: 1.0.6
 * @Date: 2019-10-22
 * @Description: 中断操作
 ********************************************************************************/
@@ -44,9 +44,11 @@ void interruptHandler21(int *esp){
 	unsigned char data;
 	io_out8(PIC0_OCW2, 0x61);	//通知PIC IRQ-01 已经受理完毕 0x60 + IRQ编号
 	data = io_in8(PORT_KEYDAT);
-	if(!keybuf.next < 32){
-		keybuf.data[keybuf.next] = data;
-		keybuf.next++;
+	if(!keybuf.len < 32){
+		keybuf.data[keybuf.next_w] = data;
+		keybuf.len++;
+		keybuf.next_w++;
+		keybuf.next_w %= 32;
 	}
 	/* 直接处理方法
 	sprintf(s, "%02X", data);
