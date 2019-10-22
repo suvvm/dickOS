@@ -128,3 +128,9 @@ interrupt.c -修改键盘中断处理函数interruptHandler21由直接处理改�
 
 bootpack.c -添加对缓冲区数据显示的处理
 
+bootpack.h -[ 修改结构体KEYBUF，将缓冲区data设为长度32的数组，并用next记录data中下一个空闲位置](https://github.com/suvvm/dickOS/commit/812bdc064f938bab842500224ec4b6e8694c4eda)
+
+interrupt.c -[ 修改键盘中断处理函数interruptHandler21](https://github.com/suvvm/dickOS/commit/4f434b57bb4eb132d51f3a437ac5b55f8910e5a0)
+
+bootpack.c - [修改键盘缓冲区处理操作](https://github.com/suvvm/dickOS/commit/e98fb67cb073b17f437db9fc91c602b868bf04e1)
+
