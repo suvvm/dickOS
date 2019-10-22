@@ -134,3 +134,9 @@ interrupt.c -[ 修改键盘中断处理函数interruptHandler21](https://github.
 
 bootpack.c - [修改键盘缓冲区处理操作](https://github.com/suvvm/dickOS/commit/e98fb67cb073b17f437db9fc91c602b868bf04e1)
 
+bootpack.h - [通过循环使用数组优化键盘缓冲区结构体KEYBUF](https://github.com/suvvm/dickOS/commit/bf1593b1cc62b78e3fd55ca37584f83eb5341bb5) 
+
+interrupt.c -[ 修改键盘中断处理函数interruptHandler21](https://github.com/suvvm/dickOS/commit/4b6a3932cc0a7ab614a16c9d6953c238bfb6a0ea)
+
+bootpack.c -[ 修改键盘缓冲区处理操作](https://github.com/suvvm/dickOS/commit/d1ac64801d47e1898e23542c2739993082994088)
+
