@@ -74,11 +74,10 @@ _interruptHandler21:
 	PUSH	96
 	CALL	_io_in8
 	ADD	ESP,12
-	CMP	BYTE [_keybuf+1],0
-	JNE	L2
-	MOV	BYTE [_keybuf],AL
-	MOV	BYTE [_keybuf+1],1
-L2:
+	MOV	EDX,DWORD [_keybuf+32]
+	MOV	BYTE [_keybuf+EDX],AL
+	INC	EDX
+	MOV	DWORD [_keybuf+32],EDX
 	LEAVE
 	RET
 	GLOBAL	_interruptHandler27
@@ -876,10 +875,23 @@ _HariMain:
 	ADD	ESP,16
 L113:
 	CALL	_io_cli
-	CMP	BYTE [_keybuf+1],0
-	JE	L118
+	MOV	EAX,DWORD [_keybuf+32]
+	TEST	EAX,EAX
+	JE	L125
+	DEC	EAX
+	XOR	EDX,EDX
 	MOVZX	EBX,BYTE [_keybuf]
-	MOV	BYTE [_keybuf+1],0
+	MOV	DWORD [_keybuf+32],EAX
+	CMP	EDX,EAX
+	JGE	L124
+	MOV	ECX,EAX
+L122:
+	MOV	AL,BYTE [_keybuf+1+EDX]
+	MOV	BYTE [_keybuf+EDX],AL
+	INC	EDX
+	CMP	EDX,ECX
+	JL	L122
+L124:
 	CALL	_io_sti
 	PUSH	EBX
 	PUSH	LC3
@@ -906,11 +918,11 @@ L113:
 	CALL	_putFont8_asc
 	ADD	ESP,24
 	JMP	L113
-L118:
+L125:
 	CALL	_io_stihlt
 	JMP	L113
 	GLOBAL	_keybuf
 [SECTION .data]
-	ALIGNB	2
+	ALIGNB	16
 _keybuf:
-	RESB	2
+	RESB	36
