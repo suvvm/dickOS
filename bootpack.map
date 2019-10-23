@@ -1,4 +1,4 @@
-text size :   3654(0x00E46)
+text size :   3645(0x00E3D)
 data size :   4520(0x011A8)
 bss  size :      0(0x00000)
 
@@ -23,7 +23,7 @@ bss  size :      0(0x00000)
 0x00000629 : _putFont8_asc
 0x00000678 : _initMouseCursor8
 0x000006D5 : _putblock8_8
-0x0000072B : _HariMain
+0x0000072B : _Main
 0x000008D0 : _io_hlt
 0x000008D0 : (.text)
 0x000008D2 : _io_cli
@@ -42,15 +42,12 @@ bss  size :      0(0x00000)
 0x0000093F : _asm_interruptHandler21
 0x00000956 : _asm_interruptHandler27
 0x0000096D : _asm_interruptHandler2c
+0x00000984 : _sprintf
 0x00000984 : (.text)
-0x00000984 : _HariStartup
-0x0000098D : _sprintf
-0x0000098D : (.text)
-0x000009A1 : (.text)
-0x000009DD : _strtoul0
-0x00000AB0 : (.text)
-0x00000AD8 : _vsprintf
-0x00000000 : (.data)
+0x00000998 : (.text)
+0x000009D4 : _strtoul0
+0x00000AA7 : (.text)
+0x00000ACF : _vsprintf
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000000 : (.data)
@@ -59,7 +56,6 @@ bss  size :      0(0x00000)
 0x00310188 : _font
 0x00310188 : (.data)
 0x00311188 : (.data)
-0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
