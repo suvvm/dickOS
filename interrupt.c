@@ -1,12 +1,13 @@
 /********************************************************************************
 * @File name: interrupt.c
 * @Author: suvvm
-* @Version: 1.0.6
-* @Date: 2019-10-22
+* @Version: 1.0.7
+* @Date: 2019-10-23
 * @Description: 中断操作
 ********************************************************************************/
 
 #include "bootpack.h"
+#include "queue.h"
 
 /*******************************************************
 *
@@ -44,12 +45,7 @@ void interruptHandler21(int *esp){
 	unsigned char data;
 	io_out8(PIC0_OCW2, 0x61);	//通知PIC IRQ-01 已经受理完毕 0x60 + IRQ编号
 	data = io_in8(PORT_KEYDAT);
-	if(!keybuf.len < 32){
-		keybuf.data[keybuf.next_w] = data;
-		keybuf.len++;
-		keybuf.next_w++;
-		keybuf.next_w %= 32;
-	}
+	QueuePush(&keybuf, data);
 	/* 直接处理方法
 	sprintf(s, "%02X", data);
 	boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
