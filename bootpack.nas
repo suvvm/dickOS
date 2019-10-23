@@ -876,8 +876,8 @@ LC2:
 LC3:
 	DB	"%02X",0x00
 [SECTION .text]
-	GLOBAL	_HariMain
-_HariMain:
+	GLOBAL	_Main
+_Main:
 	PUSH	EBP
 	MOV	EBP,ESP
 	PUSH	EDI
