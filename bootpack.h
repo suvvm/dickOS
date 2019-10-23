@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.8
-* @Date: 2019-10-22
+* @Version: 1.0.9
+* @Date: 2019-10-23
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -56,7 +56,7 @@
 
 #define ADR_BOOTINFO	0x00000ff0
 #define PORT_KEYDAT		0x0060
-
+#define FLAGS_OVERRUN		0x0001
 /*启动信息*/
 struct BOOTINFO{	
 	char cyls, leds, vmode, reserve;
@@ -97,16 +97,24 @@ struct GATE_DESCRIPTOR{
 
 /********************************************************************************
 *
-* 用来作为键盘输入时的缓冲区，减少键盘中断时所做的处理以加快键盘中断处理速度
-* data模拟一个队列用来保存获得的键盘码
-* next_w保存下一个写入，next_r保存下一个读取的位置，len保存当前缓冲区内的数据量
-* 如果缓冲区满时又来了一个键盘中断的数据则不做任何处理
+* 定义队列作为各种处理的缓冲区
+* buf为队列内数据
+* back为队尾，作为下一个写入（入队）位置，front为队首，作为下一个读取（出队）位置
+* size为队列大小
+* free记录当前可用空间
+* 如果缓冲区满时又来了一个数据则将flags标记为1 表明有过溢出
 *
 ********************************************************************************/
-struct KEYBUF {
-	unsigned char data[32];
-	int next_r, next_w, len;
+struct QUEUE {
+	unsigned char *buf;
+	int back, front, size, free, flags;
 }keybuf;
+
+// queue.c函数声明
+void QueueInit(struct QUEUE *fifo, int size, unsigned char *buf);
+int QueuePush(struct QUEUE *fifo, unsigned char data);
+int QueuePop(struct QUEUE *fifo);
+int QueueSize(struct QUEUE *fifo);
 
 /*func.nas函数声明*/
 void io_hlt();	
@@ -119,9 +127,9 @@ int io_load_eflags();
 void io_store_eflags(int eflags);
 void loadGdtr(int limit, int addr);
 void loadIdtr(int limit, int addr);
-void asm_interruptHandler21(void);
-void asm_interruptHandler27(void);
-void asm_interruptHandler2c(void);
+void asm_interruptHandler21();
+void asm_interruptHandler27();
+void asm_interruptHandler2c();
 
 /*graphic.c函数声明*/
 void init_palette();
