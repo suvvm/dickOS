@@ -12,11 +12,11 @@
 
 /*******************************************************
 *
-* Function name:HariMain
+* Function name:Main
 * Description: 主函数
 *
 **********************************************************/
-void HariMain(){
+void Main(){
 	struct BOOTINFO *binfo;
 	char mcursor[256], s[40], keyb[32];	// mcursor鼠标信息 s保存要输出的变量信息
 	int mx, my, keybufval, i;
