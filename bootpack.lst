@@ -895,8 +895,8 @@
    876 00000161                                 LC3:
    877 00000161 25 30 32 58 00                  	DB	"%02X",0x00
    878                                          [SECTION .text]
-   879 00000707                                 	GLOBAL	_HariMain
-   880 00000707                                 _HariMain:
+   879 00000707                                 	GLOBAL	_Main
+   880 00000707                                 _Main:
    881 00000707 55                              	PUSH	EBP
    882 00000708 89 E5                           	MOV	EBP,ESP
    883 0000070A 57                              	PUSH	EDI
