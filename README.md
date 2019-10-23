@@ -151,3 +151,7 @@ bootpack.h -[ 添加结构体QUEUE模拟队列，添加队列函数声明](https
 interrupt.c -[ 改用队列作为键盘缓冲区](https://github.com/suvvm/dickOS/commit/66bca37b8aaf02e8f6392e16559a4ac6fac8ac29)
 
 bootpack.c - [初始化键盘缓冲区队列，修改键盘缓冲区处理操作](https://github.com/suvvm/dickOS/commit/5a73656723ece0100b4bcb30547debbcdcfcec86) 
+
+[tools](https://github.com/suvvm/dickOS/tree/master/tools)/[include](https://github.com/suvvm/dickOS/tree/master/tools/include)/haribote.rul - [修改入口为Main](https://github.com/suvvm/dickOS/commit/89e6db42bf25880885d8537c8b78e34e5e5de452)
+
+bootpack.c - [修改主函数名为Main](https://github.com/suvvm/dickOS/commit/87ba4b179b51903aacaf7b9cfc2c5a3a27a8dd69)
