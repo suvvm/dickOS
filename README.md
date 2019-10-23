@@ -140,3 +140,14 @@ interrupt.c -[ 修改键盘中断处理函数interruptHandler21](https://github.
 
 bootpack.c -[ 修改键盘缓冲区处理操作](https://github.com/suvvm/dickOS/commit/d1ac64801d47e1898e23542c2739993082994088)
 
+make.exe出现重大问题正在寻找错误根源
+
+问题已解决 -重新安装了MinGw与msys
+
+bootpack.h -[ 添加结构体QUEUE模拟队列，添加队列函数声明](https://github.com/suvvm/dickOS/commit/182583217b521efd566711949354405051efe67a)
+
+新建文件queue.h -[保存队列函数定义](https://github.com/suvvm/dickOS/commit/eacc560978c84c0d2553f7de864d94a1e4930290)
+
+interrupt.c -[ 改用队列作为键盘缓冲区](https://github.com/suvvm/dickOS/commit/66bca37b8aaf02e8f6392e16559a4ac6fac8ac29)
+
+bootpack.c - [初始化键盘缓冲区队列，修改键盘缓冲区处理操作](https://github.com/suvvm/dickOS/commit/5a73656723ece0100b4bcb30547debbcdcfcec86) 
