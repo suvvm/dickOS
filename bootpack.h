@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.10
+* @Version: 1.0.11
 * @Date: 2019-10-24
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -119,7 +119,7 @@ struct GATE_DESCRIPTOR{
 struct QUEUE {
 	unsigned char *buf;
 	int back, front, size, free, flags;
-}keybuf;
+}keybuf, mousebuf;
 
 // queue.c函数声明
 void QueueInit(struct QUEUE *fifo, int size, unsigned char *buf);
