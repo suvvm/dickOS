@@ -157,3 +157,12 @@ bootpack.c - [初始化键盘缓冲区队列，修改键盘缓冲区处理操作
 [tools](https://github.com/suvvm/dickOS/tree/master/tools)/[include](https://github.com/suvvm/dickOS/tree/master/tools/include)/haribote.rul - [修改入口为Main](https://github.com/suvvm/dickOS/commit/89e6db42bf25880885d8537c8b78e34e5e5de452)
 
 bootpack.c - [修改主函数名为Main](https://github.com/suvvm/dickOS/commit/87ba4b179b51903aacaf7b9cfc2c5a3a27a8dd69)
+
+bootpack.h - [添加键盘控制电路与鼠标相关函数声明与宏定义](https://github.com/suvvm/dickOS/commit/7b09a16e57ac316961f9da950c36f3a4f65622d2#diff-fac193a65494545d15781ecfd834143e) 
+
+新建keyboard.c -[ 设置键盘控制电路](https://github.com/suvvm/dickOS/commit/e2bef556e1f25632f3a614f3c0f55a1e145b0935)
+
+新建mouse.c - [设置鼠标相关](https://github.com/suvvm/dickOS/commit/2e24491459e0ea1b7cd25565d4cbecf2c2e81fbe)
+
+note.txt -[ 队列函数定义](https://github.com/suvvm/dickOS/commit/eacc560978c84c0d2553f7de864d94a1e4930290)
+
