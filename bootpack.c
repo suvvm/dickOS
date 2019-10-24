@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.8
+* @Version: 1.0.9
 * @Date: 2019-10-24
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -19,15 +19,16 @@
 **********************************************************/
 void Main(){
 	struct BOOTINFO *binfo;
-	char mcursor[256], s[40], keyb[32];	// mcursor鼠标信息 s保存要输出的变量信息
-	int mx, my, keybufval, i;
+	char mcursor[256], s[40], keyb[32], mouseb[128];	// mcursor鼠标信息 s保存要输出的变量信息
+	int mx, my, bufval;
 	
 	initGdtit();	// 初始化GDT IDT
 	init_pic();	// 初始化可编程中断控制器
 	
 	io_sti();	// 解除cpu中断禁止
 	
-	QueueInit(&keybuf, 32, keyb);
+	QueueInit(&keybuf, 32, keyb);	//初始化键盘缓冲区队列
+	QueueInit(&mousebuf, 128, mouseb);	// 初始化鼠标缓冲区队列
 	
 	io_out8(PIC0_IMR, 0xf9); // 允许PIC1（从）和键盘(11111001) 
 	io_out8(PIC1_IMR, 0xef); //鼠标(11101111)
@@ -58,7 +59,24 @@ void Main(){
 	//处理键盘与鼠标中断与进入hlt
 	for(;;){
 		io_cli();
-		
+		if(QueueSize(&keybuf) + QueueSize(&mousebuf) == 0) {	// 只有在两个缓冲区都没有数据时才能开启中断并进入hlt模式
+			io_stihlt();
+		} else {
+			if (QueueSize(&keybuf) != 0) {
+				bufval = QueuePop(&keybuf);
+				io_sti();
+				sprintf(s, "%02X", bufval);
+				boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
+				putFont8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
+			} else {
+				bufval = QueuePop(&mousebuf);
+				io_sti();
+				sprintf(s, "%02X", bufval);
+				boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 47, 31);
+				putFont8_asc(binfo->vram, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
+			}
+		}
+		/*
 		if (QueueSize(&keybuf) == 0) {
 			io_stihlt();
 		} else {
@@ -67,6 +85,6 @@ void Main(){
 			sprintf(s, "%02X", keybufval);
 			boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
 			putFont8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
-		}
+		}*/
 	}
 }
