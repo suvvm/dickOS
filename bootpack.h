@@ -57,6 +57,17 @@
 #define ADR_BOOTINFO	0x00000ff0
 #define PORT_KEYDAT		0x0060
 #define FLAGS_OVERRUN		0x0001
+
+// 键盘控制电路信息
+#define PORT_KEYDAT				0x0060	// 键盘控制电路模式设置端口
+#define PORT_KEYSTA				0x0064	// 识别键盘控制电路是否就绪的地址
+#define PORT_KEYCMD				0x0064	// 键盘控制电路命令接收端口
+#define KEYSTA_SEND_NOTREADY	0x02	// 倒数第二位就绪标识
+#define KEYCMD_WRITE_MODE		0x60	// 模式设置指令
+#define KBC_MODE				0x47	// 可用鼠标模式
+#define KEYCMD_SENDTO_MOUSE		0xd4	// 向键盘控制电路发送0xd4后下一个数据将发送给鼠标
+#define MOUSECMD_ENABLE			0xf4	// 激活鼠标的指令
+
 /*启动信息*/
 struct BOOTINFO{	
 	char cyls, leds, vmode, reserve;
@@ -152,5 +163,12 @@ void init_pic();
 void interruptHandler21(int *esp);
 void interruptHandler27(int *esp);
 void interruptHandler2c(int *esp);
+
+// keyboard.c 函数声明
+void initKeyboard();
+void waitKeyboardControllerReady();
+
+// mouse.c 函数声明
+void enableMouse();
 
 #endif // BOOTPACK_H
