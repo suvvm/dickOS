@@ -9,6 +9,7 @@
 #include "desctab.c"
 #include "graphic.c"
 #include "queue.h"
+#include "mouse.c"
 
 /*******************************************************
 *
@@ -27,8 +28,11 @@ void Main(){
 	io_sti();	// 解除cpu中断禁止
 	
 	QueueInit(&keybuf, 32, keyb);
+	
 	io_out8(PIC0_IMR, 0xf9); // 允许PIC1（从）和键盘(11111001) 
 	io_out8(PIC1_IMR, 0xef); //鼠标(11101111)
+	
+	initKeyboard();
 	
 	init_palette();	// 初始化16色调色板
 	
@@ -36,6 +40,7 @@ void Main(){
 	mx = (binfo->scrnx - 16) / 2;	// 鼠标x轴位置
 	my = (binfo->scrny - 28 - 16) / 2;	// 鼠标y轴位置
 	init_GUI(binfo->vram, binfo->scrnx, binfo->scrny);	// 初始化GUI背景
+	
 	// 打印DICKOS
 	putFont8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_FFFFFF, "SHOWSTRING");
 	initMouseCursor8(mcursor, COL8_008484);	// 初始化鼠标信息
@@ -48,7 +53,9 @@ void Main(){
 	io_out8(PIC0_IMR, 0xf9); // 主PIC IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111001)
 	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
 	
-	//处理键盘中断与进入hlt
+	enableMouse();
+	
+	//处理键盘与鼠标中断与进入hlt
 	for(;;){
 		io_cli();
 		
