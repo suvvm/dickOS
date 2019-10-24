@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: interrupt.c
 * @Author: suvvm
-* @Version: 1.0.8
+* @Version: 1.0.9
 * @Date: 2019-10-24
 * @Description: 中断操作
 ********************************************************************************/
@@ -43,7 +43,7 @@ void init_pic(){
 *******************************************************/
 void interruptHandler21(int *esp){
 	unsigned char data;
-	io_out8(PIC0_OCW2, 0x61);	//通知PIC IRQ-01 已经受理完毕 0x60 + IRQ编号
+	io_out8(PIC0_OCW2, 0x61);	//通知PIC0 IRQ-01 已经受理完毕 0x60 + IRQ编号
 	data = io_in8(PORT_KEYDAT);
 	QueuePush(&keybuf, data);
 	/* 直接处理方法
@@ -71,21 +71,15 @@ void interruptHandler27(int *esp){
 /*******************************************************
 *
 * Function name:interruptHandler2c
-* Description: 接收来自IRQ12 鼠标的中断并显示提示信息
+* Description: 接收来自IRQ12 鼠标的中断并存入缓冲区
 * Parameter:
 * 	@esp	接收指针的值
 *
 *******************************************************/
 void interruptHandler2c(int *esp){
-	// 获取启动信息
-	struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-	// 显示信息背景
-	boxFill8(binfo->vram, binfo->scrnx, COL8_000000, 0, 0, 32 * 8 - 1, 15);
-	// 显示提示信息
-	putFont8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, "INT 2C (IRQ-12) : PS/2 mouse");
-	
-	for (;;) {
-		io_hlt();
-	}
-	
+	unsigned char data;
+	io_out8(PIC1_OCW2, 0x64);	// 通知PIC1 IRQ-12 已经受理完毕 0x60 + IRQ编号
+	io_out8(PIC0_OCW2, 0x62);	// 通知PIC0 IRQ-02 已经受理完毕 0x60 + IRQ编号
+	data = io_in8(PORT_KEYDAT);
+	QueuePush(&mousebuf, data);
 }
