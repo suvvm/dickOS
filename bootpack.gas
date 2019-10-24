@@ -886,6 +886,52 @@ L114:
 	popl	%edi
 	popl	%ebp
 	ret
+	.balign 2
+.globl _waitKeyboardControllerReady
+	.def	_waitKeyboardControllerReady;	.scl	2;	.type	32;	.endef
+_waitKeyboardControllerReady:
+	pushl	%ebp
+	movl	%esp, %ebp
+L118:
+	pushl	$100
+	call	_io_in8
+	popl	%edx
+	andl	$2, %eax
+	jne	L118
+	leave
+	ret
+	.balign 2
+.globl _initKeyboard
+	.def	_initKeyboard;	.scl	2;	.type	32;	.endef
+_initKeyboard:
+	pushl	%ebp
+	movl	%esp, %ebp
+	call	_waitKeyboardControllerReady
+	pushl	$96
+	pushl	$100
+	call	_io_out8
+	call	_waitKeyboardControllerReady
+	pushl	$71
+	pushl	$96
+	call	_io_out8
+	leave
+	ret
+	.balign 2
+.globl _enableMouse
+	.def	_enableMouse;	.scl	2;	.type	32;	.endef
+_enableMouse:
+	pushl	%ebp
+	movl	%esp, %ebp
+	call	_waitKeyboardControllerReady
+	pushl	$212
+	pushl	$100
+	call	_io_out8
+	call	_waitKeyboardControllerReady
+	pushl	$244
+	pushl	$96
+	call	_io_out8
+	leave
+	ret
 	.data
 LC1:
 	.ascii "SHOWSTRING\0"
@@ -918,6 +964,7 @@ _Main:
 	pushl	$239
 	pushl	$161
 	call	_io_out8
+	call	_initKeyboard
 	call	_init_palette
 	movl	$2, %ecx
 	movswl	4084,%eax
@@ -983,14 +1030,15 @@ _Main:
 	pushl	$239
 	pushl	$161
 	call	_io_out8
+	call	_enableMouse
 	addl	$16, %esp
-L118:
+L125:
 	call	_io_cli
 	pushl	$_keybuf
 	call	_QueueSize
-	popl	%edx
+	popl	%ecx
 	testl	%eax, %eax
-	je	L123
+	je	L130
 	pushl	$_keybuf
 	call	_QueuePop
 	movl	%eax, %ebx
@@ -1019,10 +1067,10 @@ L118:
 	pushl	4088
 	call	_putFont8_asc
 	addl	$24, %esp
-	jmp	L118
-L123:
+	jmp	L125
+L130:
 	call	_io_stihlt
-	jmp	L118
+	jmp	L125
 .globl _keybuf
 	.data
 	.balign 16
