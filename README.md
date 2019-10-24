@@ -16,11 +16,11 @@
 
 在桌面打印DICKOS并显示鼠标坐标
 
-当键盘发送中断时打印键盘中断编码
+初始化键盘控制电路并激活鼠标
 
-激活鼠标
+在鼠标与键盘产生中断时打印相应数据
 
-进入HALT状态
+空闲时进入HALT状态
 
 # Build
 
@@ -165,4 +165,10 @@ bootpack.h - [添加键盘控制电路与鼠标相关函数声明与宏定义](h
 新建mouse.c - [设置鼠标相关](https://github.com/suvvm/dickOS/commit/2e24491459e0ea1b7cd25565d4cbecf2c2e81fbe)
 
 note.txt -[ 队列函数定义](https://github.com/suvvm/dickOS/commit/eacc560978c84c0d2553f7de864d94a1e4930290)
+
+bootpack.h -[声明QUEUE类型变量mousebuf作为鼠标缓冲区](https://github.com/suvvm/dickOS/commit/7717e27e66a42960303225da7c1ff452bff1fa36) 
+
+interrupt.c -[ 修改鼠标中断处理函数interruptHandler2c将鼠标中断产生的数据存入缓冲区](https://github.com/suvvm/dickOS/commit/a44e0949ce8fd15f89be303289cabb136cda0372)
+
+bootpack.c -[ 初始化鼠标缓冲区mousebuf并添加对其的处理](https://github.com/suvvm/dickOS/commit/d707e714be19f7e2952411d9cc7e9690b0d825c9)
 
