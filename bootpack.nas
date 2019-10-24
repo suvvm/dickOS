@@ -868,6 +868,46 @@ L114:
 	POP	EDI
 	POP	EBP
 	RET
+	GLOBAL	_waitKeyboardControllerReady
+_waitKeyboardControllerReady:
+	PUSH	EBP
+	MOV	EBP,ESP
+L118:
+	PUSH	100
+	CALL	_io_in8
+	POP	EDX
+	AND	EAX,2
+	JNE	L118
+	LEAVE
+	RET
+	GLOBAL	_initKeyboard
+_initKeyboard:
+	PUSH	EBP
+	MOV	EBP,ESP
+	CALL	_waitKeyboardControllerReady
+	PUSH	96
+	PUSH	100
+	CALL	_io_out8
+	CALL	_waitKeyboardControllerReady
+	PUSH	71
+	PUSH	96
+	CALL	_io_out8
+	LEAVE
+	RET
+	GLOBAL	_enableMouse
+_enableMouse:
+	PUSH	EBP
+	MOV	EBP,ESP
+	CALL	_waitKeyboardControllerReady
+	PUSH	212
+	PUSH	100
+	CALL	_io_out8
+	CALL	_waitKeyboardControllerReady
+	PUSH	244
+	PUSH	96
+	CALL	_io_out8
+	LEAVE
+	RET
 [SECTION .data]
 LC1:
 	DB	"SHOWSTRING",0x00
@@ -898,6 +938,7 @@ _Main:
 	PUSH	239
 	PUSH	161
 	CALL	_io_out8
+	CALL	_initKeyboard
 	CALL	_init_palette
 	MOV	ECX,2
 	MOVSX	EAX,WORD [4084]
@@ -963,14 +1004,15 @@ _Main:
 	PUSH	239
 	PUSH	161
 	CALL	_io_out8
+	CALL	_enableMouse
 	ADD	ESP,16
-L118:
+L125:
 	CALL	_io_cli
 	PUSH	_keybuf
 	CALL	_QueueSize
-	POP	EDX
+	POP	ECX
 	TEST	EAX,EAX
-	JE	L123
+	JE	L130
 	PUSH	_keybuf
 	CALL	_QueuePop
 	MOV	EBX,EAX
@@ -999,10 +1041,10 @@ L118:
 	PUSH	DWORD [4088]
 	CALL	_putFont8_asc
 	ADD	ESP,24
-	JMP	L118
-L123:
+	JMP	L125
+L130:
 	CALL	_io_stihlt
-	JMP	L118
+	JMP	L125
 	GLOBAL	_keybuf
 [SECTION .data]
 	ALIGNB	16
