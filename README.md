@@ -172,3 +172,7 @@ interrupt.c -[ 修改鼠标中断处理函数interruptHandler2c将鼠标中断�
 
 bootpack.c -[ 初始化鼠标缓冲区mousebuf并添加对其的处理](https://github.com/suvvm/dickOS/commit/d707e714be19f7e2952411d9cc7e9690b0d825c9)
 
+mouse.c - [添加文件结束符](https://github.com/suvvm/dickOS/commit/ac636a0e0d414d951ea9f3972c81c4e6895f7953) 
+
+bootpack.c -[ 添加对鼠标传输的信息处理](https://github.com/suvvm/dickOS/commit/eff4fe86dfae485493119b9545813417a616f11e)
+
