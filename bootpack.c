@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.9
-* @Date: 2019-10-24
+* @Version: 1.0.10
+* @Date: 2019-10-28
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -20,11 +20,11 @@
 void Main(){
 	struct BOOTINFO *binfo;
 	char mcursor[256], s[40], keyb[32], mouseb[128];	// mcursor鼠标信息 s保存要输出的变量信息
-	int mx, my, bufval;
+	int mx, my, bufval; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
+	unsigned char mouseDbuf[3], mousePhase;
 	
 	initGdtit();	// 初始化GDT IDT
 	init_pic();	// 初始化可编程中断控制器
-	
 	io_sti();	// 解除cpu中断禁止
 	
 	QueueInit(&keybuf, 32, keyb);	//初始化键盘缓冲区队列
@@ -43,7 +43,7 @@ void Main(){
 	init_GUI(binfo->vram, binfo->scrnx, binfo->scrny);	// 初始化GUI背景
 	
 	// 打印DICKOS
-	putFont8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_FFFFFF, "SHOWSTRING");
+	putFont8_asc(binfo->vram, binfo->scrnx, 30, 35, COL8_FFFFFF, "SHOWSTRING");
 	initMouseCursor8(mcursor, COL8_008484);	// 初始化鼠标信息
 	// 根据鼠标信息打印鼠标
 	putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
@@ -55,7 +55,7 @@ void Main(){
 	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
 	
 	enableMouse();
-	
+	mousePhase = 0;	//此时为等待鼠标传回激活回复0xfa
 	//处理键盘与鼠标中断与进入hlt
 	for(;;){
 		io_cli();
@@ -71,9 +71,23 @@ void Main(){
 			} else {
 				bufval = QueuePop(&mousebuf);
 				io_sti();
-				sprintf(s, "%02X", bufval);
-				boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 47, 31);
-				putFont8_asc(binfo->vram, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
+				if (mousePhase == 0) {	//鼠标传回激活回复0xfa
+					if (bufval == 0xfa)
+						mousePhase = 1;
+				} else if (mousePhase == 1) {	// 鼠标传回第一字节数据
+					mouseDbuf[0] = bufval;
+					mousePhase = 2;
+				} else if (mousePhase == 2) {	// 鼠标传回第二字节数据
+					mouseDbuf[1] = bufval;
+					mousePhase = 3;
+				} else if (mousePhase == 3) {	// 鼠标传回第三字节数据
+					mouseDbuf[2] = bufval;
+					mousePhase = 1;	// 准备接收下一次鼠标数据
+					// 三个字节接收完毕打印其信息
+					sprintf(s, "%02X %02X %02X", mouseDbuf[0], mouseDbuf[1], mouseDbuf[2]);
+					boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 32 + 8 * 8 - 1, 31);
+					putFont8_asc(binfo->vram, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
+				} 
 			}
 		}
 		/*
