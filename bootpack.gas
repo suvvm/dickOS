@@ -926,6 +926,8 @@ LC0:
 	.ascii "SHOWSTRING\0"
 LC1:
 	.ascii "(%d, %d)\0"
+LC3:
+	.ascii "%02X %02X %02X\0"
 LC2:
 	.ascii "%02X\0"
 	.text
@@ -938,7 +940,7 @@ _Main:
 	pushl	%edi
 	pushl	%esi
 	pushl	%ebx
-	subl	$468, %esp
+	subl	$484, %esp
 	call	_initGdtit
 	call	_init_pic
 	call	_io_sti
@@ -982,7 +984,7 @@ _Main:
 	call	_init_GUI
 	pushl	$LC0
 	pushl	$7
-	pushl	$30
+	pushl	$35
 	pushl	$30
 	movswl	4084,%eax
 	pushl	%eax
@@ -1005,6 +1007,7 @@ _Main:
 	call	_putblock8_8
 	addl	$40, %esp
 	pushl	%esi
+	xorl	%esi, %esi
 	pushl	%edi
 	pushl	$LC1
 	pushl	%ebx
@@ -1033,27 +1036,46 @@ L122:
 	pushl	$_mousebuf
 	movl	%eax, %ebx
 	call	_QueueSize
+	popl	%edi
 	leal	(%eax,%ebx), %eax
-	popl	%ebx
-	popl	%esi
+	popl	%edx
 	testl	%eax, %eax
-	je	L130
+	je	L138
 	pushl	$_keybuf
 	call	_QueueSize
-	popl	%ecx
+	popl	%ebx
 	testl	%eax, %eax
-	jne	L131
+	jne	L139
 	pushl	$_mousebuf
 	call	_QueuePop
 	movl	%eax, %ebx
 	call	_io_sti
-	pushl	%ebx
+	movl	%esi, %eax
+	popl	%ecx
+	testb	%al, %al
+	je	L140
+	movl	%esi, %edx
+	decb	%dl
+	je	L141
+	movl	%esi, %eax
+	cmpb	$2, %al
+	je	L142
+	cmpb	$3, %al
+	jne	L122
+	movzbl	%bl, %eax
+	pushl	%eax
+	movb	%bl, -490(%ebp)
+	movzbl	-491(%ebp), %eax
+	pushl	%eax
 	leal	-316(%ebp), %ebx
-	pushl	$LC2
+	movzbl	-492(%ebp), %eax
+	pushl	%eax
+	movl	$1, %esi
+	pushl	$LC3
 	pushl	%ebx
 	call	_sprintf
 	pushl	$31
-	pushl	$47
+	pushl	$95
 	pushl	$16
 	pushl	$32
 	pushl	$14
@@ -1061,19 +1083,32 @@ L122:
 	pushl	%eax
 	pushl	4088
 	call	_boxFill8
-	addl	$44, %esp
+	addl	$48, %esp
 	pushl	%ebx
 	pushl	$7
 	pushl	$16
 	pushl	$32
-L129:
+L137:
 	movswl	4084,%eax
 	pushl	%eax
 	pushl	4088
 	call	_putFont8_asc
 	addl	$24, %esp
 	jmp	L122
-L131:
+L142:
+	movl	$3, %esi
+	movb	%bl, -491(%ebp)
+	jmp	L122
+L141:
+	movl	$2, %esi
+	movb	%bl, -492(%ebp)
+	jmp	L122
+L140:
+	cmpl	$250, %ebx
+	jne	L122
+	movl	$1, %esi
+	jmp	L122
+L139:
 	pushl	$_keybuf
 	call	_QueuePop
 	movl	%eax, %ebx
@@ -1097,8 +1132,8 @@ L131:
 	pushl	$7
 	pushl	$16
 	pushl	$0
-	jmp	L129
-L130:
+	jmp	L137
+L138:
 	call	_io_stihlt
 	jmp	L122
 .globl _keybuf
