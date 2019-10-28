@@ -1,5 +1,5 @@
-text size :   3856(0x00F10)
-data size :   4520(0x011A8)
+text size :   3980(0x00F8C)
+data size :   4536(0x011B8)
 bss  size :      0(0x00000)
 
 0x00000000 : (.text)
@@ -27,39 +27,39 @@ bss  size :      0(0x00000)
 0x00000721 : _initKeyboard
 0x00000742 : _enableMouse
 0x00000769 : _Main
-0x000009A3 : (.text)
-0x000009A3 : _io_hlt
-0x000009A5 : _io_cli
-0x000009A7 : _io_sti
-0x000009A9 : _io_stihlt
-0x000009AC : _io_in8
-0x000009B7 : _io_in16
-0x000009C3 : _io_in32
-0x000009C9 : _io_out8
-0x000009D3 : _io_out16
-0x000009DE : _io_out32
-0x000009E8 : _io_load_eflags
-0x000009EB : _io_store_eflags
-0x000009F2 : _loadGdtr
-0x00000A02 : _loadIdtr
-0x00000A12 : _asm_interruptHandler21
-0x00000A29 : _asm_interruptHandler27
-0x00000A40 : _asm_interruptHandler2c
-0x00000A57 : _sprintf
-0x00000A57 : (.text)
-0x00000A6B : (.text)
-0x00000AA7 : _strtoul0
-0x00000B7A : (.text)
-0x00000BA2 : _vsprintf
+0x00000A1F : (.text)
+0x00000A1F : _io_hlt
+0x00000A21 : _io_cli
+0x00000A23 : _io_sti
+0x00000A25 : _io_stihlt
+0x00000A28 : _io_in8
+0x00000A33 : _io_in16
+0x00000A3F : _io_in32
+0x00000A45 : _io_out8
+0x00000A4F : _io_out16
+0x00000A5A : _io_out32
+0x00000A64 : _io_load_eflags
+0x00000A67 : _io_store_eflags
+0x00000A6E : _loadGdtr
+0x00000A7E : _loadIdtr
+0x00000A8E : _asm_interruptHandler21
+0x00000AA5 : _asm_interruptHandler27
+0x00000ABC : _asm_interruptHandler2c
+0x00000AD3 : _sprintf
+0x00000AD3 : (.text)
+0x00000AE7 : (.text)
+0x00000B23 : _strtoul0
+0x00000BF6 : (.text)
+0x00000C1E : _vsprintf
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00310000 : (.data)
-0x00310150 : _keybuf
-0x00310170 : _mousebuf
-0x00310188 : _font
-0x00310188 : (.data)
-0x00311188 : (.data)
+0x00310160 : _keybuf
+0x00310180 : _mousebuf
+0x00310198 : _font
+0x00310198 : (.data)
+0x00311198 : (.data)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
