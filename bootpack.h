@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.11
-* @Date: 2019-10-24
+* @Version: 1.0.12
+* @Date: 2019-10-29
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -120,6 +120,22 @@ struct QUEUE {
 	unsigned char *buf;
 	int back, front, size, free, flags;
 }keybuf, mousebuf;
+
+/********************************************************************************
+*
+* 将鼠标相关信息提取为一个结构体
+* Parameter:
+* 	@sd	鼠标保存一条信息的3字节数据
+* 	@phase	记录当前在处理那一段数据
+* 	@x	鼠标x轴位置
+* 	@y	鼠标y轴位置
+* 	@btn 鼠标按键状态
+*
+********************************************************************************/
+struct MouseDec {
+	unsigned char buf[3], phase;
+	int x, y, btn;
+};
 
 // queue.c函数声明
 void QueueInit(struct QUEUE *fifo, int size, unsigned char *buf);
