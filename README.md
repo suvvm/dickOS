@@ -176,3 +176,9 @@ mouse.c - [添加文件结束符](https://github.com/suvvm/dickOS/commit/ac636a0
 
 bootpack.c -[ 添加对鼠标传输的信息处理](https://github.com/suvvm/dickOS/commit/eff4fe86dfae485493119b9545813417a616f11e)
 
+bootpack.h -[ 添加结构体MouseDec用来存储鼠标信息](https://github.com/suvvm/dickOS/commit/80b36c468fabd1748cecc1966a05ee8882eff4ff)
+
+mouse.c -[ 函数enableMouse接收保存鼠标信息的结构体并将其设为等待鼠标激活回复状态，添加函数mouseDecode接收鼠标数据并对鼠标信息进行设置 ]( https://github.com/suvvm/dickOS/commit/05df1a37b8a8c5f7de2e491169a3245d30f6e9d7 )
+
+bootpack.c -[ 修改鼠标信息处理步骤](https://github.com/suvvm/dickOS/commit/5c0f3a404242b212cd09dbddc89586ffda81964a)
+
