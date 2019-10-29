@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.10
-* @Date: 2019-10-28
+* @Version: 1.0.11
+* @Date: 2019-10-29
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -21,7 +21,7 @@ void Main(){
 	struct BOOTINFO *binfo;
 	char mcursor[256], s[40], keyb[32], mouseb[128];	// mcursor鼠标信息 s保存要输出的变量信息
 	int mx, my, bufval; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
-	unsigned char mouseDbuf[3], mousePhase;
+	struct MouseDec mdec;	// 保存鼠标信息
 	
 	initGdtit();	// 初始化GDT IDT
 	init_pic();	// 初始化可编程中断控制器
@@ -30,8 +30,8 @@ void Main(){
 	QueueInit(&keybuf, 32, keyb);	//初始化键盘缓冲区队列
 	QueueInit(&mousebuf, 128, mouseb);	// 初始化鼠标缓冲区队列
 	
-	io_out8(PIC0_IMR, 0xf9); // 允许PIC1（从）和键盘(11111001) 
-	io_out8(PIC1_IMR, 0xef); //鼠标(11101111)
+	io_out8(PIC0_IMR, 0xf9); // 主PIC IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111001)
+	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
 	
 	initKeyboard();
 	
@@ -50,12 +50,8 @@ void Main(){
 	sprintf(s, "(%d, %d)", mx, my);	// 将鼠标位置存入s
 	// 打印s
 	putFont8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
-	
-	io_out8(PIC0_IMR, 0xf9); // 主PIC IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111001)
-	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
-	
-	enableMouse();
-	mousePhase = 0;	//此时为等待鼠标传回激活回复0xfa
+
+	enableMouse(&mdec);	// 激活鼠标
 	//处理键盘与鼠标中断与进入hlt
 	for(;;){
 		io_cli();
@@ -68,24 +64,21 @@ void Main(){
 				sprintf(s, "%02X", bufval);
 				boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
 				putFont8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
-			} else {
+			} else if (QueueSize(&mousebuf) != 0) {
 				bufval = QueuePop(&mousebuf);
 				io_sti();
-				if (mousePhase == 0) {	//鼠标传回激活回复0xfa
-					if (bufval == 0xfa)
-						mousePhase = 1;
-				} else if (mousePhase == 1) {	// 鼠标传回第一字节数据
-					mouseDbuf[0] = bufval;
-					mousePhase = 2;
-				} else if (mousePhase == 2) {	// 鼠标传回第二字节数据
-					mouseDbuf[1] = bufval;
-					mousePhase = 3;
-				} else if (mousePhase == 3) {	// 鼠标传回第三字节数据
-					mouseDbuf[2] = bufval;
-					mousePhase = 1;	// 准备接收下一次鼠标数据
-					// 三个字节接收完毕打印其信息
-					sprintf(s, "%02X %02X %02X", mouseDbuf[0], mouseDbuf[1], mouseDbuf[2]);
-					boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 32 + 8 * 8 - 1, 31);
+				if (mouseDecode(&mdec, bufval) != 0) {	//完成一波三个字节数据的接收或者出现未知差错
+					sprintf(s, "[lcr %4d %4d]", mdec.x, mdec.y);
+					if ((mdec.btn & 0x01) != 0) {	// 按下左键
+						s[1] = 'L';
+					}
+					if ((mdec.btn & 0x02) != 0) {	// 按下右键
+						s[3] = 'R';
+					}
+					if ((mdec.btn & 0x04) != 0) {	// 中间滚轮
+						s[2] = 'C';
+					}
+					boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 32 + 15 * 8 - 1, 31);
 					putFont8_asc(binfo->vram, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
 				} 
 			}
