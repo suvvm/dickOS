@@ -998,11 +998,13 @@ L132:
 	jmp	L130
 	.data
 LC0:
-	.ascii "SHOWSTRING\0"
+	.ascii "DickOS\0"
 LC1:
 	.ascii "(%d, %d)\0"
 LC3:
 	.ascii "[lcr %4d %4d]\0"
+LC4:
+	.ascii "(%3d, %3d)\0"
 LC2:
 	.ascii "%02X\0"
 	.text
@@ -1015,7 +1017,8 @@ _Main:
 	pushl	%edi
 	pushl	%esi
 	pushl	%ebx
-	subl	$484, %esp
+	movl	$2, %ebx
+	subl	$488, %esp
 	call	_initGdtit
 	call	_init_pic
 	call	_io_sti
@@ -1038,20 +1041,22 @@ _Main:
 	call	_io_out8
 	call	_initKeyboard
 	call	_init_palette
-	movl	$2, %ecx
 	movswl	4084,%eax
-	movswl	4086,%ebx
-	leal	-16(%eax), %edx
-	pushl	%ebx
-	movl	%edx, %eax
-	leal	-44(%ebx), %esi
+	leal	-16(%eax), %ecx
+	movl	%ecx, %eax
+	movl	$2, %ecx
 	cltd
-	idivl	%ecx
+	idivl	%ebx
 	movl	%eax, %edi
+	movswl	4086,%eax
+	movl	%eax, %ebx
+	movl	%eax, -500(%ebp)
+	subl	$44, %ebx
+	movl	%ebx, %eax
 	leal	-268(%ebp), %ebx
-	movl	%esi, %eax
 	cltd
 	idivl	%ecx
+	pushl	-500(%ebp)
 	movl	%eax, %esi
 	movswl	4084,%eax
 	pushl	%eax
@@ -1098,7 +1103,7 @@ _Main:
 	addl	$40, %esp
 	pushl	%eax
 	call	_enableMouse
-	popl	%eax
+	popl	%ebx
 L136:
 	call	_io_cli
 	pushl	$_keybuf
@@ -1106,16 +1111,16 @@ L136:
 	pushl	$_mousebuf
 	movl	%eax, %ebx
 	call	_QueueSize
-	popl	%esi
+	popl	%edx
 	leal	(%eax,%ebx), %eax
-	popl	%edi
+	popl	%ecx
 	testl	%eax, %eax
-	je	L148
+	je	L152
 	pushl	$_keybuf
 	call	_QueueSize
 	popl	%ebx
 	testl	%eax, %eax
-	jne	L149
+	jne	L153
 	pushl	$_mousebuf
 	call	_QueueSize
 	popl	%ecx
@@ -1170,9 +1175,81 @@ L147:
 	pushl	%eax
 	pushl	4088
 	call	_putFont8_asc
+	leal	15(%esi), %eax
 	addl	$52, %esp
-	jmp	L136
+	pushl	%eax
+	leal	15(%edi), %eax
+	pushl	%eax
+	pushl	%esi
+	pushl	%edi
+	pushl	$14
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_boxFill8
+	addl	$28, %esp
+	addl	-484(%ebp), %esi
+	addl	-488(%ebp), %edi
+	js	L154
+L148:
+	testl	%esi, %esi
+	js	L155
 L149:
+	movswl	4084,%eax
+	subl	$16, %eax
+	cmpl	%eax, %edi
+	jle	L150
+	movl	%eax, %edi
+L150:
+	movswl	4086,%eax
+	subl	$16, %eax
+	cmpl	%eax, %esi
+	jle	L151
+	movl	%eax, %esi
+L151:
+	pushl	%esi
+	pushl	%edi
+	pushl	$LC4
+	pushl	%ebx
+	call	_sprintf
+	pushl	$15
+	pushl	$79
+	pushl	$0
+	pushl	$0
+	pushl	$14
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_boxFill8
+	addl	$44, %esp
+	pushl	%ebx
+	pushl	$7
+	pushl	$0
+	pushl	$0
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_putFont8_asc
+	leal	-268(%ebp), %eax
+	pushl	$16
+	pushl	%eax
+	pushl	%esi
+	pushl	%edi
+	pushl	$16
+	pushl	$16
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_putblock8_8
+	addl	$56, %esp
+	jmp	L136
+L155:
+	xorl	%esi, %esi
+	jmp	L149
+L154:
+	xorl	%edi, %edi
+	jmp	L148
+L153:
 	pushl	$_keybuf
 	call	_QueuePop
 	movl	%eax, %ebx
@@ -1202,7 +1279,7 @@ L149:
 	call	_putFont8_asc
 	addl	$24, %esp
 	jmp	L136
-L148:
+L152:
 	call	_io_stihlt
 	jmp	L136
 .globl _keybuf
