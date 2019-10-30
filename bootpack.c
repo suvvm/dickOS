@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.11
-* @Date: 2019-10-29
+* @Version: 1.0.12
+* @Date: 2019-10-30
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -43,7 +43,7 @@ void Main(){
 	init_GUI(binfo->vram, binfo->scrnx, binfo->scrny);	// 初始化GUI背景
 	
 	// 打印DICKOS
-	putFont8_asc(binfo->vram, binfo->scrnx, 30, 35, COL8_FFFFFF, "SHOWSTRING");
+	putFont8_asc(binfo->vram, binfo->scrnx, 30, 35, COL8_FFFFFF, "DickOS");
 	initMouseCursor8(mcursor, COL8_008484);	// 初始化鼠标信息
 	// 根据鼠标信息打印鼠标
 	putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
@@ -78,20 +78,30 @@ void Main(){
 					if ((mdec.btn & 0x04) != 0) {	// 中间滚轮
 						s[2] = 'C';
 					}
-					boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 32 + 15 * 8 - 1, 31);
-					putFont8_asc(binfo->vram, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
+					
+					boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 32 + 15 * 8 - 1, 31);	// 用背景色覆盖原有鼠标信息
+					putFont8_asc(binfo->vram, binfo->scrnx, 32, 16, COL8_FFFFFF, s);	//打印鼠标信息
+					// 鼠标移动操作
+					boxFill8(binfo->vram, binfo->scrnx, COL8_008484, mx, my, mx + 15, my + 15);	// 以背景色覆盖原有鼠标图案
+					// 鼠标坐标加上偏移量
+					mx += mdec.x;
+					my += mdec.y;
+					
+					// 超边界处理
+					if (mx < 0)
+						mx = 0;
+					if (my < 0)
+						my = 0;
+					if (mx > binfo->scrnx - 16)
+						mx = binfo->scrnx - 16;
+					if (my > binfo->scrny - 16)
+						my = binfo->scrny - 16;
+					sprintf(s, "(%3d, %3d)", mx, my);
+					boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 0, 79, 15);	// 覆盖原有坐标信息
+					putFont8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);	// 显示新的坐标信息
+					putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);	// 显示新的鼠标图案
 				} 
 			}
 		}
-		/*
-		if (QueueSize(&keybuf) == 0) {
-			io_stihlt();
-		} else {
-			keybufval = QueuePop(&keybuf);
-			io_sti();
-			sprintf(s, "%02X", keybufval);
-			boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
-			putFont8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
-		}*/
 	}
 }
