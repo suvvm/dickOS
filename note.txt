@@ -27,7 +27,11 @@
 	MOV 赋值
 	JMP 跳转
 	ADD 加
+	IMUL 乘法
+	SUB 减法
 	CMP 比较
+	JZ 结果为0就跳转
+	JN 结果不为0则跳转
 	JE 相等就跳转
 	JNC 进位标致是0时跳转
 	JAE 大于等于时跳转
@@ -38,6 +42,7 @@
 	ORG 指定程序开始的地址
 	EQU equal相当于C语言#define
 	RET 子程序返回
+	NOP 让cpu休息一个时钟周期
 	
 	WORD 16位（2字节）
 	DWORD 32位（4字节）
@@ -46,6 +51,8 @@
 	naks与c语言函数连接，函数名前加_
 	GLOBAL 全局
 	LOCAL 局部
+	
+	
 	
 	16色颜色编号
 		#000000：黑		#00ffff：浅亮蓝		#000084：暗蓝
