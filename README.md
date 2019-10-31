@@ -203,3 +203,11 @@ mouse.c -[ 添加文件结束符](https://github.com/suvvm/dickOS/commit/fa2f0a5
 
 queue.h - [添加文件结束符](https://github.com/suvvm/dickOS/commit/fa2f0a5acc1c8eb564f7e517d12ccb7ec79ff31c) 
 
+asmhead.nas -[ 添加针对部分方法的详细注释](https://github.com/suvvm/dickOS/commit/c3fa9e05780cf28b7a58e840c31059585147970b)
+
+note.txt -[ 添加指令JZ IMUL SUB的介绍](https://github.com/suvvm/dickOS/commit/c8af1eb1c5887dc91a2d369ff95b30ab70e0b560)
+
+README.md -[ 添加内存分布描述](https://github.com/suvvm/dickOS/commit/9372a8bcd8c564cf21b492b8a4479942f0ae3ca6)
+
+
+
