@@ -68,7 +68,16 @@
 #define KEYCMD_SENDTO_MOUSE		0xd4	// 向键盘控制电路发送0xd4后下一个数据将发送给鼠标
 #define MOUSECMD_ENABLE			0xf4	// 激活鼠标的指令
 
-/*启动信息*/
+/********************************************************************************
+* 启动信息，与asmhead.nas中设置一致
+Parameter:
+*	@cyls 启动区设置
+*	@leds 键盘指示灯LED状态数
+*	@vmode 颜色数目信息 颜色的位数
+*	@scrnx 分辨率X像素数
+*	@scrny 分辨率Y像素数
+*	@vram 图像缓冲区开始地址
+********************************************************************************/
 struct BOOTINFO{	
 	char cyls, leds, vmode, reserve;
 	short scrnx, scrny;
@@ -83,16 +92,21 @@ struct BOOTINFO{
 * 但不能直接设为4GB，这样会将32位直接占满，导致没有空间存储段的管理属性信息
 * 段的可用上限只有20位，为了解决这个问题inter开发人员在段属性中设置了一个标准位
 * Gbit 当Gbit为1时段上限的单位为4KB 4KB * 1MB（20位）= 4GB
-*
+* Parameter:
+* 	@limitLow 段上限低地址 2字节 16位
+*	@baseLow 基址低地址 16位
+*	@baseMid 基址中地址 8位
+*	@accessRight 段属性低8位（高4位在limitHigh的高4位代表扩展访问权）关于低8位详见note.txt
+*	@limitHigh limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性
+*	@baseHigh 基址高地址 8位 4位扩展访问权由GD00组成 G为Gbit标志位 D为模式位 1代表32位模式 0代表16位模式（即使D为0也不能调用BOIS）
 ********************************************************************************/
 struct SEGMENT_DESCRIPTOR{
-	short limitLow;	/*limitLow 段上限低地址 2字节 16位*/
-	short baseLow;	/*基址低地址 16位*/
-	char baseMid;	/*基址中地址 8位*/
-	char accessRight;	/*段属性低8位（高4位在limitHigh的高4位代表扩展访问权）关于低8位详见note.txt*/
-	char limitHigh;	/*limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性*/
-	char baseHigh;	/*基址高地址 8位*/
-	/*4位扩展访问权由GD00组成 G为Gbit标志位 D为模式位 1代表32位模式 0代表16位模式（即使D为0也不能调用BOIS）*/
+	short limitLow;
+	short baseLow;
+	char baseMid;
+	char accessRight;
+	char limitHigh;
+	char baseHigh;	
 };
 
 /********************************************************************************
