@@ -32,6 +32,20 @@ windows：在!cons_nt.bat或!cons_9x.bat中输入make install（目标地址为a
 
 windows：在!cons_nt.bat或!cons_9x.bat中输入make run即可调用QEMU运行
 
+#  Command-line instruction 
+
+```makefile
+make img 		# 生成映像文件dickos.img
+make run		# 生成必要文件并启动qemu模拟器
+make install	# 生成必要文件并将其安装至a驱动器
+make clean		# 删除中间文件
+make src_only	# 删除中间文件并删除dickos.img映像
+```
+
+
+
+
+
 # Memory distribution
 
 ```
