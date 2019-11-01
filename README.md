@@ -42,10 +42,6 @@ make clean		# 删除中间文件
 make src_only	# 删除中间文件并删除dickos.img映像
 ```
 
-
-
-
-
 # Memory distribution
 
 ```
@@ -223,5 +219,5 @@ note.txt -[ 添加指令JZ IMUL SUB的介绍](https://github.com/suvvm/dickOS/co
 
 README.md -[ 添加内存分布描述](https://github.com/suvvm/dickOS/commit/9372a8bcd8c564cf21b492b8a4479942f0ae3ca6)
 
-
+README.md -[ 添加命令行指令描述](https://github.com/suvvm/dickOS/commit/a618b407eab4b8cb3ccffef3d089fb6e7b1f1a81)
 
