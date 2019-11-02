@@ -157,7 +157,7 @@ int QueuePush(struct QUEUE *fifo, unsigned char data);
 int QueuePop(struct QUEUE *fifo);
 int QueueSize(struct QUEUE *fifo);
 
-/*func.nas函数声明*/
+// func.nas函数声明
 void io_hlt();	
 void io_cli();
 void io_sti();
@@ -172,7 +172,7 @@ void asm_interruptHandler21();
 void asm_interruptHandler27();
 void asm_interruptHandler2c();
 
-/*graphic.c函数声明*/
+// graphic.c函数声明
 void init_palette();
 void set_palette(int start, int end, unsigned char *rgb);
 void boxFill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
@@ -183,12 +183,12 @@ void initMouseCursor8(char *mouse, char bc);
 void putblock8_8(char *vram, int vxsize, int pxsize,
 	int pysize, int px0, int py0, char *buf, int bxsize);
 	
-/*desctab.c函数声明*/
+// desctab.c函数声明
 void initGdtit();
 void setSegmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, int ar);
 void setGatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 
-/*interrupt.c函数声明*/
+// interrupt.c函数声明
 void init_pic();
 void interruptHandler21(int *esp);
 void interruptHandler27(int *esp);
