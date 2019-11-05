@@ -221,7 +221,7 @@ README.md -[ 添加内存分布描述](https://github.com/suvvm/dickOS/commit/93
 
 README.md -[ 添加命令行指令描述](https://github.com/suvvm/dickOS/commit/a618b407eab4b8cb3ccffef3d089fb6e7b1f1a81)
 
-# 许可协议
+# 许可协议原文
 
 ```开源协议原文
 通俗地说：“这是自由软件，使用前使用后都无须支付任何费用，可以自由使用，也可以复制、修改，以及用于商业目的，但是作者对软件的bug以及因此所造成的损失不负任何责任。”
