@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.12
-* @Date: 2019-10-30
+* @Version: 1.0.13
+* @Date: 2019-11-11
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -10,6 +10,80 @@
 #include "graphic.c"
 #include "queue.h"
 #include "mouse.c"
+
+
+/*******************************************************
+*
+* Function name:memtestSub
+* Description: 调查start到end地址范围内能够使用的内存的末尾地址
+* Parameter:
+*	@start	需要调查的起始地址
+*	@end	需要调查的末尾地址
+* Return:
+*	返回能够使用的末尾地址
+*
+**********************************************************/
+unsigned int memtestSub(unsigned int start, unsigned int end) {
+	unsigned int i, *p, old, pat0 = 0xaa55aa55, pat1 = 0x55aa55aa;
+	for(i = start; i <= end; i += 0x1000) {	// 对于每个要检查的内存进行写入测试看看是否能读出正确的值
+		p = (unsigned int *)(i + 0xffc);	// 检查4KB末尾4字节
+		old = *p;	// 记录先前修改的值
+		*p = pat0;	// 试写
+		*p ^= 0xffffffff;	// 与全1按位异或（反转）进行反转的原因是如果直接读出的话有些机型会直接读出要写入的数据，起不到检查的效果
+		if(*p != pat1) {
+notMemoey:
+			*p = old;
+			break;
+		}
+		*p ^= 0xffffffff;	// 再次反转
+		if(*p != pat0) {	// 检查再次反转后值是否恢复为初值
+			goto notMemoey;
+		}
+		*p = old;
+	}
+	return i;
+}
+
+/*******************************************************
+*
+* Function name: memtest
+* Description: 检查CPU是否在486以上（386没有cache）
+*	如果CPU在486以上就将缓存设为OFF，之后调用具体处理函数获得内存可以使用的末尾地址
+* Parameter:
+*	@start	需要调查的起始地址
+*	@end	需要调查的末尾地址
+* Return:
+*	返回能够使用的末尾地址
+**********************************************************/
+unsigned int memtest(unsigned int start, unsigned int end) {
+	char flag486 = 0;
+	unsigned int eflag, cr0, i;
+	eflag = io_load_eflags();	// 读取当前eflags的值
+	eflag |= EFLAGS_AC_BIT;		// 手动将eflags的AC位设为1
+	io_store_eflags(eflag);	// 写入eflags
+	eflag = io_load_eflags();	//再次读取eflags的值
+	if((eflag & EFLAGS_AC_BIT) != 0) {	// 如果是386，即使手动设为1AC也会恢复为0
+		flag486 = 1;	// 如果AC位不为零则一定在386以上
+	}
+	eflag &= ~EFLAGS_AC_BIT;	// 将eflagsAC位恢复为0
+	io_store_eflags(eflag);	// 写入eflags
+	
+	if(flag486 != 0) {	// 386以上
+		cr0 = loadCr0();	// 读取当前cr0寄存器的值
+		cr0 |= CR0_CACHE_DISABLE;	// 禁止缓存	
+		storeCr0(cr0);	// 写入cr0寄存器
+	}
+	
+	i = memtestSub(start, end);
+	
+	if(flag486 != 0) {	// 386以上
+		cr0 = loadCr0();	// 读取当前cr0寄存器的值
+		cr0 &= ~CR0_CACHE_DISABLE;	// 允许缓存	
+		storeCr0(cr0);	// 写入cr0寄存器
+	}
+	
+	return i;
+}
 
 /*******************************************************
 *
@@ -20,7 +94,7 @@
 void Main(){
 	struct BOOTINFO *binfo;
 	char mcursor[256], s[40], keyb[32], mouseb[128];	// mcursor鼠标信息 s保存要输出的变量信息
-	int mx, my, bufval; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
+	int mx, my, bufval, i; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
 	struct MouseDec mdec;	// 保存鼠标信息
 	
 	initGdtit();	// 初始化GDT IDT
@@ -43,14 +117,18 @@ void Main(){
 	init_GUI(binfo->vram, binfo->scrnx, binfo->scrny);	// 初始化GUI背景
 	
 	// 打印DICKOS
-	putFont8_asc(binfo->vram, binfo->scrnx, 30, 35, COL8_FFFFFF, "DickOS");
+	putFont8_asc(binfo->vram, binfo->scrnx, 30, 32, COL8_FFFFFF, "DickOS");
 	initMouseCursor8(mcursor, COL8_008484);	// 初始化鼠标信息
 	// 根据鼠标信息打印鼠标
 	putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
 	sprintf(s, "(%d, %d)", mx, my);	// 将鼠标位置存入s
 	// 打印s
 	putFont8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
-
+	
+	i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
+	sprintf(s, "memory %dMB", i);
+	putFont8_asc(binfo->vram, binfo->scrnx, 0, 64, COL8_FFFFFF, s);
+	
 	enableMouse(&mdec);	// 激活鼠标
 	//处理键盘与鼠标中断与进入hlt
 	for(;;){
