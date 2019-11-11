@@ -221,6 +221,12 @@ README.md -[ 添加内存分布描述](https://github.com/suvvm/dickOS/commit/93
 
 README.md -[ 添加命令行指令描述](https://github.com/suvvm/dickOS/commit/a618b407eab4b8cb3ccffef3d089fb6e7b1f1a81)
 
+func.nas - [添加针对寄存器cr0的读写函数](https://github.com/suvvm/dickOS/commit/8d1aa75f0fe5fbc858f540e428e687edca6da68c) 
+
+bootpack.h -[ 添加func.nas的函数声明，添加关于eflagAC位与cr0中启用或禁止缓存的宏定义](https://github.com/suvvm/dickOS/commit/bb42c2c1934a87fa8f2a1354489ea2147b7ef4ce)
+
+bootpack.c - [添加判断内存大小相关函数](https://github.com/suvvm/dickOS/commit/81e0428810334e312e81b70863e4beacb103f08e) 
+
 # 许可协议原文
 
 ```开源协议原文
