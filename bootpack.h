@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.12
-* @Date: 2019-10-29
+* @Version: 1.0.13
+* @Date: 2019-11-11
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -68,9 +68,12 @@
 #define KEYCMD_SENDTO_MOUSE		0xd4	// 向键盘控制电路发送0xd4后下一个数据将发送给鼠标
 #define MOUSECMD_ENABLE			0xf4	// 激活鼠标的指令
 
+#define EFLAGS_AC_BIT		0x00040000	// 用于判断是否为386（486以上eflags第18位为AC标志位）
+#define CR0_CACHE_DISABLE	0x60000000	// 用于开放与禁止缓存
+
 /********************************************************************************
 * 启动信息，与asmhead.nas中设置一致
-Parameter:
+* Parameter:
 *	@cyls 启动区设置
 *	@leds 键盘指示灯LED状态数
 *	@vmode 颜色数目信息 颜色的位数
@@ -166,6 +169,8 @@ int io_in8(int port);
 void io_out8(int port, int data);
 int io_load_eflags();
 void io_store_eflags(int eflags);
+int loadCr0();
+void storeCr0(int cr0);
 void loadGdtr(int limit, int addr);
 void loadIdtr(int limit, int addr);
 void asm_interruptHandler21();
