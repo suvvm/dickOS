@@ -13,6 +13,7 @@
 		GLOBAL _io_out8, _io_out16, _io_out32
 		GLOBAL _io_load_eflags, _io_store_eflags
 		GLOBAL _loadGdtr, _loadIdtr
+		GLOBAL _loadCr0, _storeCr0
 		GLOBAL	_asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
 		EXTERN	_interruptHandler21, _interruptHandler27, _interruptHandler2c
 ; 实际的函数
@@ -71,12 +72,12 @@ _io_out32:						; void io_out32(int port, int data);
 		OUT		DX,EAX			; 将AL值写入端口
 		RET
 		
-_io_load_eflags:				; int io_load_eflags(void);
+_io_load_eflags:				; int io_load_eflags(void); 读取eflags
 		PUSHFD					; PUSH EFLAGS
 		POP		EAX
 		RET
 
-_io_store_eflags:				; void io_store_eflags(int eflags);
+_io_store_eflags:				; void io_store_eflags(int eflags); 写入eflags
 		MOV		EAX,[ESP+4]
 		PUSH		EAX
 		POPFD					; POP EFLAGS
@@ -93,7 +94,16 @@ _loadIdtr:						; void loadIdtr(int limit, int  addr);
 		MOV		[ESP+6],AX
 		LIDT	[ESP+6]
 		RET
-
+		
+_loadCr0:						; int loadCr0; 读取cr0寄存器
+		MOV		EAX,CR0
+		RET
+		
+_storeCr0:						; void storeCr0(int cr0) 写入cr0寄存器
+		MOV		EAX,[ESP+4]
+		MOV		CR0,EAX
+		RET
+		
 _asm_interruptHandler21:
 		PUSH	ES
 		PUSH	DS
