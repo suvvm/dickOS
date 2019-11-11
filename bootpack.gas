@@ -996,16 +996,93 @@ L132:
 	movb	%cl, (%edx)
 	movb	$2, 3(%edx)
 	jmp	L130
+	.balign 2
+.globl _memtestSub
+	.def	_memtestSub;	.scl	2;	.type	32;	.endef
+_memtestSub:
+	pushl	%ebp
+	movl	%esp, %ebp
+	movl	12(%ebp), %edx
+	movl	8(%ebp), %eax
+	cmpl	%edx, %eax
+	ja	L137
+L143:
+L141:
+	addl	$4096, %eax
+	cmpl	%edx, %eax
+	jbe	L143
+L137:
+	popl	%ebp
+	ret
+	.balign 2
+.globl _memtest
+	.def	_memtest;	.scl	2;	.type	32;	.endef
+_memtest:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%esi
+	pushl	%ebx
+	xorl	%esi, %esi
+	call	_io_load_eflags
+	orl	$262144, %eax
+	pushl	%eax
+	call	_io_store_eflags
+	call	_io_load_eflags
+	popl	%edx
+	testl	$262144, %eax
+	je	L146
+	movl	$1, %esi
+L146:
+	andl	$-262145, %eax
+	pushl	%eax
+	call	_io_store_eflags
+	movl	%esi, %eax
+	popl	%ebx
+	testb	%al, %al
+	jne	L149
+L147:
+	pushl	12(%ebp)
+	pushl	8(%ebp)
+	call	_memtestSub
+	movl	%eax, %ebx
+	popl	%eax
+	movl	%esi, %eax
+	popl	%edx
+	testb	%al, %al
+	jne	L150
+L148:
+	leal	-8(%ebp), %esp
+	movl	%ebx, %eax
+	popl	%ebx
+	popl	%esi
+	popl	%ebp
+	ret
+L150:
+	call	_loadCr0
+	andl	$-1610612737, %eax
+	pushl	%eax
+	call	_storeCr0
+	popl	%ecx
+	jmp	L148
+L149:
+	call	_loadCr0
+	orl	$1610612736, %eax
+	pushl	%eax
+	call	_storeCr0
+	popl	%ecx
+	jmp	L147
 	.data
 LC0:
 	.ascii "DickOS\0"
 LC1:
 	.ascii "(%d, %d)\0"
-LC3:
-	.ascii "[lcr %4d %4d]\0"
-LC4:
-	.ascii "(%3d, %3d)\0"
 LC2:
+	.ascii "memory %dMB\0"
+LC4:
+	.ascii "[lcr %4d %4d]\0"
+LC5:
+	.ascii "(%3d, %3d)\0"
+LC3:
 	.ascii "%02X\0"
 	.text
 	.balign 2
@@ -1064,7 +1141,7 @@ _Main:
 	call	_init_GUI
 	pushl	$LC0
 	pushl	$7
-	pushl	$35
+	pushl	$32
 	pushl	$30
 	movswl	4084,%eax
 	pushl	%eax
@@ -1099,12 +1176,29 @@ _Main:
 	pushl	%eax
 	pushl	4088
 	call	_putFont8_asc
-	leal	-492(%ebp), %eax
 	addl	$40, %esp
+	pushl	$-1073741825
+	pushl	$4194304
+	call	_memtest
+	shrl	$20, %eax
+	pushl	%eax
+	pushl	$LC2
+	pushl	%ebx
+	call	_sprintf
+	pushl	%ebx
+	pushl	$7
+	pushl	$64
+	pushl	$0
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	4088
+	call	_putFont8_asc
+	leal	-492(%ebp), %eax
+	addl	$44, %esp
 	pushl	%eax
 	call	_enableMouse
 	popl	%ebx
-L136:
+L152:
 	call	_io_cli
 	pushl	$_keybuf
 	call	_QueueSize
@@ -1115,17 +1209,17 @@ L136:
 	leal	(%eax,%ebx), %eax
 	popl	%ecx
 	testl	%eax, %eax
-	je	L152
+	je	L168
 	pushl	$_keybuf
 	call	_QueueSize
 	popl	%ebx
 	testl	%eax, %eax
-	jne	L153
+	jne	L169
 	pushl	$_mousebuf
 	call	_QueueSize
 	popl	%ecx
 	testl	%eax, %eax
-	je	L136
+	je	L152
 	pushl	$_mousebuf
 	call	_QueuePop
 	movl	%eax, %ebx
@@ -1137,27 +1231,27 @@ L136:
 	call	_mouseDecode
 	addl	$12, %esp
 	testl	%eax, %eax
-	je	L136
+	je	L152
 	pushl	-484(%ebp)
 	pushl	-488(%ebp)
-	pushl	$LC3
+	pushl	$LC4
 	leal	-316(%ebp), %ebx
 	pushl	%ebx
 	call	_sprintf
 	addl	$16, %esp
 	movl	-480(%ebp), %eax
 	testl	$1, %eax
-	je	L145
+	je	L161
 	movb	$76, -315(%ebp)
-L145:
+L161:
 	testl	$2, %eax
-	je	L146
+	je	L162
 	movb	$82, -313(%ebp)
-L146:
+L162:
 	andl	$4, %eax
-	je	L147
+	je	L163
 	movb	$67, -314(%ebp)
-L147:
+L163:
 	pushl	$31
 	pushl	$151
 	pushl	$16
@@ -1190,26 +1284,26 @@ L147:
 	addl	$28, %esp
 	addl	-484(%ebp), %esi
 	addl	-488(%ebp), %edi
-	js	L154
-L148:
+	js	L170
+L164:
 	testl	%esi, %esi
-	js	L155
-L149:
+	js	L171
+L165:
 	movswl	4084,%eax
 	subl	$16, %eax
 	cmpl	%eax, %edi
-	jle	L150
+	jle	L166
 	movl	%eax, %edi
-L150:
+L166:
 	movswl	4086,%eax
 	subl	$16, %eax
 	cmpl	%eax, %esi
-	jle	L151
+	jle	L167
 	movl	%eax, %esi
-L151:
+L167:
 	pushl	%esi
 	pushl	%edi
-	pushl	$LC4
+	pushl	$LC5
 	pushl	%ebx
 	call	_sprintf
 	pushl	$15
@@ -1242,21 +1336,21 @@ L151:
 	pushl	4088
 	call	_putblock8_8
 	addl	$56, %esp
-	jmp	L136
-L155:
+	jmp	L152
+L171:
 	xorl	%esi, %esi
-	jmp	L149
-L154:
+	jmp	L165
+L170:
 	xorl	%edi, %edi
-	jmp	L148
-L153:
+	jmp	L164
+L169:
 	pushl	$_keybuf
 	call	_QueuePop
 	movl	%eax, %ebx
 	call	_io_sti
 	pushl	%ebx
 	leal	-316(%ebp), %ebx
-	pushl	$LC2
+	pushl	$LC3
 	pushl	%ebx
 	call	_sprintf
 	pushl	$31
@@ -1278,10 +1372,10 @@ L153:
 	pushl	4088
 	call	_putFont8_asc
 	addl	$24, %esp
-	jmp	L136
-L152:
+	jmp	L152
+L168:
 	call	_io_stihlt
-	jmp	L136
+	jmp	L152
 .globl _keybuf
 	.data
 	.balign 16
@@ -1295,6 +1389,8 @@ _mousebuf:
 	.def	_io_stihlt;	.scl	2;	.type	32;	.endef
 	.def	_sprintf;	.scl	2;	.type	32;	.endef
 	.def	_io_sti;	.scl	2;	.type	32;	.endef
+	.def	_storeCr0;	.scl	2;	.type	32;	.endef
+	.def	_loadCr0;	.scl	2;	.type	32;	.endef
 	.def	_io_store_eflags;	.scl	2;	.type	32;	.endef
 	.def	_io_cli;	.scl	2;	.type	32;	.endef
 	.def	_io_load_eflags;	.scl	2;	.type	32;	.endef
