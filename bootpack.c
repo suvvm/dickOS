@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.13
-* @Date: 2019-11-11
+* @Version: 1.0.14
+* @Date: 2020-01-16
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -14,8 +14,8 @@
 
 /*******************************************************
 *
-* Function name:memtestSub
-* Description: 调查start到end地址范围内能够使用的内存的末尾地址
+* Function name: memtest_sub
+* Description: 调查start到end地址范围内能够使用的内存的末尾地址(由于编译器缘由，在fun.nas中重写为汇编函数)
 * Parameter:
 *	@start	需要调查的起始地址
 *	@end	需要调查的末尾地址
@@ -23,7 +23,8 @@
 *	返回能够使用的末尾地址
 *
 **********************************************************/
-unsigned int memtestSub(unsigned int start, unsigned int end) {
+/*
+unsigned int memtest_sub(unsigned int start, unsigned int end) {
 	unsigned int i, *p, old, pat0 = 0xaa55aa55, pat1 = 0x55aa55aa;
 	for(i = start; i <= end; i += 0x1000) {	// 对于每个要检查的内存进行写入测试看看是否能读出正确的值
 		p = (unsigned int *)(i + 0xffc);	// 检查4KB末尾4字节
@@ -43,7 +44,7 @@ notMemoey:
 	}
 	return i;
 }
-
+*/
 /*******************************************************
 *
 * Function name: memtest
@@ -74,7 +75,7 @@ unsigned int memtest(unsigned int start, unsigned int end) {
 		storeCr0(cr0);	// 写入cr0寄存器
 	}
 	
-	i = memtestSub(start, end);
+	i = memtest_sub(start, end);
 	
 	if(flag486 != 0) {	// 386以上
 		cr0 = loadCr0();	// 读取当前cr0寄存器的值
