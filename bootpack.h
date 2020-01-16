@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.13
-* @Date: 2019-11-11
+* @Version: 1.0.14
+* @Date: 2020-01-16
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -176,6 +176,7 @@ void loadIdtr(int limit, int addr);
 void asm_interruptHandler21();
 void asm_interruptHandler27();
 void asm_interruptHandler2c();
+unsigned int memtest_sub(unsigned int start, unsigned int end);
 
 // graphic.c函数声明
 void init_palette();
@@ -186,7 +187,7 @@ void putFont8(char *vram, int xsize, int x, int y, char c, char *font);
 void putFont8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s);
 void initMouseCursor8(char *mouse, char bc);
 void putblock8_8(char *vram, int vxsize, int pxsize,
-	int pysize, int px0, int py0, char *buf, int bxsize);
+int pysize, int px0, int py0, char *buf, int bxsize);
 	
 // desctab.c函数声明
 void initGdtit();
