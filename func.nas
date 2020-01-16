@@ -8,13 +8,14 @@
 ; 制作目标文件的信息
 
 [FILE "func.nas"]				; 源文件名
-		GLOBAL _io_hlt, _io_cli, _io_sti, _io_stihlt	; 程序中包含的函数名
-		GLOBAL _io_in8, _io_in16, _io_in32
-		GLOBAL _io_out8, _io_out16, _io_out32
-		GLOBAL _io_load_eflags, _io_store_eflags
-		GLOBAL _loadGdtr, _loadIdtr
-		GLOBAL _loadCr0, _storeCr0
+		GLOBAL	_io_hlt, _io_cli, _io_sti, _io_stihlt	; 程序中包含的函数名
+		GLOBAL	_io_in8, _io_in16, _io_in32
+		GLOBAL	_io_out8, _io_out16, _io_out32
+		GLOBAL	_io_load_eflags, _io_store_eflags
+		GLOBAL	_loadGdtr, _loadIdtr
+		GLOBAL	_loadCr0, _storeCr0
 		GLOBAL	_asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
+		GLOBAL	_memtest_sub
 		EXTERN	_interruptHandler21, _interruptHandler27, _interruptHandler2c
 ; 实际的函数
 
@@ -151,3 +152,38 @@ _asm_interruptHandler2c:
 		POP		DS
 		POP		ES
 		IRETD
+
+_memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
+		PUSH	EDI
+		PUSH	ESI
+		PUSH	EBX						; 由于要使用这些寄存器，保存以上三个寄存器的值
+		MOV		ESI,0xaa55aa55			; pat0 = 0xaa55aa55;
+		MOV		EDI,0x55aa55aa			; pat1 = 0x55aa55aa;
+		MOV		EAX,[ESP+12+4]			; i = start; 由于EAX是通用寄存器，不需要保存（EBX是32位基址寄存器，需要保存）当然保存也没问题
+		
+mts_loop:
+		MOV		EBX,EAX
+		ADD		EBX,0xffc				; p = i + 0xffc;
+		MOV		EDX,[EBX]				; old = *p;
+		MOV		[EBX],ESI				; *p = pat0;
+		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
+		CMP		EDI,[EBX]				; if(pat1 != *p) 
+		JNE		mts_fin					; goto mts_fin;
+		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
+		CMP		ESI,[EBX]				; if(pat0 != *p)
+		JNE		mts_fin					; goto mts_fin;
+		MOV		[EBX],EDX				; *p = old;
+		ADD 	EAX,0x1000				; i += 0x1000;
+		CMP		EAX,[ESP+12+8]			; if(i <= end)
+		JBE		mts_loop				; goto mts_loop;
+		POP		EBX
+		POP		ESI
+		POP		EDI
+		RET
+		
+mts_fin:
+		MOV		[EBX],EDX				; *p = old;
+		POP		EBX
+		POP		ESI
+		POP		EDI
+		RET
