@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.14
-* @Date: 2020-01-16
+* @Version: 1.0.15
+* @Date: 2020-01-17
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -70,6 +70,9 @@
 
 #define EFLAGS_AC_BIT		0x00040000	// 用于判断是否为386（486以上eflags第18位为AC标志位）
 #define CR0_CACHE_DISABLE	0x60000000	// 用于开放与禁止缓存
+
+#define MEMSEG_MAX	4090		// 内存分段最大段数 总大小约为32KB
+#define MEMSEG_ADDR	0x003c0000	// 内存保留地址（存储分段信息）32KB	
 
 /********************************************************************************
 * 启动信息，与asmhead.nas中设置一致
@@ -152,6 +155,32 @@ struct QUEUE {
 struct MouseDec {
 	unsigned char buf[3], phase;
 	int x, y, btn;
+};
+
+/********************************************************************************
+* Memory segmentation information 内存分段信息 记录段首地址与段偏移
+* Parameter:
+*	@addr 段首地址	unsigned int
+*	@size 段偏移	unsigned int
+*
+********************************************************************************/
+struct MEMSEGINFO {
+	unsigned int addr, size;
+};
+
+/********************************************************************************
+* Memory segmentation table 段表，用于记录当前可用与分配的分段信息
+* Parameter:
+*	@frees		当前可用分段数量						int
+*	@maxfree	当前最大可用分段数量					int
+*	@lostsize	当前释放失败的内存的大小总和			int
+*	@lostcnt	当前释放失败的次数						int
+*	@table		段表详情，记录着每一段的分段信息		MEMSEGINFO * 
+*
+********************************************************************************/
+struct MEMSEGTABLE {
+	int frees, maxfrees, lostsize, lostcnt;
+	struct MEMSEGINFO free[MEMSEG_MAX];
 };
 
 // queue.c函数声明
