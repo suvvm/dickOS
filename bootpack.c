@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.14
-* @Date: 2020-01-16
+* @Version: 1.0.15
+* @Date: 2020-01-17
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -11,6 +11,124 @@
 #include "queue.h"
 #include "mouse.c"
 
+/*******************************************************
+*
+* Function name: memsegInit
+* Description: 初始化段表信息
+* Parameter:
+*	@memsegtable 段表指针	struct MEMSEGTABLE *	
+*
+**********************************************************/
+void memsegInit(struct MEMSEGTABLE *memsegtable) {
+	memsegtable->frees = 0;
+	memsegtable->maxfrees = 0;
+	memsegtable->lostsize = 0;
+	memsegtable->lostcnt = 0;
+}
+
+/*******************************************************
+*
+* Function name: memsegTotal
+* Description: 检查空闲内存大小总和
+* Parameter:
+*	@memsegtable 段表指针	struct MEMSEGTABLE *	
+* Return:
+*	返回空闲内存的大小 unsigned int
+*
+**********************************************************/
+unsigned int memsegTotal(struct MEMSEGTABLE *memsegtable) {
+	unsigned i, total = 0;
+	for(i = 0; i < memsegtable->frees; i++){	// c99以下不允许在for循环内声明变量
+		total += memsegtable->free[i].size;
+	}
+	return total;
+}
+
+/*******************************************************
+*
+* Function name: memsegAlloc
+* Description: 内存分配（首次匹配）
+* Parameter:
+*	@memsegtable	段表指针		struct MEMSEGTABLE *
+*	@size			要分配的大小	unsigned int
+* Return:
+*	成功则返回分配的首地址，失败则返回0	unsigned int
+*
+**********************************************************/
+unsigned int memsegAlloc(struct MEMSEGTABLE *memsegtable, unsigned int size) {
+	unsigned int i, alloc;
+	for(i = 0; i < memsegtable->frees; i++) {	// c99以下不允许在for循环内声明变量
+		if(memsegtable->free[i].size >= size) {	// 找到可分配的内存段
+			alloc = memsegtable->free[i].addr;
+			memsegtable->free[i].addr += size;	
+			memsegtable->free[i].size -= size;
+			if(memsegtable->free[i].size == 0) {	// 若当前空闲分段偏移为0证明与下一段重合，将其合并
+				memsegtable->frees--;
+				for(; i < memsegtable->frees; i++) {
+					memsegtable->free[i] = memsegtable->free[i+1];
+				}
+			}
+			return alloc;
+		}
+	}
+	return 0;
+}
+
+/*******************************************************
+*
+* Function name: memsegFree
+* Description: 内存释放
+* Parameter:
+*	@memsegtable	段表指针				struct MEMSEGTABLE *
+*	@addr			要释放内存段的首地址	unsigned int
+*	@size			要释放的偏移			unsigned int
+* Return:
+*	释放成功返回0，释放失败返回-1
+*
+**********************************************************/
+int memsegFree(struct MEMSEGTABLE *memsegtable, unsigned int addr, unsigned int size) {
+	int i, j;
+	for(i = 0; i < memsegtable->frees; i++) {	// 找到第一个大于addr的空闲地址
+		if(memsegtable->free[i].addr > addr)
+			break;
+	}
+	// 当前状态 free[i-1].addr < addr < free[i].addr
+	
+	if(i > 0 && memsegtable->free[i-1].addr + memsegtable->free[i-1].size == addr) {	// addr前方有连续的空闲空间
+		memsegtable->free[i-1].size += size;	// 将其与当前欲释放空间合并
+		if(i < memsegtable->frees && addr + size == memsegtable->free[i].addr) {	// addr 后方有连续的空闲空间
+			memsegtable->free[i-1].size += memsegtable->free[i].size;
+			memsegtable->frees--;
+			for(; i < memsegtable->frees; i++) {
+				memsegtable->free[i] = memsegtable->free[i+1];
+			}
+		}	
+		return 0;
+	}
+	if(i < memsegtable->frees && addr + size == memsegtable->free[i].addr) {	// addr前方没有空闲空间后方却有空闲空间
+		memsegtable->free[i].addr = addr;
+		memsegtable->free[i].size += size;
+		return 0;
+	}
+	
+	if(memsegtable->frees < MEMSEG_MAX) {	// addr前后都没有空闲空间
+		for(j = memsegtable->frees; j > i; j--) {
+			memsegtable->free[j] = memsegtable->free[j - 1];
+		}
+		memsegtable->frees++;
+		if(memsegtable->maxfrees < memsegtable->frees) {
+			memsegtable->maxfrees = memsegtable->frees;	// 更新最大值
+		}
+		memsegtable->free[i].addr = addr;
+		memsegtable->free[i].size = size;
+		return 0;
+	}
+	
+	// 内存段超上限
+	memsegtable->lostcnt++;
+	memsegtable->lostsize += size;
+	return -1;
+}
 
 /*******************************************************
 *
@@ -97,6 +215,8 @@ void Main(){
 	char mcursor[256], s[40], keyb[32], mouseb[128];	// mcursor鼠标信息 s保存要输出的变量信息
 	int mx, my, bufval, i; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
 	struct MouseDec mdec;	// 保存鼠标信息
+	unsigned int memtotal;
+	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
 	
 	initGdtit();	// 初始化GDT IDT
 	init_pic();	// 初始化可编程中断控制器
@@ -107,6 +227,11 @@ void Main(){
 	
 	io_out8(PIC0_IMR, 0xf9); // 主PIC IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111001)
 	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
+	
+	memtotal = memtest(0x00400000, 0xbfffffff);	// 获取内存总和
+	memsegInit(memsegtable);
+	memsegFree(memsegtable, 0x00001000, 0x0009e000);
+	memsegFree(memsegtable, 0x00400000, memtotal - 0x00400000);
 	
 	initKeyboard();
 	
@@ -126,8 +251,7 @@ void Main(){
 	// 打印s
 	putFont8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 	
-	i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
-	sprintf(s, "memory %dMB", i);
+	sprintf(s, "memory %dMB	free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 打印内存信息
 	putFont8_asc(binfo->vram, binfo->scrnx, 0, 64, COL8_FFFFFF, s);
 	
 	enableMouse(&mdec);	// 激活鼠标
