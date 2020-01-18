@@ -1,4 +1,4 @@
-text size :   5105(0x013F1)
+text size :   5155(0x01423)
 data size :   4568(0x011D8)
 bss  size :      0(0x00000)
 
@@ -32,34 +32,36 @@ bss  size :      0(0x00000)
 0x000008AA : _memsegInit
 0x000008CD : _memsegAlloc
 0x00000930 : _memsegFree
-0x00000A16 : _Main
-0x00000E36 : (.text)
-0x00000E36 : _io_hlt
-0x00000E38 : _io_cli
-0x00000E3A : _io_sti
-0x00000E3C : _io_stihlt
-0x00000E3F : _io_in8
-0x00000E4A : _io_in16
-0x00000E56 : _io_in32
-0x00000E5C : _io_out8
-0x00000E66 : _io_out16
-0x00000E71 : _io_out32
-0x00000E7B : _io_load_eflags
-0x00000E7E : _io_store_eflags
-0x00000E85 : _loadGdtr
-0x00000E95 : _loadIdtr
-0x00000EA5 : _loadCr0
-0x00000EA9 : _storeCr0
-0x00000EB1 : _asm_interruptHandler21
-0x00000EC8 : _asm_interruptHandler27
-0x00000EDF : _asm_interruptHandler2c
-0x00000EF6 : _memtest_sub
-0x00000F38 : _sprintf
-0x00000F38 : (.text)
-0x00000F4C : (.text)
-0x00000F88 : _strtoul0
-0x0000105B : (.text)
-0x00001083 : _vsprintf
+0x00000A16 : _memsegAlloc4K
+0x00000A2F : _memsegFree4K
+0x00000A48 : _Main
+0x00000E68 : (.text)
+0x00000E68 : _io_hlt
+0x00000E6A : _io_cli
+0x00000E6C : _io_sti
+0x00000E6E : _io_stihlt
+0x00000E71 : _io_in8
+0x00000E7C : _io_in16
+0x00000E88 : _io_in32
+0x00000E8E : _io_out8
+0x00000E98 : _io_out16
+0x00000EA3 : _io_out32
+0x00000EAD : _io_load_eflags
+0x00000EB0 : _io_store_eflags
+0x00000EB7 : _loadGdtr
+0x00000EC7 : _loadIdtr
+0x00000ED7 : _loadCr0
+0x00000EDB : _storeCr0
+0x00000EE3 : _asm_interruptHandler21
+0x00000EFA : _asm_interruptHandler27
+0x00000F11 : _asm_interruptHandler2c
+0x00000F28 : _memtest_sub
+0x00000F6A : _sprintf
+0x00000F6A : (.text)
+0x00000F7E : (.text)
+0x00000FBA : _strtoul0
+0x0000108D : (.text)
+0x000010B5 : _vsprintf
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000000 : (.data)
