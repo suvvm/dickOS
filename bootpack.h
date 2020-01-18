@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 1.0.15
-* @Date: 2020-01-17
+* @Version: 0.1.5
+* @Date: 2020-01-18
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -183,13 +183,13 @@ struct MEMSEGTABLE {
 	struct MEMSEGINFO free[MEMSEG_MAX];
 };
 
-// queue.c函数声明
+// queue.c 函数声明
 void QueueInit(struct QUEUE *fifo, int size, unsigned char *buf);
 int QueuePush(struct QUEUE *fifo, unsigned char data);
 int QueuePop(struct QUEUE *fifo);
 int QueueSize(struct QUEUE *fifo);
 
-// func.nas函数声明
+// func.nas 函数声明
 void io_hlt();	
 void io_cli();
 void io_sti();
@@ -207,7 +207,7 @@ void asm_interruptHandler27();
 void asm_interruptHandler2c();
 unsigned int memtest_sub(unsigned int start, unsigned int end);
 
-// graphic.c函数声明
+// graphic.c 函数声明
 void init_palette();
 void set_palette(int start, int end, unsigned char *rgb);
 void boxFill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
@@ -218,12 +218,12 @@ void initMouseCursor8(char *mouse, char bc);
 void putblock8_8(char *vram, int vxsize, int pxsize,
 int pysize, int px0, int py0, char *buf, int bxsize);
 	
-// desctab.c函数声明
+// desctab.c 函数声明
 void initGdtit();
 void setSegmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, int ar);
 void setGatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 
-// interrupt.c函数声明
+// interrupt.c 函数声明
 void init_pic();
 void interruptHandler21(int *esp);
 void interruptHandler27(int *esp);
@@ -235,5 +235,13 @@ void waitKeyboardControllerReady();
 
 // mouse.c 函数声明
 void enableMouse();
+
+// memory.c 函数声明
+unsigned int memtest(unsigned int start, unsigned int end);
+unsigned int memsegTotal(struct MEMSEGTABLE *memsegtable);
+void memsegInit(struct MEMSEGTABLE *memsegtable);
+unsigned int memsegAlloc(struct MEMSEGTABLE *memsegtable, unsigned int size);
+int memsegFree(struct MEMSEGTABLE *memsegtable, unsigned int addr, unsigned int size);
+
 
 #endif // BOOTPACK_H
