@@ -1251,6 +1251,30 @@ L180:
 	cmpl	%ecx, %ebx
 	jl	L180
 	jmp	L193
+	.balign 2
+.globl _memsegAlloc4K
+	.def	_memsegAlloc4K;	.scl	2;	.type	32;	.endef
+_memsegAlloc4K:
+	pushl	%ebp
+	movl	%esp, %ebp
+	movl	12(%ebp), %eax
+	addl	$4095, %eax
+	andl	$-4096, %eax
+	movl	%eax, 12(%ebp)
+	popl	%ebp
+	jmp	_memsegAlloc
+	.balign 2
+.globl _memsegFree4K
+	.def	_memsegFree4K;	.scl	2;	.type	32;	.endef
+_memsegFree4K:
+	pushl	%ebp
+	movl	%esp, %ebp
+	movl	16(%ebp), %eax
+	addl	$4095, %eax
+	andl	$-4096, %eax
+	movl	%eax, 16(%ebp)
+	popl	%ebp
+	jmp	_memsegFree
 	.data
 LC0:
 	.ascii "DickOS\0"
@@ -1400,7 +1424,7 @@ _Main:
 	pushl	%eax
 	call	_enableMouse
 	popl	%ebx
-L197:
+L199:
 	call	_io_cli
 	pushl	$_keybuf
 	call	_QueueSize
@@ -1411,17 +1435,17 @@ L197:
 	leal	(%eax,%ebx), %eax
 	popl	%ecx
 	testl	%eax, %eax
-	je	L213
+	je	L215
 	pushl	$_keybuf
 	call	_QueueSize
 	popl	%ebx
 	testl	%eax, %eax
-	jne	L214
+	jne	L216
 	pushl	$_mousebuf
 	call	_QueueSize
 	popl	%ecx
 	testl	%eax, %eax
-	je	L197
+	je	L199
 	pushl	$_mousebuf
 	call	_QueuePop
 	movl	%eax, %ebx
@@ -1433,7 +1457,7 @@ L197:
 	call	_mouseDecode
 	addl	$12, %esp
 	testl	%eax, %eax
-	je	L197
+	je	L199
 	pushl	-484(%ebp)
 	pushl	-488(%ebp)
 	pushl	$LC4
@@ -1443,17 +1467,17 @@ L197:
 	addl	$16, %esp
 	movl	-480(%ebp), %eax
 	testl	$1, %eax
-	je	L206
-	movb	$76, -315(%ebp)
-L206:
-	testl	$2, %eax
-	je	L207
-	movb	$82, -313(%ebp)
-L207:
-	andl	$4, %eax
 	je	L208
-	movb	$67, -314(%ebp)
+	movb	$76, -315(%ebp)
 L208:
+	testl	$2, %eax
+	je	L209
+	movb	$82, -313(%ebp)
+L209:
+	andl	$4, %eax
+	je	L210
+	movb	$67, -314(%ebp)
+L210:
 	pushl	$31
 	pushl	$151
 	pushl	$16
@@ -1486,23 +1510,23 @@ L208:
 	addl	$28, %esp
 	addl	-484(%ebp), %esi
 	addl	-488(%ebp), %edi
-	js	L215
-L209:
+	js	L217
+L211:
 	testl	%esi, %esi
-	js	L216
-L210:
+	js	L218
+L212:
 	movswl	4084,%eax
 	subl	$16, %eax
 	cmpl	%eax, %edi
-	jle	L211
+	jle	L213
 	movl	%eax, %edi
-L211:
+L213:
 	movswl	4086,%eax
 	subl	$16, %eax
 	cmpl	%eax, %esi
-	jle	L212
+	jle	L214
 	movl	%eax, %esi
-L212:
+L214:
 	pushl	%esi
 	pushl	%edi
 	pushl	$LC5
@@ -1538,14 +1562,14 @@ L212:
 	pushl	4088
 	call	_putblock8_8
 	addl	$56, %esp
-	jmp	L197
-L216:
+	jmp	L199
+L218:
 	xorl	%esi, %esi
-	jmp	L210
-L215:
+	jmp	L212
+L217:
 	xorl	%edi, %edi
-	jmp	L209
-L214:
+	jmp	L211
+L216:
 	pushl	$_keybuf
 	call	_QueuePop
 	movl	%eax, %ebx
@@ -1574,10 +1598,10 @@ L214:
 	pushl	4088
 	call	_putFont8_asc
 	addl	$24, %esp
-	jmp	L197
-L213:
+	jmp	L199
+L215:
 	call	_io_stihlt
-	jmp	L197
+	jmp	L199
 .globl _keybuf
 	.data
 	.balign 16
