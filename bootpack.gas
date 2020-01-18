@@ -997,18 +997,62 @@ L132:
 	movb	$2, 3(%edx)
 	jmp	L130
 	.balign 2
-.globl _memsegInit
-	.def	_memsegInit;	.scl	2;	.type	32;	.endef
-_memsegInit:
+.globl _memtest
+	.def	_memtest;	.scl	2;	.type	32;	.endef
+_memtest:
 	pushl	%ebp
 	movl	%esp, %ebp
-	movl	8(%ebp), %eax
-	movl	$0, (%eax)
-	movl	$0, 4(%eax)
-	movl	$0, 8(%eax)
-	movl	$0, 12(%eax)
+	pushl	%esi
+	pushl	%ebx
+	xorl	%esi, %esi
+	call	_io_load_eflags
+	orl	$262144, %eax
+	pushl	%eax
+	call	_io_store_eflags
+	call	_io_load_eflags
+	popl	%edx
+	testl	$262144, %eax
+	je	L136
+	movl	$1, %esi
+L136:
+	andl	$-262145, %eax
+	pushl	%eax
+	call	_io_store_eflags
+	movl	%esi, %eax
+	popl	%ebx
+	testb	%al, %al
+	jne	L139
+L137:
+	pushl	12(%ebp)
+	pushl	8(%ebp)
+	call	_memtest_sub
+	movl	%eax, %ebx
+	popl	%eax
+	movl	%esi, %eax
+	popl	%edx
+	testb	%al, %al
+	jne	L140
+L138:
+	leal	-8(%ebp), %esp
+	movl	%ebx, %eax
+	popl	%ebx
+	popl	%esi
 	popl	%ebp
 	ret
+L140:
+	call	_loadCr0
+	andl	$-1610612737, %eax
+	pushl	%eax
+	call	_storeCr0
+	popl	%ecx
+	jmp	L138
+L139:
+	call	_loadCr0
+	orl	$1610612736, %eax
+	pushl	%eax
+	call	_storeCr0
+	popl	%ecx
+	jmp	L137
 	.balign 2
 .globl _memsegTotal
 	.def	_memsegTotal;	.scl	2;	.type	32;	.endef
@@ -1021,14 +1065,27 @@ _memsegTotal:
 	movl	8(%ebp), %ebx
 	movl	(%ebx), %ecx
 	cmpl	%ecx, %eax
-	jae	L143
-L141:
+	jae	L148
+L146:
 	addl	20(%ebx,%edx,8), %eax
 	incl	%edx
 	cmpl	%ecx, %edx
-	jb	L141
-L143:
+	jb	L146
+L148:
 	popl	%ebx
+	popl	%ebp
+	ret
+	.balign 2
+.globl _memsegInit
+	.def	_memsegInit;	.scl	2;	.type	32;	.endef
+_memsegInit:
+	pushl	%ebp
+	movl	%esp, %ebp
+	movl	8(%ebp), %eax
+	movl	$0, (%eax)
+	movl	$0, 4(%eax)
+	movl	$0, 8(%eax)
+	movl	$0, 12(%eax)
 	popl	%ebp
 	ret
 	.balign 2
@@ -1045,23 +1102,23 @@ _memsegAlloc:
 	movl	8(%ebp), %ebx
 	movl	(%ebx), %eax
 	cmpl	%eax, %ecx
-	jae	L158
-L156:
+	jae	L164
+L162:
 	movl	20(%ebx,%ecx,8), %edx
 	cmpl	%esi, %edx
-	jae	L160
+	jae	L166
 	incl	%ecx
 	cmpl	%eax, %ecx
-	jb	L156
-L158:
+	jb	L162
+L164:
 	xorl	%eax, %eax
-L144:
+L150:
 	popl	%ebx
 	popl	%esi
 	popl	%edi
 	popl	%ebp
 	ret
-L160:
+L166:
 	movl	16(%ebx,%ecx,8), %edi
 	leal	(%esi,%edi), %eax
 	movl	%eax, 16(%ebx,%ecx,8)
@@ -1069,24 +1126,24 @@ L160:
 	subl	%esi, %eax
 	movl	%eax, 20(%ebx,%ecx,8)
 	testl	%eax, %eax
-	jne	L150
+	jne	L156
 	movl	(%ebx), %eax
 	decl	%eax
 	movl	%eax, (%ebx)
 	cmpl	%eax, %ecx
-	jae	L150
+	jae	L156
 	movl	%eax, %esi
-L155:
+L161:
 	movl	24(%ebx,%ecx,8), %eax
 	movl	28(%ebx,%ecx,8), %edx
 	movl	%eax, 16(%ebx,%ecx,8)
 	movl	%edx, 20(%ebx,%ecx,8)
 	incl	%ecx
 	cmpl	%esi, %ecx
-	jb	L155
-L150:
+	jb	L161
+L156:
 	movl	%edi, %eax
-	jmp	L144
+	jmp	L150
 	.balign 2
 .globl _memsegFree
 	.def	_memsegFree;	.scl	2;	.type	32;	.endef
@@ -1100,164 +1157,107 @@ _memsegFree:
 	xorl	%ebx, %ebx
 	movl	(%esi), %edi
 	cmpl	%edi, %ebx
-	jge	L163
-L167:
+	jge	L169
+L173:
 	movl	12(%ebp), %eax
 	cmpl	%eax, 16(%esi,%ebx,8)
-	ja	L163
+	ja	L169
 	incl	%ebx
 	cmpl	%edi, %ebx
-	jl	L167
-L163:
+	jl	L173
+L169:
 	testl	%ebx, %ebx
-	jle	L168
+	jle	L174
 	movl	12(%esi,%ebx,8), %edx
 	movl	8(%esi,%ebx,8), %eax
 	addl	%edx, %eax
 	cmpl	12(%ebp), %eax
-	je	L188
-L168:
+	je	L194
+L174:
 	cmpl	%edi, %ebx
-	jge	L175
+	jge	L181
 	movl	12(%ebp), %eax
 	addl	16(%ebp), %eax
 	cmpl	16(%esi,%ebx,8), %eax
-	je	L189
-L175:
+	je	L195
+L181:
 	cmpl	$4089, %edi
-	jg	L176
+	jg	L182
 	movl	%edi, %ecx
 	cmpl	%ebx, %edi
-	jle	L186
-L181:
+	jle	L192
+L187:
 	movl	8(%esi,%ecx,8), %eax
 	movl	12(%esi,%ecx,8), %edx
 	movl	%eax, 16(%esi,%ecx,8)
 	movl	%edx, 20(%esi,%ecx,8)
 	decl	%ecx
 	cmpl	%ebx, %ecx
-	jg	L181
-L186:
+	jg	L187
+L192:
 	leal	1(%edi), %eax
 	movl	%eax, (%esi)
 	cmpl	%eax, 4(%esi)
-	jge	L182
+	jge	L188
 	movl	%eax, 4(%esi)
-L182:
+L188:
 	movl	12(%ebp), %eax
 	movl	%eax, 16(%esi,%ebx,8)
 	movl	16(%ebp), %eax
 	movl	%eax, 20(%esi,%ebx,8)
-L187:
+L193:
 	xorl	%eax, %eax
-L161:
+L167:
 	popl	%ebx
 	popl	%esi
 	popl	%edi
 	popl	%ebp
 	ret
-L176:
+L182:
 	movl	16(%ebp), %eax
 	incl	12(%esi)
 	addl	%eax, 8(%esi)
 	orl	$-1, %eax
-	jmp	L161
-L189:
+	jmp	L167
+L195:
 	movl	12(%ebp), %eax
 	movl	%eax, 16(%esi,%ebx,8)
 	movl	16(%ebp), %eax
 	addl	%eax, 20(%esi,%ebx,8)
-	jmp	L187
-L188:
+	jmp	L193
+L194:
 	addl	16(%ebp), %edx
 	movl	%edx, 12(%esi,%ebx,8)
 	cmpl	(%esi), %ebx
-	jge	L187
+	jge	L193
 	movl	12(%ebp), %eax
 	addl	16(%ebp), %eax
 	cmpl	16(%esi,%ebx,8), %eax
-	jne	L187
+	jne	L193
 	addl	20(%esi,%ebx,8), %edx
 	movl	%edx, 12(%esi,%ebx,8)
 	movl	(%esi), %eax
 	decl	%eax
 	movl	%eax, (%esi)
 	cmpl	%eax, %ebx
-	jge	L187
+	jge	L193
 	movl	%eax, %ecx
-L174:
+L180:
 	movl	24(%esi,%ebx,8), %eax
 	movl	28(%esi,%ebx,8), %edx
 	movl	%eax, 16(%esi,%ebx,8)
 	movl	%edx, 20(%esi,%ebx,8)
 	incl	%ebx
 	cmpl	%ecx, %ebx
-	jl	L174
-	jmp	L187
-	.balign 2
-.globl _memtest
-	.def	_memtest;	.scl	2;	.type	32;	.endef
-_memtest:
-	pushl	%ebp
-	movl	%esp, %ebp
-	pushl	%esi
-	pushl	%ebx
-	xorl	%esi, %esi
-	call	_io_load_eflags
-	orl	$262144, %eax
-	pushl	%eax
-	call	_io_store_eflags
-	call	_io_load_eflags
-	popl	%edx
-	testl	$262144, %eax
-	je	L191
-	movl	$1, %esi
-L191:
-	andl	$-262145, %eax
-	pushl	%eax
-	call	_io_store_eflags
-	movl	%esi, %eax
-	popl	%ebx
-	testb	%al, %al
-	jne	L194
-L192:
-	pushl	12(%ebp)
-	pushl	8(%ebp)
-	call	_memtest_sub
-	movl	%eax, %ebx
-	popl	%eax
-	movl	%esi, %eax
-	popl	%edx
-	testb	%al, %al
-	jne	L195
-L193:
-	leal	-8(%ebp), %esp
-	movl	%ebx, %eax
-	popl	%ebx
-	popl	%esi
-	popl	%ebp
-	ret
-L195:
-	call	_loadCr0
-	andl	$-1610612737, %eax
-	pushl	%eax
-	call	_storeCr0
-	popl	%ecx
+	jl	L180
 	jmp	L193
-L194:
-	call	_loadCr0
-	orl	$1610612736, %eax
-	pushl	%eax
-	call	_storeCr0
-	popl	%ecx
-	jmp	L192
 	.data
 LC0:
 	.ascii "DickOS\0"
 LC1:
 	.ascii "(%d, %d)\0"
 LC2:
-	.ascii "memory %dMB\11free : %dKB\0"
+	.ascii "memory %dMB free : %dKB\0"
 LC4:
 	.ascii "[lcr %4d %4d]\0"
 LC5:
