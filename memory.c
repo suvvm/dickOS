@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: memory.c
 * @Author: suvvm
-* @Version: 0.0.1
+* @Version: 0.0.2
 * @Date: 2020-01-18
 * @Description: 实现内存相关函数
 ********************************************************************************/
@@ -121,7 +121,7 @@ unsigned int memsegAlloc(struct MEMSEGTABLE *memsegtable, unsigned int size) {
 *	@addr			要释放内存段的首地址	unsigned int
 *	@size			要释放的偏移			unsigned int
 * Return:
-*	释放成功返回0，释放失败返回-1
+*	释放成功返回0，释放失败返回-1			int
 *
 **********************************************************/
 int memsegFree(struct MEMSEGTABLE *memsegtable, unsigned int addr, unsigned int size) {
@@ -202,3 +202,39 @@ notMemoey:
 	return i;
 }
 */
+
+/*******************************************************
+*
+* Function name: memsegAlloc4K
+* Description: 以4KB为单位进行内存分配，用于减少内存碎片
+* Parameter:
+* 	@memsegtable	段表指针			struct MEMSEGTABLE *
+* 	@size			要分配的大小		unsigned int
+* Return:
+*	成功则返回分配的首地址，失败则返回0	unsigned int
+*
+**********************************************************/
+unsigned int memsegAlloc4K(struct MEMSEGTABLE *memsegtable, unsigned int size) {
+	unsigned int alloc;
+	size = (size + 0xfff) & 0xfffff000;	// 向上舍入
+	alloc = memsegAlloc(memsegtable, size);
+	return alloc;
+}
+
+/*******************************************************
+*
+* Function name: memsegFree4K
+* Description: 以4KB为单位进行内存释放
+* Parameter:
+* 	@memsegtable	段表指针		struct MEMSEGTABLE *
+* 	@size			要分配的大小	unsigned int
+* Return:
+*	释释放成功返回0，释放失败返回-1 int
+*
+**********************************************************/
+int memsegFree4K(struct MEMSEGTABLE *memsegtable, unsigned int addr, unsigned int size) {
+	int ans;
+	size = (size + 0xfff) & 0xfffff000;	// 向上舍入
+	ans = memsegFree(memsegtable, addr, size);
+	return ans;
+}
