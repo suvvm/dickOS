@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.1.5
+* @Version: 0.1.6
 * @Date: 2020-01-18
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -242,6 +242,7 @@ unsigned int memsegTotal(struct MEMSEGTABLE *memsegtable);
 void memsegInit(struct MEMSEGTABLE *memsegtable);
 unsigned int memsegAlloc(struct MEMSEGTABLE *memsegtable, unsigned int size);
 int memsegFree(struct MEMSEGTABLE *memsegtable, unsigned int addr, unsigned int size);
-
+unsigned int memsegAlloc4K(struct MEMSEGTABLE *memsegtable, unsigned int size);
+int memsegFree4K(struct MEMSEGTABLE *memsegtable, unsigned int addr, unsigned int size);
 
 #endif // BOOTPACK_H
