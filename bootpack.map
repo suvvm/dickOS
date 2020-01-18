@@ -27,11 +27,11 @@ bss  size :      0(0x00000)
 0x00000721 : _initKeyboard
 0x00000742 : _enableMouse
 0x00000770 : _mouseDecode
-0x0000080E : _memsegInit
-0x00000831 : _memsegTotal
-0x0000084E : _memsegAlloc
-0x000008B1 : _memsegFree
-0x00000997 : _memtest
+0x0000080E : _memtest
+0x0000088D : _memsegTotal
+0x000008AA : _memsegInit
+0x000008CD : _memsegAlloc
+0x00000930 : _memsegFree
 0x00000A16 : _Main
 0x00000E36 : (.text)
 0x00000E36 : _io_hlt
