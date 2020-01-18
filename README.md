@@ -16,6 +16,10 @@
 
 在桌面打印DICKOS并显示鼠标坐标
 
+内存分配采取分段式分配方式，分配失败时使用鸵鸟算法处理 :laughing:
+
+在桌面打印内存大小与可用内存大小
+
 初始化键盘控制电路并激活鼠标
 
 在鼠标与键盘产生中断时打印相应数据
@@ -26,11 +30,11 @@
 
 # Build
 
-windows：在!cons_nt.bat或!cons_9x.bat中输入make install（目标地址为a:）
+windows：在!cons_nt.bat或!cons_9x.bat（控制台对应目录）中输入make install（目标地址为a:）
 
 # Run
 
-windows：在!cons_nt.bat或!cons_9x.bat中输入make run即可调用QEMU运行
+windows：在!cons_nt.bat或!cons_9x.bat（控制台对应目录）中输入make run即可调用QEMU运行
 
 #  Command-line instruction 
 
@@ -226,6 +230,18 @@ func.nas - [添加针对寄存器cr0的读写函数](https://github.com/suvvm/di
 bootpack.h -[ 添加func.nas的函数声明，添加关于eflagAC位与cr0中启用或禁止缓存的宏定义](https://github.com/suvvm/dickOS/commit/bb42c2c1934a87fa8f2a1354489ea2147b7ef4ce)
 
 bootpack.c - [添加判断内存大小相关函数](https://github.com/suvvm/dickOS/commit/81e0428810334e312e81b70863e4beacb103f08e) 
+
+bootpack.c -[添加内存分段相关函数](https://github.com/suvvm/dickOS/commit/89ccf8210543277703c187de953db8c80c167c10)
+
+新建 memory.c 
+
+memory.c -[将bootpack.c中内存分配相关函数转移至memory.c](https://github.com/suvvm/dickOS/commit/d35acc87d6350244963ede93c7bf6c4fbdfc7dfd)
+
+bootpack.h -[添加memory.c相关函数声明](https://github.com/suvvm/dickOS/commit/8b40e616bc0470685d89842d748ff023a55f5cd5)
+
+memory.c -[添加以4KB为单位分配与回收内存的函数](https://github.com/suvvm/dickOS/commit/84f53ff3f991e9a4c40c63578e0d6ff7816b0c0a)
+
+bootpack.h -[添加以4KB为单位分配与回收内存的函数声明](https://github.com/suvvm/dickOS/commit/0e3a831132d7532b9b851330ebe2b0d0fb8a17cf)
 
 # 许可协议原文
 
