@@ -26,6 +26,8 @@
 
 鼠标移动实现
 
+使用图层处理重叠问题
+
 空闲时进入HALT状态
 
 # Build
@@ -242,6 +244,16 @@ bootpack.h -[添加memory.c相关函数声明](https://github.com/suvvm/dickOS/c
 memory.c -[添加以4KB为单位分配与回收内存的函数](https://github.com/suvvm/dickOS/commit/84f53ff3f991e9a4c40c63578e0d6ff7816b0c0a)
 
 bootpack.h -[添加以4KB为单位分配与回收内存的函数声明](https://github.com/suvvm/dickOS/commit/0e3a831132d7532b9b851330ebe2b0d0fb8a17cf)
+
+新建 sheet.c
+
+sheet.c -[用于定义图层相关函数](https://github.com/suvvm/dickOS/commit/299795edca7b5ea58c5d88fac5430f9bf6b5dc44)
+
+bootpack.h -[添加图层相关宏定义结构体，声明sheet.c中的函数](https://github.com/suvvm/dickOS/commit/8cf67ccda90bd17c7024911cb2195350c2dbff78)
+
+bootpcak.c -[修改显示背景与显示鼠标为图层操作](https://github.com/suvvm/dickOS/commit/b7f5d1cac57b7c73e4adf89fae50ad050ba5d2a2)
+
+
 
 # 许可协议原文
 
