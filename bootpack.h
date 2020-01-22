@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.1.6
-* @Date: 2020-01-18
+* @Version: 0.1.7
+* @Date: 2020-01-22
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -74,7 +74,11 @@
 #define MEMSEG_MAX	4090		// 内存分段最大段数 总大小约为32KB
 #define MEMSEG_ADDR	0x003c0000	// 内存保留地址（存储分段信息）32KB	
 
+#define MAX_SHEETS	256	// 最大图层数
+#define SHEET_USE	1	// 图层使用标记
+
 /********************************************************************************
+*
 * 启动信息，与asmhead.nas中设置一致
 * Parameter:
 *	@cyls 启动区设置
@@ -83,6 +87,7 @@
 *	@scrnx 分辨率X像素数
 *	@scrny 分辨率Y像素数
 *	@vram 图像缓冲区开始地址
+*
 ********************************************************************************/
 struct BOOTINFO{	
 	char cyls, leds, vmode, reserve;
@@ -91,6 +96,7 @@ struct BOOTINFO{
 };
 
 /********************************************************************************
+*
 * 段描述符存放GDT内容 
 * base代表32位段的地址（基址）
 * base又分为 low（2字节） mid（1字节） high（1字节）共(2 + 1 + 1) * 8 = 32位
@@ -105,6 +111,7 @@ struct BOOTINFO{
 *	@accessRight 段属性低8位（高4位在limitHigh的高4位代表扩展访问权）关于低8位详见note.txt
 *	@limitHigh limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性
 *	@baseHigh 基址高地址 8位 4位扩展访问权由GD00组成 G为Gbit标志位 D为模式位 1代表32位模式 0代表16位模式（即使D为0也不能调用BOIS）
+*
 ********************************************************************************/
 struct SEGMENT_DESCRIPTOR{
 	short limitLow;
@@ -158,6 +165,7 @@ struct MouseDec {
 };
 
 /********************************************************************************
+*
 * Memory segmentation information 内存分段信息 记录段首地址与段偏移
 * Parameter:
 *	@addr 段首地址	unsigned int
@@ -169,6 +177,7 @@ struct MEMSEGINFO {
 };
 
 /********************************************************************************
+*
 * Memory segmentation table 段表，用于记录当前可用与分配的分段信息
 * Parameter:
 *	@frees		当前可用分段数量						int
@@ -181,6 +190,44 @@ struct MEMSEGINFO {
 struct MEMSEGTABLE {
 	int frees, maxfrees, lostsize, lostcnt;
 	struct MEMSEGINFO free[MEMSEG_MAX];
+};
+
+/********************************************************************************
+*
+* sheet 图层，用于实现画面叠加处理
+* Parameter:
+*	@buf		图层上所描画内容的地址					unsigned char *
+*	@width		图层的宽度								int
+*	@height		图层的高度								int
+*	@locationX	图层左上角在x轴上的位置					int
+*	@locationY	图层左上角在y轴上的位置					int
+*	@colInvNum	透明色号								int
+*	@index		图层索引编号							int
+*	@status		图层状态								int
+*
+********************************************************************************/
+struct SHEET {
+	unsigned char *buf;
+	int width, height, locationX, locationY, colInvNum, index, status;
+};
+
+/********************************************************************************
+*
+* sheet control 图层控制，用于管理图层
+* Parameter:
+*	@vram		对应vram地址							unsigned char *
+*	@xSize		vram的画面宽度							int
+*	@ySize		vram的画面高度							int
+*	@top		最上层图层索引							int
+*	@sheetsAcs	存放按索引升序排列后的所有图层地址		int
+*	@sheets		存放所有图层							int
+*
+********************************************************************************/
+struct SHTCTL {
+	unsigned char *vram;
+	int xSize, ySize, top;
+	struct SHEET *sheetsAcs[MAX_SHEETS];
+	struct SHEET sheets[MAX_SHEETS];
 };
 
 // queue.c 函数声明
@@ -244,5 +291,14 @@ unsigned int memsegAlloc(struct MEMSEGTABLE *memsegtable, unsigned int size);
 int memsegFree(struct MEMSEGTABLE *memsegtable, unsigned int addr, unsigned int size);
 unsigned int memsegAlloc4K(struct MEMSEGTABLE *memsegtable, unsigned int size);
 int memsegFree4K(struct MEMSEGTABLE *memsegtable, unsigned int addr, unsigned int size);
+
+// sheet.c 函数声明
+struct SHTCTL *shtctlInit(struct MEMSEGTABLE *memsegtable, unsigned char *vram, int xSize, int ySize);
+struct SHEET *sheetAlloc(struct SHTCTL *shtclt);
+void sheetSetbuf(struct SHEET *sheet, unsigned char *buf, int width, int height, int colInvNum);
+void sheetUpdown(struct SHTCTL *shtclt, struct SHEET *sheet, int index);
+void sheetRefresh(struct SHTCTL *shtclt);
+void sheetSlide(struct SHTCTL *shtclt, struct SHEET *sheet, int locationX, int locationY);
+void sheetFree(struct SHTCTL *shtctl, struct SHEET *sheet);
 
 #endif // BOOTPACK_H
