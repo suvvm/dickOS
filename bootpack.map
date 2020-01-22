@@ -1,4 +1,4 @@
-text size :   5155(0x01423)
+text size :   5909(0x01715)
 data size :   4568(0x011D8)
 bss  size :      0(0x00000)
 
@@ -34,34 +34,41 @@ bss  size :      0(0x00000)
 0x00000930 : _memsegFree
 0x00000A16 : _memsegAlloc4K
 0x00000A2F : _memsegFree4K
-0x00000A48 : _Main
-0x00000E68 : (.text)
-0x00000E68 : _io_hlt
-0x00000E6A : _io_cli
-0x00000E6C : _io_sti
-0x00000E6E : _io_stihlt
-0x00000E71 : _io_in8
-0x00000E7C : _io_in16
-0x00000E88 : _io_in32
-0x00000E8E : _io_out8
-0x00000E98 : _io_out16
-0x00000EA3 : _io_out32
-0x00000EAD : _io_load_eflags
-0x00000EB0 : _io_store_eflags
-0x00000EB7 : _loadGdtr
-0x00000EC7 : _loadIdtr
-0x00000ED7 : _loadCr0
-0x00000EDB : _storeCr0
-0x00000EE3 : _asm_interruptHandler21
-0x00000EFA : _asm_interruptHandler27
-0x00000F11 : _asm_interruptHandler2c
-0x00000F28 : _memtest_sub
-0x00000F6A : _sprintf
-0x00000F6A : (.text)
-0x00000F7E : (.text)
-0x00000FBA : _strtoul0
-0x0000108D : (.text)
-0x000010B5 : _vsprintf
+0x00000A48 : _shtctlInit
+0x00000A95 : _sheetAlloc
+0x00000AC8 : _sheetSetbuf
+0x00000AE7 : _sheetUpdown
+0x00000BA0 : _sheetRefresh
+0x00000C3E : _sheetSlide
+0x00000C5E : _sheetFree
+0x00000C85 : _Main
+0x0000115A : (.text)
+0x0000115A : _io_hlt
+0x0000115C : _io_cli
+0x0000115E : _io_sti
+0x00001160 : _io_stihlt
+0x00001163 : _io_in8
+0x0000116E : _io_in16
+0x0000117A : _io_in32
+0x00001180 : _io_out8
+0x0000118A : _io_out16
+0x00001195 : _io_out32
+0x0000119F : _io_load_eflags
+0x000011A2 : _io_store_eflags
+0x000011A9 : _loadGdtr
+0x000011B9 : _loadIdtr
+0x000011C9 : _loadCr0
+0x000011CD : _storeCr0
+0x000011D5 : _asm_interruptHandler21
+0x000011EC : _asm_interruptHandler27
+0x00001203 : _asm_interruptHandler2c
+0x0000121A : _memtest_sub
+0x0000125C : _sprintf
+0x0000125C : (.text)
+0x00001270 : (.text)
+0x000012AC : _strtoul0
+0x0000137F : (.text)
+0x000013A7 : _vsprintf
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000000 : (.data)
