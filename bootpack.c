@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.1.7
+* @Version: 0.1.8
 * @Date: 2020-01-23
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -116,10 +116,10 @@ void Main(){
 						mx = 0;
 					if (my < 0)
 						my = 0;
-					if (mx > binfo->scrnx - 16)
-						mx = binfo->scrnx - 16;
-					if (my > binfo->scrny - 16)
-						my = binfo->scrny - 16;
+					if (mx > binfo->scrnx - 1)
+						mx = binfo->scrnx - 1;
+					if (my > binfo->scrny - 1)
+						my = binfo->scrny - 1;
 					
 					sprintf(s, "(%3d, %3d)", mx, my);
 					boxFill8(bufBack, binfo->scrnx, COL8_008484, 0, 0, 79, 15);	// 覆盖原有坐标信息
