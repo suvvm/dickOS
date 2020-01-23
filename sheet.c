@@ -117,7 +117,7 @@ void sheetUpdown(struct SHEET *sheet, int index) {
 				shtctl->top--;
 			}
 		}
-		sheetRefresh(sheet, sheet->locationX, sheet->locationY, sheet->locationX + sheet->width, sheet->locationY + sheet->height);	// 重新绘制画面
+		sheetRefreshSub(sheet->shtctl, sheet->locationX, sheet->locationY, sheet->locationX + sheet->width, sheet->locationY + sheet->height);	// 重新绘制画面
 	} else if (old < index) {	// 若新的索引值大于之前的索引值 将更新的图层提升至目标位置
 		if (old >= 0) {	// 图层之前未被隐藏
 			for (i = old; i < index; i++) {	// 将之前位置到现在位置之间的所有图层索引降低1
@@ -133,7 +133,7 @@ void sheetUpdown(struct SHEET *sheet, int index) {
 			shtctl->sheetsAcs[index] = sheet;	// 将图层放至对应位置
 			shtctl->top++;
 		}
-		sheetRefresh(sheet, sheet->locationX, sheet->locationY, sheet->locationX + sheet->width, sheet->locationY + sheet->height);
+		sheetRefreshSub(sheet->shtctl, sheet->locationX, sheet->locationY, sheet->locationX + sheet->width, sheet->locationY + sheet->height);
 	}
 }
 
