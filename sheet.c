@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: sheet.c
 * @Author: suvvm
-* @Version: 0.0.2
+* @Version: 0.0.3
 * @Date: 2020-01-23
 * @Description: 定义图层相关函数
 ********************************************************************************/
@@ -211,6 +211,18 @@ void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 	int i, sheetX, sheetY, locationX, locationY, relativeStartX, relativeStartY, relativeEndX, relativeEndY;
 	unsigned char *buf, c, *vram = shtctl->vram;
 	struct SHEET *sheet;
+	if (startX < 0) {
+		startX = 0;
+	}
+	if (startY < 0) {
+		startY = 0;
+	}
+	if (endX > shtctl->xSize) {
+		endX = shtctl->xSize;
+	}
+	if (endY > shtctl->ySize) {
+		endY = shtctl->ySize;
+	}
 	for (i = 0; i <= shtctl->top; i++) {
 		sheet = shtctl->sheetsAcs[i];
 		buf = sheet->buf;
