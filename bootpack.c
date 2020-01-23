@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.1.6
-* @Date: 2020-01-22
+* @Version: 0.1.7
+* @Date: 2020-01-23
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -74,7 +74,7 @@ void Main(){
 	putFont8_asc(bufBack, binfo->scrnx, 0, 0, COL8_FFFFFF, s);	// 将s写入背景图层
 	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
 	putFont8_asc(bufBack, binfo->scrnx, 0, 64, COL8_FFFFFF, s);	// 将s写入背景图层
-	sheetRefresh(shtctl);	// 刷新图层
+	sheetRefresh(shtctl, sheetBack, 0, 0, binfo->scrnx, 64 + 16 + 16);	// 刷新图层
 	
 	//处理键盘与鼠标中断与进入hlt
 	for(;;){
@@ -88,7 +88,7 @@ void Main(){
 				sprintf(s, "%02X", bufval);
 				boxFill8(bufBack, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
 				putFont8_asc(bufBack, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
-				sheetRefresh(shtctl);
+				sheetRefresh(shtctl, sheetBack, 0, 16, 16, 32);
 			} else if (QueueSize(&mousebuf) != 0) {
 				bufval = QueuePop(&mousebuf);
 				io_sti();
@@ -107,6 +107,7 @@ void Main(){
 					boxFill8(bufBack, binfo->scrnx, COL8_008484, 32, 16, 32 + 15 * 8 - 1, 31);	// 用背景色覆盖原有鼠标信息
 					putFont8_asc(bufBack, binfo->scrnx, 32, 16, COL8_FFFFFF, s);	//打印鼠标信息
 					// 鼠标坐标加上偏移量
+					sheetRefresh(shtctl, sheetBack, 32, 16, 32 + 15 * 8, 32);
 					mx += mdec.x;
 					my += mdec.y;
 					
@@ -123,6 +124,7 @@ void Main(){
 					sprintf(s, "(%3d, %3d)", mx, my);
 					boxFill8(bufBack, binfo->scrnx, COL8_008484, 0, 0, 79, 15);	// 覆盖原有坐标信息
 					putFont8_asc(bufBack, binfo->scrnx, 0, 0, COL8_FFFFFF, s);	// 显示新的坐标信息
+					sheetRefresh(shtctl, sheetBack, 0, 0, 80, 16);
 					sheetSlide(shtctl, sheetMouse, mx, my);
 				} 
 			}
