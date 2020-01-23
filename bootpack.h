@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.1.7
-* @Date: 2020-01-22
+* @Version: 0.1.8
+* @Date: 2020-01-23
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -297,8 +297,9 @@ struct SHTCTL *shtctlInit(struct MEMSEGTABLE *memsegtable, unsigned char *vram, 
 struct SHEET *sheetAlloc(struct SHTCTL *shtclt);
 void sheetSetbuf(struct SHEET *sheet, unsigned char *buf, int width, int height, int colInvNum);
 void sheetUpdown(struct SHTCTL *shtclt, struct SHEET *sheet, int index);
-void sheetRefresh(struct SHTCTL *shtclt);
-void sheetSlide(struct SHTCTL *shtclt, struct SHEET *sheet, int locationX, int locationY);
+void sheetRefresh(struct SHTCTL *shtctl, struct SHEET *sheet, int startX, int startY, int endX, int endY);
+void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY);
+void sheetSlide(struct SHTCTL *shtctl, struct SHEET *sheet, int locationX, int locationY);
 void sheetFree(struct SHTCTL *shtctl, struct SHEET *sheet);
 
 #endif // BOOTPACK_H
