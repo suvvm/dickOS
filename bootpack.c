@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.1.8
+* @Version: 0.1.9
 * @Date: 2020-01-23
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -22,7 +22,7 @@
 void Main(){
 	struct BOOTINFO *binfo;
 	char s[40], keyb[32], mouseb[128];	// mcursor鼠标信息 s保存要输出的变量信息
-	int mx, my, bufval, i; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
+	int mx, my, bufval; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
@@ -62,19 +62,19 @@ void Main(){
 	init_GUI(bufBack, binfo->scrnx, binfo->scrny);	// 初始化GUI至bufBack
 	initMouseCursor8(bufMouse, COL8_008484);	// 初始化鼠标至bufMouse
 	
-	sheetSlide(shtctl, sheetBack, 0, 0);	// 背景图层起始坐标(0,0)
+	sheetSlide(sheetBack, 0, 0);	// 背景图层起始坐标(0,0)
 	// 初始鼠标坐标为屏幕正中
 	mx = (binfo->scrnx - 16) / 2;	// 鼠标x轴位置
 	my = (binfo->scrny - 28 - 16) / 2;	// 鼠标y轴位置
-	sheetSlide(shtctl, sheetMouse, mx, my);	// 将鼠标图层滑动至对应位置
-	sheetUpdown(shtctl, sheetBack, 0);	// 将背景图层置于索引0
-	sheetUpdown(shtctl, sheetMouse, 1);	// 将鼠标图层置于背景层上方索引1
+	sheetSlide(sheetMouse, mx, my);	// 将鼠标图层滑动至对应位置
+	sheetUpdown(sheetBack, 0);	// 将背景图层置于索引0
+	sheetUpdown(sheetMouse, 1);	// 将鼠标图层置于背景层上方索引1
 	putFont8_asc(bufBack, binfo->scrnx, 30, 32, COL8_FFFFFF, "DickOS");	// 将DickOS写入背景层
 	sprintf(s, "(%d, %d)", mx, my);	// 将鼠标位置存入s
 	putFont8_asc(bufBack, binfo->scrnx, 0, 0, COL8_FFFFFF, s);	// 将s写入背景图层
 	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
 	putFont8_asc(bufBack, binfo->scrnx, 0, 64, COL8_FFFFFF, s);	// 将s写入背景图层
-	sheetRefresh(shtctl, sheetBack, 0, 0, binfo->scrnx, 64 + 16 + 16);	// 刷新图层
+	sheetRefresh(sheetBack, 0, 0, binfo->scrnx, 64 + 16 + 16);	// 刷新图层
 	
 	//处理键盘与鼠标中断与进入hlt
 	for(;;){
@@ -88,7 +88,7 @@ void Main(){
 				sprintf(s, "%02X", bufval);
 				boxFill8(bufBack, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
 				putFont8_asc(bufBack, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
-				sheetRefresh(shtctl, sheetBack, 0, 16, 16, 32);
+				sheetRefresh(sheetBack, 0, 16, 16, 32);
 			} else if (QueueSize(&mousebuf) != 0) {
 				bufval = QueuePop(&mousebuf);
 				io_sti();
@@ -107,7 +107,7 @@ void Main(){
 					boxFill8(bufBack, binfo->scrnx, COL8_008484, 32, 16, 32 + 15 * 8 - 1, 31);	// 用背景色覆盖原有鼠标信息
 					putFont8_asc(bufBack, binfo->scrnx, 32, 16, COL8_FFFFFF, s);	//打印鼠标信息
 					// 鼠标坐标加上偏移量
-					sheetRefresh(shtctl, sheetBack, 32, 16, 32 + 15 * 8, 32);
+					sheetRefresh(sheetBack, 32, 16, 32 + 15 * 8, 32);
 					mx += mdec.x;
 					my += mdec.y;
 					
@@ -124,8 +124,8 @@ void Main(){
 					sprintf(s, "(%3d, %3d)", mx, my);
 					boxFill8(bufBack, binfo->scrnx, COL8_008484, 0, 0, 79, 15);	// 覆盖原有坐标信息
 					putFont8_asc(bufBack, binfo->scrnx, 0, 0, COL8_FFFFFF, s);	// 显示新的坐标信息
-					sheetRefresh(shtctl, sheetBack, 0, 0, 80, 16);
-					sheetSlide(shtctl, sheetMouse, mx, my);
+					sheetRefresh(sheetBack, 0, 0, 80, 16);
+					sheetSlide(sheetMouse, mx, my);
 				} 
 			}
 		}

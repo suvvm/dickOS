@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.1.8
+* @Version: 0.1.9
 * @Date: 2020-01-23
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -209,6 +209,7 @@ struct MEMSEGTABLE {
 struct SHEET {
 	unsigned char *buf;
 	int width, height, locationX, locationY, colInvNum, index, status;
+	struct SHTCTL *shtctl;
 };
 
 /********************************************************************************
@@ -296,10 +297,10 @@ int memsegFree4K(struct MEMSEGTABLE *memsegtable, unsigned int addr, unsigned in
 struct SHTCTL *shtctlInit(struct MEMSEGTABLE *memsegtable, unsigned char *vram, int xSize, int ySize);
 struct SHEET *sheetAlloc(struct SHTCTL *shtclt);
 void sheetSetbuf(struct SHEET *sheet, unsigned char *buf, int width, int height, int colInvNum);
-void sheetUpdown(struct SHTCTL *shtclt, struct SHEET *sheet, int index);
-void sheetRefresh(struct SHTCTL *shtctl, struct SHEET *sheet, int startX, int startY, int endX, int endY);
+void sheetUpdown(struct SHEET *sheet, int index);
+void sheetRefresh(struct SHEET *sheet, int startX, int startY, int endX, int endY);
 void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY);
-void sheetSlide(struct SHTCTL *shtctl, struct SHEET *sheet, int locationX, int locationY);
-void sheetFree(struct SHTCTL *shtctl, struct SHEET *sheet);
+void sheetSlide(struct SHEET *sheet, int locationX, int locationY);
+void sheetFree(struct SHEET *sheet);
 
 #endif // BOOTPACK_H
