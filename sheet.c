@@ -187,6 +187,7 @@ void sheetRefresh(struct SHTCTL *shtctl, struct SHEET *sheet, int startX, int st
 *
 **********************************************************/
 void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY) {
+	/*
 	int i, sheetX, sheetY, locationX, locationY;
 	unsigned char *buf, c, *vram = shtctl->vram;
 	struct SHEET *sheet;
@@ -202,6 +203,41 @@ void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 					if (c != sheet->colInvNum) {	// c不为图层透明色
 						vram[locationY * shtctl->xSize + locationX] = c;
 					}
+				}
+			}
+		}
+	}
+	*/
+	int i, sheetX, sheetY, locationX, locationY, relativeStartX, relativeStartY, relativeEndX, relativeEndY;
+	unsigned char *buf, c, *vram = shtctl->vram;
+	struct SHEET *sheet;
+	for (i = 0; i <= shtctl->top; i++) {
+		sheet = shtctl->sheetsAcs[i];
+		buf = sheet->buf;
+		// 获取要刷新的区域在图层中的对应位置
+		relativeStartX = startX - sheet->locationX;
+		relativeStartY = startY - sheet->locationY;
+		relativeEndX = endX - sheet->locationX;
+		relativeEndY = endY - sheet->locationY;
+		if (relativeStartX < 0) {	// 修正溢出部分
+			relativeStartX = 0;
+		}
+		if (relativeStartY < 0) {
+			relativeStartY = 0;
+		}
+		if (relativeEndX > sheet->width) {
+			relativeEndX = sheet->width;
+		}
+		if (relativeEndY > sheet->height) {
+			relativeEndY = sheet->height;
+		}
+		for (sheetY = relativeStartY; sheetY < relativeEndY; sheetY++) {
+			locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
+			for (sheetX = relativeStartX; sheetX < relativeEndX; sheetX++) {
+				locationX = sheet->locationX + sheetX;	// 找到图像在vram x轴映射的位置
+				c = buf[sheetY * sheet->width + sheetX];
+				if (c != sheet->colInvNum) {	// c不为图层透明色
+					vram[locationY * shtctl->xSize + locationX] = c;
 				}
 			}
 		}
