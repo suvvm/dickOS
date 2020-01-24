@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.1
-* @Date: 2020-01-23
+* @Version: 0.2.2
+* @Date: 2020-01-24
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -84,7 +84,7 @@ void Main(){
 	char s[40], keyb[32], mouseb[128];	// mcursor鼠标信息 s保存要输出的变量信息
 	int mx, my, bufval; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
 	struct MouseDec mdec;	// 保存鼠标信息
-	unsigned int memtotal;
+	unsigned int memtotal, count = 0;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHTCTL *shtctl;	// 图层控制块指针
 	struct SHEET *sheetBack, *sheetMouse, *sheetWin;	// 背景图层 鼠标图层 窗口图层
@@ -117,15 +117,15 @@ void Main(){
 	sheetMouse = sheetAlloc(shtctl);
 	sheetWin = sheetAlloc(shtctl);
 	bufBack = (unsigned char *) memsegAlloc4K(memsegtable, binfo->scrnx * binfo->scrny);	// 以4KB为单位为背景分配内存
-	bufWin = (unsigned char *) memsegAlloc4K(memsegtable, 160 * 68);
+	bufWin = (unsigned char *) memsegAlloc4K(memsegtable, 160 * 52);
 	sheetSetbuf(sheetBack, bufBack, binfo->scrnx, binfo->scrny, -1);	// 设置背景图层缓冲区，背景不需要透明色设为-1
 	sheetSetbuf(sheetMouse, bufMouse, 16, 16, COL8_008484);	// 设置鼠标图层缓冲区与透明色
-	sheetSetbuf(sheetWin, bufWin, 160, 68, -1);	// 设置窗口图层缓冲区 无透明色
+	sheetSetbuf(sheetWin, bufWin, 160, 52, -1);	// 设置窗口图层缓冲区 无透明色
 	init_GUI(bufBack, binfo->scrnx, binfo->scrny);	// 初始化GUI至bufBack
 	initMouseCursor8(bufMouse, COL8_008484);	// 初始化鼠标至bufMouse
-	makeWindow(bufWin, 160, 68, "window");	// 显示窗口
-	putFont8_asc(bufWin, 160, 24, 28, COL8_000000, "Welcome to");
-	putFont8_asc(bufWin, 160, 24, 44, COL8_000000, "DickOS");
+	makeWindow(bufWin, 160, 52, "counter");	// 显示窗口
+	// putFont8_asc(bufWin, 160, 24, 28, COL8_000000, "Welcome to");
+	// putFont8_asc(bufWin, 160, 24, 44, COL8_000000, "DickOS");
 	sheetSlide(sheetBack, 0, 0);	// 背景图层起始坐标(0,0)
 	// 初始鼠标坐标为屏幕正中
 	mx = (binfo->scrnx - 16) / 2;	// 鼠标x轴位置
@@ -144,9 +144,16 @@ void Main(){
 	
 	//处理键盘与鼠标中断与进入hlt
 	for(;;){
+		count ++;
+		sprintf(s, "%010d", count);
+		boxFill8(bufWin, 160, COL8_C6C6C6, 40, 28, 119, 43);
+		putFont8_asc(bufWin, 160, 40, 28, COL8_000000, s);
+		
+		sheetRefresh(sheetWin, 40, 28, 120, 44);
+		
 		io_cli();
 		if(QueueSize(&keybuf) + QueueSize(&mousebuf) == 0) {	// 只有在两个缓冲区都没有数据时才能开启中断并进入hlt模式
-			io_stihlt();
+			io_sti();
 		} else {
 			if (QueueSize(&keybuf) != 0) {
 				bufval = QueuePop(&keybuf);
