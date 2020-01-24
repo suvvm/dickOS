@@ -1,4 +1,4 @@
-text size :   6791(0x01A87)
+text size :   6861(0x01ACD)
 data size :   4808(0x012C8)
 bss  size :      0(0x00000)
 
@@ -44,33 +44,33 @@ bss  size :      0(0x00000)
 0x00000DBA : _sheetFree
 0x00000DDD : _makeWindow
 0x00000F49 : _Main
-0x000014CC : (.text)
-0x000014CC : _io_hlt
-0x000014CE : _io_cli
-0x000014D0 : _io_sti
-0x000014D2 : _io_stihlt
-0x000014D5 : _io_in8
-0x000014E0 : _io_in16
-0x000014EC : _io_in32
-0x000014F2 : _io_out8
-0x000014FC : _io_out16
-0x00001507 : _io_out32
-0x00001511 : _io_load_eflags
-0x00001514 : _io_store_eflags
-0x0000151B : _loadGdtr
-0x0000152B : _loadIdtr
-0x0000153B : _loadCr0
-0x0000153F : _storeCr0
-0x00001547 : _asm_interruptHandler21
-0x0000155E : _asm_interruptHandler27
-0x00001575 : _asm_interruptHandler2c
-0x0000158C : _memtest_sub
-0x000015CE : _sprintf
-0x000015CE : (.text)
-0x000015E2 : (.text)
-0x0000161E : _strtoul0
-0x000016F1 : (.text)
-0x00001719 : _vsprintf
+0x00001512 : (.text)
+0x00001512 : _io_hlt
+0x00001514 : _io_cli
+0x00001516 : _io_sti
+0x00001518 : _io_stihlt
+0x0000151B : _io_in8
+0x00001526 : _io_in16
+0x00001532 : _io_in32
+0x00001538 : _io_out8
+0x00001542 : _io_out16
+0x0000154D : _io_out32
+0x00001557 : _io_load_eflags
+0x0000155A : _io_store_eflags
+0x00001561 : _loadGdtr
+0x00001571 : _loadIdtr
+0x00001581 : _loadCr0
+0x00001585 : _storeCr0
+0x0000158D : _asm_interruptHandler21
+0x000015A4 : _asm_interruptHandler27
+0x000015BB : _asm_interruptHandler2c
+0x000015D2 : _memtest_sub
+0x00001614 : _sprintf
+0x00001614 : (.text)
+0x00001628 : (.text)
+0x00001664 : _strtoul0
+0x00001737 : (.text)
+0x0000175F : _vsprintf
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000000 : (.data)
