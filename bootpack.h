@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.1.9
-* @Date: 2020-01-23
+* @Version: 0.2.1
+* @Date: 2020-01-25
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -299,7 +299,7 @@ struct SHEET *sheetAlloc(struct SHTCTL *shtclt);
 void sheetSetbuf(struct SHEET *sheet, unsigned char *buf, int width, int height, int colInvNum);
 void sheetUpdown(struct SHEET *sheet, int index);
 void sheetRefresh(struct SHEET *sheet, int startX, int startY, int endX, int endY);
-void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY);
+void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY, int startIndex);
 void sheetSlide(struct SHEET *sheet, int locationX, int locationY);
 void sheetFree(struct SHEET *sheet);
 

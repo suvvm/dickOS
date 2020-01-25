@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: sheet.c
 * @Author: suvvm
-* @Version: 0.0.4
-* @Date: 2020-01-23
+* @Version: 0.0.5
+* @Date: 2020-01-25
 * @Description: 定义图层相关函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -108,16 +108,17 @@ void sheetUpdown(struct SHEET *sheet, int index) {
 				shtctl->sheetsAcs[i]->index = i;
 			}
 			shtctl->sheetsAcs[index] = sheet;
+			sheetRefreshSub(sheet->shtctl, sheet->locationX, sheet->locationY, sheet->locationX + sheet->width, sheet->locationY + sheet->height, index + 1);	// 重新绘制画面
 		} else {	// 隐藏
 			if(shtctl->top > old) {	// 最高索引大于之前的索引值（图层不在最高层）
 				for (i = old; i < shtctl->top; i++) {	// 将大于该图层原索引的所有图层的索引降低1
 					shtctl->sheetsAcs[i] = shtctl->sheetsAcs[i + 1];
 					shtctl->sheetsAcs[i]->index = i;
 				}
-				shtctl->top--;
 			}
+			shtctl->top--;
+			sheetRefreshSub(sheet->shtctl, sheet->locationX, sheet->locationY, sheet->locationX + sheet->width, sheet->locationY + sheet->height, 0);	// 重新绘制画面
 		}
-		sheetRefreshSub(sheet->shtctl, sheet->locationX, sheet->locationY, sheet->locationX + sheet->width, sheet->locationY + sheet->height);	// 重新绘制画面
 	} else if (old < index) {	// 若新的索引值大于之前的索引值 将更新的图层提升至目标位置
 		if (old >= 0) {	// 图层之前未被隐藏
 			for (i = old; i < index; i++) {	// 将之前位置到现在位置之间的所有图层索引降低1
@@ -133,7 +134,7 @@ void sheetUpdown(struct SHEET *sheet, int index) {
 			shtctl->sheetsAcs[index] = sheet;	// 将图层放至对应位置
 			shtctl->top++;
 		}
-		sheetRefreshSub(sheet->shtctl, sheet->locationX, sheet->locationY, sheet->locationX + sheet->width, sheet->locationY + sheet->height);
+		sheetRefreshSub(sheet->shtctl, sheet->locationX, sheet->locationY, sheet->locationX + sheet->width, sheet->locationY + sheet->height, index);
 	}
 }
 
@@ -170,7 +171,7 @@ void sheetRefresh(struct SHEET *sheet, int startX, int startY, int endX, int end
 	}
 	*/
 	if (sheet->index >= 0) {	// 图层未被隐藏
-		sheetRefreshSub(sheet->shtctl, sheet->locationX + startX, sheet->locationY + startY, sheet->locationX + endX, sheet->locationY + endY);	// 刷新vram指定位置
+		sheetRefreshSub(sheet->shtctl, sheet->locationX + startX, sheet->locationY + startY, sheet->locationX + endX, sheet->locationY + endY, sheet->index);	// 刷新vram指定位置
 	}
 }
 
@@ -184,9 +185,10 @@ void sheetRefresh(struct SHEET *sheet, int startX, int startY, int endX, int end
 *	@startY		欲刷新区域y轴起始坐标	int
 *	@endX		欲刷新区域的宽度		int
 *	@endY		欲刷新区域的高度		int
+*	@startIndex	要与刷新的指定开始索引	int
 *
 **********************************************************/
-void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY) {
+void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY, int startIndex) {
 	/*
 	int i, sheetX, sheetY, locationX, locationY;
 	unsigned char *buf, c, *vram = shtctl->vram;
@@ -223,7 +225,7 @@ void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 	if (endY > shtctl->ySize) {
 		endY = shtctl->ySize;
 	}
-	for (i = 0; i <= shtctl->top; i++) {
+	for (i = startIndex; i <= shtctl->top; i++) {	// 只刷新指定索引及以上的图层
 		sheet = shtctl->sheetsAcs[i];
 		buf = sheet->buf;
 		// 获取要刷新的区域在图层中的对应位置
@@ -271,8 +273,8 @@ void sheetSlide(struct SHEET *sheet, int locationX, int locationY) {
 	sheet->locationX = locationX;
 	sheet->locationY = locationY;
 	if (sheet->index >= 0) {	// 图层未被隐藏则重新绘制画面
-		sheetRefreshSub(sheet->shtctl, oldLocationX, oldLocationY, oldLocationX + sheet->width, oldLocationY + sheet->height);	// 刷新移动前区域
-		sheetRefreshSub(sheet->shtctl, locationX, locationY, locationX + sheet->width, locationY + sheet->height);	// 刷新移动目标区域
+		sheetRefreshSub(sheet->shtctl, oldLocationX, oldLocationY, oldLocationX + sheet->width, oldLocationY + sheet->height, 0);	// 刷新移动前区域
+		sheetRefreshSub(sheet->shtctl, locationX, locationY, locationX + sheet->width, locationY + sheet->height, sheet->index);	// 刷新移动目标区域
 		
 		//sheetRefresh(shtctl);
 	}
