@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.1
-* @Date: 2020-01-25
+* @Version: 0.2.2
+* @Date: 2020-01-29
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -217,6 +217,8 @@ struct SHEET {
 * sheet control 图层控制，用于管理图层
 * Parameter:
 *	@vram		对应vram地址							unsigned char *
+*	@map		与vram大小相等的内存空间，				unsigned char *
+*				用于记录画面上正在显示的点属于哪个图层	
 *	@xSize		vram的画面宽度							int
 *	@ySize		vram的画面高度							int
 *	@top		最上层图层索引							int
@@ -225,7 +227,7 @@ struct SHEET {
 *
 ********************************************************************************/
 struct SHTCTL {
-	unsigned char *vram;
+	unsigned char *vram, *map;
 	int xSize, ySize, top;
 	struct SHEET *sheetsAcs[MAX_SHEETS];
 	struct SHEET sheets[MAX_SHEETS];
@@ -302,5 +304,6 @@ void sheetRefresh(struct SHEET *sheet, int startX, int startY, int endX, int end
 void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY, int startIndex);
 void sheetSlide(struct SHEET *sheet, int locationX, int locationY);
 void sheetFree(struct SHEET *sheet);
+void sheetRefreshMap(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY, int startIndex);
 
 #endif // BOOTPACK_H
