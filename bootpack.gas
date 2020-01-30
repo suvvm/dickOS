@@ -1953,6 +1953,7 @@ _initPit:
 	pushl	$64
 	call	_io_out8
 	movl	$0, _timerctl
+	movl	$0, _timerctl+4
 	leave
 	ret
 	.balign 2
@@ -1964,9 +1965,55 @@ _interruptHandler20:
 	pushl	$96
 	pushl	$32
 	call	_io_out8
+	popl	%eax
+	movl	_timerctl+4, %eax
 	incl	_timerctl
+	popl	%edx
+	testl	%eax, %eax
+	je	L338
+	decl	%eax
+	movl	%eax, _timerctl+4
+	testl	%eax, %eax
+	je	L341
+L338:
 	leave
 	ret
+L341:
+	movzbl	_timerctl+12, %eax
+	pushl	%eax
+	pushl	_timerctl+8
+	call	_QueuePush
+	popl	%ecx
+	popl	%eax
+	jmp	L338
+	.balign 2
+.globl _setTimer
+	.def	_setTimer;	.scl	2;	.type	32;	.endef
+_setTimer:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%edi
+	pushl	%esi
+	pushl	%ebx
+	pushl	%ebx
+	movl	16(%ebp), %eax
+	movl	8(%ebp), %esi
+	movl	%eax, -16(%ebp)
+	movl	12(%ebp), %edi
+	call	_io_load_eflags
+	movl	%eax, %ebx
+	call	_io_cli
+	movb	-16(%ebp), %al
+	movl	%esi, _timerctl+4
+	movl	%edi, _timerctl+8
+	movb	%al, _timerctl+12
+	movl	%ebx, 8(%ebp)
+	popl	%ecx
+	popl	%ebx
+	popl	%esi
+	popl	%edi
+	popl	%ebp
+	jmp	_io_store_eflags
 	.data
 _closeBtn.2:
 	.ascii "OOOOOOOOOOOOOOO@"
@@ -2103,45 +2150,45 @@ _makeWindow:
 	addl	$24, %esp
 	movl	$0, -16(%ebp)
 	movl	$0, -32(%ebp)
-L355:
+L359:
 	leal	(%esi,%ebx), %eax
 	movl	8(%ebp), %edx
 	xorl	%edi, %edi
 	leal	-21(%edx,%eax), %ecx
-L354:
+L358:
 	movl	-32(%ebp), %eax
 	movb	_closeBtn.2(%edi,%eax), %dl
 	cmpb	$64, %dl
-	je	L360
+	je	L364
 	cmpb	$36, %dl
-	je	L361
+	je	L365
 	cmpb	$81, %dl
 	movb	$8, %dl
 	setne	%al
 	subb	%al, %dl
-L349:
+L353:
 	incl	%edi
 	movb	%dl, (%ecx)
 	incl	%ecx
 	cmpl	$15, %edi
-	jle	L354
+	jle	L358
 	incl	-16(%ebp)
 	addl	%ebx, %esi
 	addl	$16, -32(%ebp)
 	cmpl	$13, -16(%ebp)
-	jle	L355
+	jle	L359
 	leal	-12(%ebp), %esp
 	popl	%ebx
 	popl	%esi
 	popl	%edi
 	popl	%ebp
 	ret
-L361:
+L365:
 	movb	$15, %dl
-	jmp	L349
-L360:
+	jmp	L353
+L364:
 	xorl	%edx, %edx
-	jmp	L349
+	jmp	L353
 	.data
 LC0:
 	.ascii "counter\0"
@@ -2153,6 +2200,8 @@ LC3:
 	.ascii "memory %dMB free : %dKB\0"
 LC4:
 	.ascii "%010d\0"
+LC8:
+	.ascii "10[sec]\0"
 LC6:
 	.ascii "[lcr %4d %4d]\0"
 LC7:
@@ -2169,7 +2218,8 @@ _Main:
 	pushl	%edi
 	pushl	%esi
 	pushl	%ebx
-	subl	$508, %esp
+	leal	-524(%ebp), %ebx
+	subl	$552, %esp
 	call	_initGdtit
 	call	_init_pic
 	call	_io_sti
@@ -2191,6 +2241,16 @@ _Main:
 	pushl	$239
 	pushl	$161
 	call	_io_out8
+	leal	-532(%ebp), %eax
+	pushl	%eax
+	pushl	$8
+	pushl	%ebx
+	call	_QueueInit
+	pushl	$1
+	pushl	%ebx
+	pushl	$1000
+	call	_setTimer
+	addl	$32, %esp
 	call	_initKeyboard
 	leal	-236(%ebp), %eax
 	pushl	%eax
@@ -2206,11 +2266,11 @@ _Main:
 	pushl	$3932160
 	call	_memsegFree
 	leal	-4194304(%ebx), %eax
-	addl	$36, %esp
 	pushl	%eax
 	pushl	$4194304
 	pushl	$3932160
 	call	_memsegFree
+	addl	$40, %esp
 	call	_init_palette
 	movswl	4086,%eax
 	pushl	%eax
@@ -2222,54 +2282,54 @@ _Main:
 	movl	%eax, %ebx
 	pushl	%eax
 	call	_sheetAlloc
-	addl	$32, %esp
 	pushl	%ebx
-	movl	%eax, -496(%ebp)
+	movl	%eax, -544(%ebp)
 	call	_sheetAlloc
 	pushl	%ebx
 	leal	-492(%ebp), %ebx
-	movl	%eax, -500(%ebp)
+	movl	%eax, -548(%ebp)
 	call	_sheetAlloc
 	movswl	4086,%edx
-	movl	%eax, -504(%ebp)
+	movl	%eax, -552(%ebp)
 	movswl	4084,%eax
 	imull	%edx, %eax
 	pushl	%eax
 	pushl	$3932160
 	call	_memsegAlloc4K
+	addl	$36, %esp
+	movl	%eax, %edi
 	pushl	$8320
 	pushl	$3932160
-	movl	%eax, -508(%ebp)
 	call	_memsegAlloc4K
 	pushl	$-1
-	movl	%eax, -512(%ebp)
+	movl	%eax, -556(%ebp)
 	movswl	4086,%eax
 	pushl	%eax
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
-	pushl	-496(%ebp)
+	pushl	%edi
+	pushl	-544(%ebp)
 	call	_sheetSetbuf
-	addl	$44, %esp
 	pushl	$14
 	pushl	$16
 	pushl	$16
 	pushl	%ebx
-	pushl	-500(%ebp)
+	pushl	-548(%ebp)
 	call	_sheetSetbuf
+	addl	$48, %esp
 	pushl	$-1
 	pushl	$52
 	pushl	$160
-	pushl	-512(%ebp)
-	pushl	-504(%ebp)
+	pushl	-556(%ebp)
+	pushl	-552(%ebp)
 	call	_sheetSetbuf
-	addl	$40, %esp
 	movswl	4086,%eax
 	pushl	%eax
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
+	pushl	%edi
 	call	_init_GUI
+	addl	$32, %esp
 	pushl	$14
 	pushl	%ebx
 	movl	$2, %ebx
@@ -2277,43 +2337,43 @@ _Main:
 	pushl	$LC0
 	pushl	$52
 	pushl	$160
-	pushl	-512(%ebp)
+	pushl	-556(%ebp)
 	call	_makeWindow
-	addl	$36, %esp
 	pushl	$0
 	pushl	$0
-	pushl	-496(%ebp)
+	pushl	-544(%ebp)
 	call	_sheetSlide
+	addl	$36, %esp
 	movswl	4084,%eax
 	leal	-16(%eax), %ecx
 	movl	%ecx, %eax
 	cltd
 	idivl	%ebx
-	movl	%eax, %edi
+	movl	%eax, -536(%ebp)
 	movswl	4086,%eax
 	leal	-44(%eax), %ecx
 	movl	%ecx, %eax
 	cltd
 	idivl	%ebx
 	pushl	%eax
-	movl	%eax, %esi
-	pushl	%edi
+	movl	%eax, -540(%ebp)
+	pushl	-536(%ebp)
+	pushl	-548(%ebp)
 	leal	-60(%ebp), %ebx
-	pushl	-500(%ebp)
 	call	_sheetSlide
 	pushl	$80
 	pushl	$80
-	pushl	-504(%ebp)
+	pushl	-552(%ebp)
 	call	_sheetSlide
-	addl	$36, %esp
 	pushl	$0
-	pushl	-496(%ebp)
+	pushl	-544(%ebp)
 	call	_sheetUpdown
+	addl	$32, %esp
 	pushl	$1
-	pushl	-504(%ebp)
+	pushl	-552(%ebp)
 	call	_sheetUpdown
 	pushl	$2
-	pushl	-500(%ebp)
+	pushl	-548(%ebp)
 	call	_sheetUpdown
 	pushl	$LC1
 	pushl	$7
@@ -2321,11 +2381,11 @@ _Main:
 	pushl	$30
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
-	call	_putFont8_asc
-	addl	$48, %esp
-	pushl	%esi
 	pushl	%edi
+	call	_putFont8_asc
+	addl	$40, %esp
+	pushl	-540(%ebp)
+	pushl	-536(%ebp)
 	pushl	$LC2
 	pushl	%ebx
 	call	_sprintf
@@ -2335,7 +2395,7 @@ _Main:
 	pushl	$0
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
+	pushl	%edi
 	call	_putFont8_asc
 	addl	$40, %esp
 	pushl	$3932160
@@ -2345,9 +2405,9 @@ _Main:
 	pushl	$-1073741825
 	pushl	$4194304
 	call	_memtest
-	popl	%edx
+	popl	%esi
 	shrl	$20, %eax
-	popl	%ecx
+	popl	%edx
 	pushl	%eax
 	pushl	$LC3
 	pushl	%ebx
@@ -2358,7 +2418,7 @@ _Main:
 	pushl	$0
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
+	pushl	%edi
 	call	_putFont8_asc
 	addl	$40, %esp
 	pushl	$172
@@ -2366,14 +2426,15 @@ _Main:
 	pushl	%eax
 	pushl	$0
 	pushl	$0
-	pushl	-496(%ebp)
+	pushl	-544(%ebp)
 	call	_sheetRefresh
 	addl	$20, %esp
-L363:
+L367:
 	pushl	_timerctl
 	pushl	$LC4
 	leal	-60(%ebp), %ebx
 	pushl	%ebx
+	leal	-524(%ebp), %esi
 	call	_sprintf
 	pushl	$43
 	pushl	$119
@@ -2381,7 +2442,7 @@ L363:
 	pushl	$40
 	pushl	$8
 	pushl	$160
-	pushl	-512(%ebp)
+	pushl	-556(%ebp)
 	call	_boxFill8
 	addl	$40, %esp
 	pushl	%ebx
@@ -2389,13 +2450,13 @@ L363:
 	pushl	$28
 	pushl	$40
 	pushl	$160
-	pushl	-512(%ebp)
+	pushl	-556(%ebp)
 	call	_putFont8_asc
 	pushl	$44
 	pushl	$120
 	pushl	$28
 	pushl	$40
-	pushl	-504(%ebp)
+	pushl	-552(%ebp)
 	call	_sheetRefresh
 	addl	$44, %esp
 	call	_io_cli
@@ -2404,21 +2465,48 @@ L363:
 	pushl	$_mousebuf
 	movl	%eax, %ebx
 	call	_QueueSize
-	popl	%edx
+	pushl	%esi
+	addl	%eax, %ebx
+	call	_QueueSize
+	addl	$12, %esp
 	leal	(%eax,%ebx), %eax
-	popl	%ecx
 	testl	%eax, %eax
-	je	L379
+	je	L385
 	pushl	$_keybuf
 	call	_QueueSize
 	popl	%ebx
 	testl	%eax, %eax
-	jne	L380
+	jne	L386
 	pushl	$_mousebuf
 	call	_QueueSize
 	popl	%ecx
 	testl	%eax, %eax
-	je	L363
+	jne	L387
+	pushl	%esi
+	call	_QueueSize
+	popl	%edx
+	testl	%eax, %eax
+	je	L367
+	pushl	%esi
+	call	_QueuePop
+	call	_io_sti
+	pushl	$LC8
+	pushl	$7
+	pushl	$80
+	pushl	$0
+	movswl	4084,%eax
+	pushl	%eax
+	pushl	%edi
+	call	_putFont8_asc
+	pushl	$172
+	pushl	$56
+	pushl	$64
+	pushl	$0
+	pushl	-544(%ebp)
+	call	_sheetRefresh
+	addl	$48, %esp
+	jmp	L367
+L387:
 	pushl	$_mousebuf
 	call	_QueuePop
 	movl	%eax, %ebx
@@ -2430,7 +2518,7 @@ L363:
 	call	_mouseDecode
 	addl	$12, %esp
 	testl	%eax, %eax
-	je	L363
+	je	L367
 	pushl	-228(%ebp)
 	pushl	-232(%ebp)
 	pushl	$LC6
@@ -2440,17 +2528,17 @@ L363:
 	addl	$16, %esp
 	movl	-224(%ebp), %eax
 	testl	$1, %eax
-	je	L372
+	je	L376
 	movb	$76, -59(%ebp)
-L372:
+L376:
 	testl	$2, %eax
-	je	L373
+	je	L377
 	movb	$82, -57(%ebp)
-L373:
+L377:
 	andl	$4, %eax
-	je	L374
+	je	L378
 	movb	$67, -58(%ebp)
-L374:
+L378:
 	pushl	$31
 	pushl	$151
 	pushl	$16
@@ -2458,7 +2546,7 @@ L374:
 	pushl	$14
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
+	pushl	%edi
 	call	_boxFill8
 	leal	-60(%ebp), %edx
 	pushl	%edx
@@ -2467,40 +2555,43 @@ L374:
 	pushl	$32
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
+	pushl	%edi
 	call	_putFont8_asc
 	addl	$52, %esp
 	pushl	$32
 	pushl	$152
 	pushl	$16
 	pushl	$32
-	pushl	-496(%ebp)
+	pushl	-544(%ebp)
 	call	_sheetRefresh
+	movl	-232(%ebp), %eax
+	movl	-228(%ebp), %ebx
 	addl	$20, %esp
-	addl	-228(%ebp), %esi
-	addl	-232(%ebp), %edi
-	js	L381
-L375:
-	testl	%esi, %esi
-	js	L382
-L376:
+	addl	%ebx, -540(%ebp)
+	addl	%eax, -536(%ebp)
+	js	L388
+L379:
+	cmpl	$0, -540(%ebp)
+	js	L389
+L380:
 	movswl	4084,%eax
 	decl	%eax
-	cmpl	%eax, %edi
-	jle	L377
-	movl	%eax, %edi
-L377:
+	cmpl	%eax, -536(%ebp)
+	jle	L381
+	movl	%eax, -536(%ebp)
+L381:
 	movswl	4086,%eax
 	decl	%eax
-	cmpl	%eax, %esi
-	jle	L378
-	movl	%eax, %esi
-L378:
-	pushl	%esi
-	leal	-60(%ebp), %ebx
-	pushl	%edi
+	cmpl	%eax, -540(%ebp)
+	jle	L382
+	movl	%eax, -540(%ebp)
+L382:
+	pushl	-540(%ebp)
+	pushl	-536(%ebp)
 	pushl	$LC7
-	pushl	%ebx
+	leal	-60(%ebp), %edx
+	pushl	%edx
+	leal	-60(%ebp), %ebx
 	call	_sprintf
 	pushl	$15
 	pushl	$79
@@ -2509,7 +2600,7 @@ L378:
 	pushl	$14
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
+	pushl	%edi
 	call	_boxFill8
 	addl	$44, %esp
 	pushl	%ebx
@@ -2518,28 +2609,28 @@ L378:
 	pushl	$0
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
+	pushl	%edi
 	call	_putFont8_asc
 	pushl	$16
 	pushl	$80
 	pushl	$0
 	pushl	$0
-	pushl	-496(%ebp)
+	pushl	-544(%ebp)
 	call	_sheetRefresh
 	addl	$44, %esp
-	pushl	%esi
-	pushl	%edi
-	pushl	-500(%ebp)
+	pushl	-540(%ebp)
+	pushl	-536(%ebp)
+	pushl	-548(%ebp)
 	call	_sheetSlide
 	addl	$12, %esp
-	jmp	L363
-L382:
-	xorl	%esi, %esi
-	jmp	L376
-L381:
-	xorl	%edi, %edi
-	jmp	L375
-L380:
+	jmp	L367
+L389:
+	movl	$0, -540(%ebp)
+	jmp	L380
+L388:
+	movl	$0, -536(%ebp)
+	jmp	L379
+L386:
 	pushl	$_keybuf
 	call	_QueuePop
 	movl	%eax, %ebx
@@ -2557,7 +2648,7 @@ L380:
 	pushl	$14
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
+	pushl	%edi
 	call	_boxFill8
 	addl	$44, %esp
 	pushl	%ebx
@@ -2566,19 +2657,19 @@ L380:
 	pushl	$0
 	movswl	4084,%eax
 	pushl	%eax
-	pushl	-508(%ebp)
+	pushl	%edi
 	call	_putFont8_asc
 	pushl	$32
 	pushl	$16
 	pushl	$16
 	pushl	$0
-	pushl	-496(%ebp)
+	pushl	-544(%ebp)
 	call	_sheetRefresh
 	addl	$44, %esp
-	jmp	L363
-L379:
+	jmp	L367
+L385:
 	call	_io_sti
-	jmp	L363
+	jmp	L367
 .globl _keybuf
 	.data
 	.balign 16
@@ -2591,9 +2682,9 @@ _mousebuf:
 	.space 24
 .globl _timerctl
 	.data
-	.balign 4
+	.balign 16
 _timerctl:
-	.space 4
+	.space 16
 	.def	_sprintf;	.scl	2;	.type	32;	.endef
 	.def	_io_sti;	.scl	2;	.type	32;	.endef
 	.def	_sheetRefreshSub;	.scl	2;	.type	32;	.endef
