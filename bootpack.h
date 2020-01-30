@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.2
-* @Date: 2020-01-29
+* @Version: 0.2.3
+* @Date: 2020-01-30
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -77,6 +77,9 @@
 #define MAX_SHEETS	256	// 最大图层数
 #define SHEET_USE	1	// 图层使用标记
 
+#define PIT_CTRL	0x0043
+#define PIT_CNT0	0x0040
+
 /********************************************************************************
 *
 * 启动信息，与asmhead.nas中设置一致
@@ -111,7 +114,7 @@ struct BOOTINFO{
 *	@accessRight 段属性低8位（高4位在limitHigh的高4位代表扩展访问权）关于低8位详见note.txt
 *	@limitHigh limitHigh 段上限高地址 1字节 8位 由于段上限只有20位，所以在limitHigh高4位也写入段的属性
 *	@baseHigh 基址高地址 8位 4位扩展访问权由GD00组成 G为Gbit标志位 D为模式位 1代表32位模式 0代表16位模式（即使D为0也不能调用BOIS）
-*
+* 
 ********************************************************************************/
 struct SEGMENT_DESCRIPTOR{
 	short limitLow;
@@ -252,6 +255,7 @@ int loadCr0();
 void storeCr0(int cr0);
 void loadGdtr(int limit, int addr);
 void loadIdtr(int limit, int addr);
+void asm_interruptHandler20();
 void asm_interruptHandler21();
 void asm_interruptHandler27();
 void asm_interruptHandler2c();
@@ -305,5 +309,9 @@ void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 void sheetSlide(struct SHEET *sheet, int locationX, int locationY);
 void sheetFree(struct SHEET *sheet);
 void sheetRefreshMap(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY, int startIndex);
+
+// timer.c 函数声明
+void initPit();
+void interruptHandler20(int *esp);
 
 #endif // BOOTPACK_H
