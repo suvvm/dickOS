@@ -240,11 +240,17 @@ struct SHTCTL {
 *
 * timer control 计时器控制
 * Parameter:
-*	@count	记录计时器中断发生的次数	unsigned int
+*	@count		记录计时器中断发生的次数	unsigned int
+*	@timeout	超时限制					unsigned int
+*	@queue		缓冲区						struct QUEUE *
+*	@data		超时信息					unsigned char		
 *
 ********************************************************************************/
 struct TIMERCTL {
 	unsigned int count;
+	unsigned int timeout;
+	struct QUEUE *queue;
+	unsigned char data;
 };
 
 // queue.c 函数声明
@@ -324,5 +330,6 @@ void sheetRefreshMap(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 // timer.c 函数声明
 void initPit();
 void interruptHandler20(int *esp);
+void setTimer(unsigned int timeout, struct QUEUE *queue, unsigned char data);
 
 #endif // BOOTPACK_H
