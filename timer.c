@@ -7,6 +7,8 @@
 ********************************************************************************/
 #include "bootpack.h"
 
+struct TIMERCTL timerctl;
+
 /********************************************************
 *
 * Function name:	initPit
@@ -17,6 +19,7 @@ void initPit() {
 	io_out8(PIT_CTRL, 0x34);
 	io_out8(PIT_CNT0, 0x9c);
 	io_out8(PIT_CNT0, 0x2e);
+	timerctl.count = 0;
 }
 
 /********************************************************
@@ -29,5 +32,5 @@ void initPit() {
 **********************************************************/
 void interruptHandler20(int *esp) {
 	io_out8(PIC0_OCW2, 0x60);	// 将IRQ-0信号接收完毕的消息通知给PIC
-	// 暂时不做处理
+	timerctl.count++;	// 计时器控制块中的计数
 }
