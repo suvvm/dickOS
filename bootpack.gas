@@ -289,15 +289,20 @@ L24:
 	call	_loadIdtr
 	pushl	$142
 	pushl	$16
+	pushl	$_asm_interruptHandler20
+	pushl	$2554112
+	call	_setGatedesc
+	pushl	$142
+	pushl	$16
 	pushl	$_asm_interruptHandler21
 	pushl	$2554120
 	call	_setGatedesc
+	addl	$40, %esp
 	pushl	$142
 	pushl	$16
 	pushl	$_asm_interruptHandler27
 	pushl	$2554168
 	call	_setGatedesc
-	addl	$40, %esp
 	pushl	$142
 	pushl	$16
 	pushl	$_asm_interruptHandler2c
@@ -1932,6 +1937,34 @@ L336:
 	movl	-4(%ebp), %ebx
 	leave
 	ret
+	.balign 2
+.globl _initPit
+	.def	_initPit;	.scl	2;	.type	32;	.endef
+_initPit:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	$52
+	pushl	$67
+	call	_io_out8
+	pushl	$156
+	pushl	$64
+	call	_io_out8
+	pushl	$46
+	pushl	$64
+	call	_io_out8
+	leave
+	ret
+	.balign 2
+.globl _interruptHandler20
+	.def	_interruptHandler20;	.scl	2;	.type	32;	.endef
+_interruptHandler20:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	$96
+	pushl	$32
+	call	_io_out8
+	leave
+	ret
 	.data
 _closeBtn.2:
 	.ascii "OOOOOOOOOOOOOOO@"
@@ -2068,45 +2101,45 @@ _makeWindow:
 	addl	$24, %esp
 	movl	$0, -16(%ebp)
 	movl	$0, -32(%ebp)
-L353:
+L355:
 	leal	(%esi,%ebx), %eax
 	movl	8(%ebp), %edx
 	xorl	%edi, %edi
 	leal	-21(%edx,%eax), %ecx
-L352:
+L354:
 	movl	-32(%ebp), %eax
 	movb	_closeBtn.2(%edi,%eax), %dl
 	cmpb	$64, %dl
-	je	L358
+	je	L360
 	cmpb	$36, %dl
-	je	L359
+	je	L361
 	cmpb	$81, %dl
 	movb	$8, %dl
 	setne	%al
 	subb	%al, %dl
-L347:
+L349:
 	incl	%edi
 	movb	%dl, (%ecx)
 	incl	%ecx
 	cmpl	$15, %edi
-	jle	L352
+	jle	L354
 	incl	-16(%ebp)
 	addl	%ebx, %esi
 	addl	$16, -32(%ebp)
 	cmpl	$13, -16(%ebp)
-	jle	L353
+	jle	L355
 	leal	-12(%ebp), %esp
 	popl	%ebx
 	popl	%esi
 	popl	%edi
 	popl	%ebp
 	ret
-L359:
+L361:
 	movb	$15, %dl
-	jmp	L347
-L358:
+	jmp	L349
+L360:
 	xorl	%edx, %edx
-	jmp	L347
+	jmp	L349
 	.data
 LC0:
 	.ascii "counter\0"
@@ -2149,6 +2182,7 @@ _Main:
 	pushl	$128
 	pushl	$_mousebuf
 	call	_QueueInit
+	call	_initPit
 	pushl	$249
 	pushl	$33
 	call	_io_out8
@@ -2334,7 +2368,7 @@ _Main:
 	pushl	-500(%ebp)
 	call	_sheetRefresh
 	addl	$20, %esp
-L361:
+L363:
 	incl	-496(%ebp)
 	leal	-60(%ebp), %ebx
 	pushl	-496(%ebp)
@@ -2374,17 +2408,17 @@ L361:
 	leal	(%eax,%ebx), %eax
 	popl	%ecx
 	testl	%eax, %eax
-	je	L377
+	je	L379
 	pushl	$_keybuf
 	call	_QueueSize
 	popl	%ebx
 	testl	%eax, %eax
-	jne	L378
+	jne	L380
 	pushl	$_mousebuf
 	call	_QueueSize
 	popl	%ecx
 	testl	%eax, %eax
-	je	L361
+	je	L363
 	pushl	$_mousebuf
 	call	_QueuePop
 	movl	%eax, %ebx
@@ -2396,7 +2430,7 @@ L361:
 	call	_mouseDecode
 	addl	$12, %esp
 	testl	%eax, %eax
-	je	L361
+	je	L363
 	pushl	-228(%ebp)
 	pushl	-232(%ebp)
 	pushl	$LC6
@@ -2406,17 +2440,17 @@ L361:
 	addl	$16, %esp
 	movl	-224(%ebp), %eax
 	testl	$1, %eax
-	je	L370
-	movb	$76, -59(%ebp)
-L370:
-	testl	$2, %eax
-	je	L371
-	movb	$82, -57(%ebp)
-L371:
-	andl	$4, %eax
 	je	L372
-	movb	$67, -58(%ebp)
+	movb	$76, -59(%ebp)
 L372:
+	testl	$2, %eax
+	je	L373
+	movb	$82, -57(%ebp)
+L373:
+	andl	$4, %eax
+	je	L374
+	movb	$67, -58(%ebp)
+L374:
 	pushl	$31
 	pushl	$151
 	pushl	$16
@@ -2445,23 +2479,23 @@ L372:
 	addl	$20, %esp
 	addl	-228(%ebp), %esi
 	addl	-232(%ebp), %edi
-	js	L379
-L373:
+	js	L381
+L375:
 	testl	%esi, %esi
-	js	L380
-L374:
+	js	L382
+L376:
 	movswl	4084,%eax
 	decl	%eax
 	cmpl	%eax, %edi
-	jle	L375
+	jle	L377
 	movl	%eax, %edi
-L375:
+L377:
 	movswl	4086,%eax
 	decl	%eax
 	cmpl	%eax, %esi
-	jle	L376
+	jle	L378
 	movl	%eax, %esi
-L376:
+L378:
 	pushl	%esi
 	leal	-60(%ebp), %ebx
 	pushl	%edi
@@ -2498,14 +2532,14 @@ L376:
 	pushl	-504(%ebp)
 	call	_sheetSlide
 	addl	$12, %esp
-	jmp	L361
-L380:
+	jmp	L363
+L382:
 	xorl	%esi, %esi
-	jmp	L374
-L379:
+	jmp	L376
+L381:
 	xorl	%edi, %edi
-	jmp	L373
-L378:
+	jmp	L375
+L380:
 	pushl	$_keybuf
 	call	_QueuePop
 	movl	%eax, %ebx
@@ -2541,10 +2575,10 @@ L378:
 	pushl	-500(%ebp)
 	call	_sheetRefresh
 	addl	$44, %esp
-	jmp	L361
-L377:
+	jmp	L363
+L379:
 	call	_io_sti
-	jmp	L361
+	jmp	L363
 .globl _keybuf
 	.data
 	.balign 16
@@ -2567,6 +2601,7 @@ _mousebuf:
 	.def	_asm_interruptHandler2c;	.scl	2;	.type	32;	.endef
 	.def	_asm_interruptHandler27;	.scl	2;	.type	32;	.endef
 	.def	_asm_interruptHandler21;	.scl	2;	.type	32;	.endef
+	.def	_asm_interruptHandler20;	.scl	2;	.type	32;	.endef
 	.def	_loadIdtr;	.scl	2;	.type	32;	.endef
 	.def	_loadGdtr;	.scl	2;	.type	32;	.endef
 	.def	_io_in8;	.scl	2;	.type	32;	.endef
