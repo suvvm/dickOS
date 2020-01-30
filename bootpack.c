@@ -99,8 +99,8 @@ void Main(){
 	QueueInit(&keybuf, 32, keyb);	//初始化键盘缓冲区队列
 	QueueInit(&mousebuf, 128, mouseb);	// 初始化鼠标缓冲区队列
 	
-	initPit();	// 初始化计时器
-	io_out8(PIC0_IMR, 0xf9); // 主PIC IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111001)
+	initPit();	// 初始化定时器
+	io_out8(PIC0_IMR, 0xf8); // 主PIC IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111001)
 	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
 	
 	initKeyboard();
@@ -145,8 +145,7 @@ void Main(){
 	
 	//处理键盘与鼠标中断与进入hlt
 	for(;;){
-		count ++;
-		sprintf(s, "%010d", count);
+		sprintf(s, "%010d", timerctl.count);
 		boxFill8(bufWin, 160, COL8_C6C6C6, 40, 28, 119, 43);
 		putFont8_asc(bufWin, 160, 40, 28, COL8_000000, s);
 		
