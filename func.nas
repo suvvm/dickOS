@@ -14,9 +14,9 @@
 		GLOBAL	_io_load_eflags, _io_store_eflags
 		GLOBAL	_loadGdtr, _loadIdtr
 		GLOBAL	_loadCr0, _storeCr0
-		GLOBAL	_asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
+		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
 		GLOBAL	_memtest_sub
-		EXTERN	_interruptHandler21, _interruptHandler27, _interruptHandler2c
+		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
 ; 实际的函数
 
 [SECTION .text]					; 目标文件中写了这些后再写程序
@@ -104,6 +104,22 @@ _storeCr0:						; void storeCr0(int cr0) 写入cr0寄存器
 		MOV		EAX,[ESP+4]
 		MOV		CR0,EAX
 		RET
+		
+_asm_interruptHandler20:
+		PUSH	ES
+		PUSH	DS
+		PUSHAD
+		MOV		EAX,ESP
+		PUSH	EAX
+		MOV		AX,SS
+		MOV		DS,AX
+		MOV		ES,AX
+		CALL	_interruptHandler20
+		POP		EAX
+		POPAD
+		POP		DS
+		POP		ES
+		IRETD
 		
 _asm_interruptHandler21:
 		PUSH	ES
