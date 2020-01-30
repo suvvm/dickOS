@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.2
-* @Date: 2020-01-24
+* @Version: 0.2.3
+* @Date: 2020-01-30
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -12,7 +12,7 @@
 #include "mouse.c"
 #include "memory.c"
 #include "sheet.c"
-
+#include "timer.c"
 
 /*******************************************************
 *
@@ -99,6 +99,7 @@ void Main(){
 	QueueInit(&keybuf, 32, keyb);	//初始化键盘缓冲区队列
 	QueueInit(&mousebuf, 128, mouseb);	// 初始化鼠标缓冲区队列
 	
+	initPit();	// 初始化计时器
 	io_out8(PIC0_IMR, 0xf9); // 主PIC IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111001)
 	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
 	
