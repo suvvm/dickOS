@@ -14,9 +14,9 @@
     14 00000000                                 		GLOBAL	_io_load_eflags, _io_store_eflags
     15 00000000                                 		GLOBAL	_loadGdtr, _loadIdtr
     16 00000000                                 		GLOBAL	_loadCr0, _storeCr0
-    17 00000000                                 		GLOBAL	_asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
+    17 00000000                                 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
     18 00000000                                 		GLOBAL	_memtest_sub
-    19 00000000                                 		EXTERN	_interruptHandler21, _interruptHandler27, _interruptHandler2c
+    19 00000000                                 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
     20 00000000                                 ; 实际的函数
     21 00000000                                 
     22                                          [SECTION .text]					; 目标文件中写了这些后再写程序
@@ -105,7 +105,7 @@
    105 00000077 0F 22 C0                        		MOV		CR0,EAX
    106 0000007A C3                              		RET
    107 0000007B                                 		
-   108 0000007B                                 _asm_interruptHandler21:
+   108 0000007B                                 _asm_interruptHandler20:
    109 0000007B 06                              		PUSH	ES
    110 0000007C 1E                              		PUSH	DS
    111 0000007D 60                              		PUSHAD
@@ -114,14 +114,14 @@
    114 00000081 66 8C D0                        		MOV		AX,SS
    115 00000084 8E D8                           		MOV		DS,AX
    116 00000086 8E C0                           		MOV		ES,AX
-   117 00000088 E8 [00000000]                   		CALL	_interruptHandler21
+   117 00000088 E8 [00000000]                   		CALL	_interruptHandler20
    118 0000008D 58                              		POP		EAX
    119 0000008E 61                              		POPAD
    120 0000008F 1F                              		POP		DS
    121 00000090 07                              		POP		ES
    122 00000091 CF                              		IRETD
-   123 00000092                                 
-   124 00000092                                 _asm_interruptHandler27:
+   123 00000092                                 		
+   124 00000092                                 _asm_interruptHandler21:
    125 00000092 06                              		PUSH	ES
    126 00000093 1E                              		PUSH	DS
    127 00000094 60                              		PUSHAD
@@ -130,14 +130,14 @@
    130 00000098 66 8C D0                        		MOV		AX,SS
    131 0000009B 8E D8                           		MOV		DS,AX
    132 0000009D 8E C0                           		MOV		ES,AX
-   133 0000009F E8 [00000000]                   		CALL	_interruptHandler27
+   133 0000009F E8 [00000000]                   		CALL	_interruptHandler21
    134 000000A4 58                              		POP		EAX
    135 000000A5 61                              		POPAD
    136 000000A6 1F                              		POP		DS
    137 000000A7 07                              		POP		ES
    138 000000A8 CF                              		IRETD
    139 000000A9                                 
-   140 000000A9                                 _asm_interruptHandler2c:
+   140 000000A9                                 _asm_interruptHandler27:
    141 000000A9 06                              		PUSH	ES
    142 000000AA 1E                              		PUSH	DS
    143 000000AB 60                              		PUSHAD
@@ -146,44 +146,60 @@
    146 000000AF 66 8C D0                        		MOV		AX,SS
    147 000000B2 8E D8                           		MOV		DS,AX
    148 000000B4 8E C0                           		MOV		ES,AX
-   149 000000B6 E8 [00000000]                   		CALL	_interruptHandler2c
+   149 000000B6 E8 [00000000]                   		CALL	_interruptHandler27
    150 000000BB 58                              		POP		EAX
    151 000000BC 61                              		POPAD
    152 000000BD 1F                              		POP		DS
    153 000000BE 07                              		POP		ES
    154 000000BF CF                              		IRETD
    155 000000C0                                 
-   156 000000C0                                 _memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
-   157 000000C0 57                              		PUSH	EDI
-   158 000000C1 56                              		PUSH	ESI
-   159 000000C2 53                              		PUSH	EBX						; 由于要使用这些寄存器，保存以上三个寄存器的值
-   160 000000C3 BE AA55AA55                     		MOV		ESI,0xaa55aa55			; pat0 = 0xaa55aa55;
-   161 000000C8 BF 55AA55AA                     		MOV		EDI,0x55aa55aa			; pat1 = 0x55aa55aa;
-   162 000000CD 8B 44 24 10                     		MOV		EAX,[ESP+12+4]			; i = start; 由于EAX是通用寄存器，不需要保存（EBX是32位基址寄存器，需要保存）当然保存也没问题
-   163 000000D1                                 		
-   164 000000D1                                 mts_loop:
-   165 000000D1 89 C3                           		MOV		EBX,EAX
-   166 000000D3 81 C3 00000FFC                  		ADD		EBX,0xffc				; p = i + 0xffc;
-   167 000000D9 8B 13                           		MOV		EDX,[EBX]				; old = *p;
-   168 000000DB 89 33                           		MOV		[EBX],ESI				; *p = pat0;
-   169 000000DD 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
-   170 000000E0 3B 3B                           		CMP		EDI,[EBX]				; if(pat1 != *p) 
-   171 000000E2 75 18                           		JNE		mts_fin					; goto mts_fin;
-   172 000000E4 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
-   173 000000E7 3B 33                           		CMP		ESI,[EBX]				; if(pat0 != *p)
-   174 000000E9 75 11                           		JNE		mts_fin					; goto mts_fin;
-   175 000000EB 89 13                           		MOV		[EBX],EDX				; *p = old;
-   176 000000ED 05 00001000                     		ADD 	EAX,0x1000				; i += 0x1000;
-   177 000000F2 3B 44 24 14                     		CMP		EAX,[ESP+12+8]			; if(i <= end)
-   178 000000F6 76 D9                           		JBE		mts_loop				; goto mts_loop;
-   179 000000F8 5B                              		POP		EBX
-   180 000000F9 5E                              		POP		ESI
-   181 000000FA 5F                              		POP		EDI
-   182 000000FB C3                              		RET
-   183 000000FC                                 		
-   184 000000FC                                 mts_fin:
-   185 000000FC 89 13                           		MOV		[EBX],EDX				; *p = old;
-   186 000000FE 5B                              		POP		EBX
-   187 000000FF 5E                              		POP		ESI
-   188 00000100 5F                              		POP		EDI
-   189 00000101 C3                              		RET
+   156 000000C0                                 _asm_interruptHandler2c:
+   157 000000C0 06                              		PUSH	ES
+   158 000000C1 1E                              		PUSH	DS
+   159 000000C2 60                              		PUSHAD
+   160 000000C3 89 E0                           		MOV		EAX,ESP
+   161 000000C5 50                              		PUSH	EAX
+   162 000000C6 66 8C D0                        		MOV		AX,SS
+   163 000000C9 8E D8                           		MOV		DS,AX
+   164 000000CB 8E C0                           		MOV		ES,AX
+   165 000000CD E8 [00000000]                   		CALL	_interruptHandler2c
+   166 000000D2 58                              		POP		EAX
+   167 000000D3 61                              		POPAD
+   168 000000D4 1F                              		POP		DS
+   169 000000D5 07                              		POP		ES
+   170 000000D6 CF                              		IRETD
+   171 000000D7                                 
+   172 000000D7                                 _memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
+   173 000000D7 57                              		PUSH	EDI
+   174 000000D8 56                              		PUSH	ESI
+   175 000000D9 53                              		PUSH	EBX						; 由于要使用这些寄存器，保存以上三个寄存器的值
+   176 000000DA BE AA55AA55                     		MOV		ESI,0xaa55aa55			; pat0 = 0xaa55aa55;
+   177 000000DF BF 55AA55AA                     		MOV		EDI,0x55aa55aa			; pat1 = 0x55aa55aa;
+   178 000000E4 8B 44 24 10                     		MOV		EAX,[ESP+12+4]			; i = start; 由于EAX是通用寄存器，不需要保存（EBX是32位基址寄存器，需要保存）当然保存也没问题
+   179 000000E8                                 		
+   180 000000E8                                 mts_loop:
+   181 000000E8 89 C3                           		MOV		EBX,EAX
+   182 000000EA 81 C3 00000FFC                  		ADD		EBX,0xffc				; p = i + 0xffc;
+   183 000000F0 8B 13                           		MOV		EDX,[EBX]				; old = *p;
+   184 000000F2 89 33                           		MOV		[EBX],ESI				; *p = pat0;
+   185 000000F4 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
+   186 000000F7 3B 3B                           		CMP		EDI,[EBX]				; if(pat1 != *p) 
+   187 000000F9 75 18                           		JNE		mts_fin					; goto mts_fin;
+   188 000000FB 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
+   189 000000FE 3B 33                           		CMP		ESI,[EBX]				; if(pat0 != *p)
+   190 00000100 75 11                           		JNE		mts_fin					; goto mts_fin;
+   191 00000102 89 13                           		MOV		[EBX],EDX				; *p = old;
+   192 00000104 05 00001000                     		ADD 	EAX,0x1000				; i += 0x1000;
+   193 00000109 3B 44 24 14                     		CMP		EAX,[ESP+12+8]			; if(i <= end)
+   194 0000010D 76 D9                           		JBE		mts_loop				; goto mts_loop;
+   195 0000010F 5B                              		POP		EBX
+   196 00000110 5E                              		POP		ESI
+   197 00000111 5F                              		POP		EDI
+   198 00000112 C3                              		RET
+   199 00000113                                 		
+   200 00000113                                 mts_fin:
+   201 00000113 89 13                           		MOV		[EBX],EDX				; *p = old;
+   202 00000115 5B                              		POP		EBX
+   203 00000116 5E                              		POP		ESI
+   204 00000117 5F                              		POP		EDI
+   205 00000118 C3                              		RET
