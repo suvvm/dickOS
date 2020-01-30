@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.3
+* @Version: 0.2.4
 * @Date: 2020-01-30
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -81,7 +81,7 @@ void makeWindow(unsigned char *buf, int width, int height, char *title) {
 **********************************************************/
 void Main(){
 	struct BOOTINFO *binfo;
-	char s[40], keyb[32], mouseb[128];	// mcursor鼠标信息 s保存要输出的变量信息
+	char s[40], keyb[32], mouseb[128], timerb[8];	// s保存要输出的变量信息 keyb键盘缓冲区 mouseb鼠标缓冲区 timerb定时器缓冲区
 	int mx, my, bufval; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal, count = 0;
@@ -89,6 +89,7 @@ void Main(){
 	struct SHTCTL *shtctl;	// 图层控制块指针
 	struct SHEET *sheetBack, *sheetMouse, *sheetWin;	// 背景图层 鼠标图层 窗口图层
 	unsigned char *bufBack, bufMouse[256], *bufWin;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
+	struct QUEUE timerbuf;
 	
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
 	
@@ -96,12 +97,18 @@ void Main(){
 	init_pic();	// 初始化可编程中断控制器
 	io_sti();	// 解除cpu中断禁止
 	
+	
 	QueueInit(&keybuf, 32, keyb);	//初始化键盘缓冲区队列
 	QueueInit(&mousebuf, 128, mouseb);	// 初始化鼠标缓冲区队列
 	
+	
+	
 	initPit();	// 初始化定时器
-	io_out8(PIC0_IMR, 0xf8); // 主PIC IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111001)
+	io_out8(PIC0_IMR, 0xf8); // 主PIC IRQ0(定时器) IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111000)
 	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
+	
+	QueueInit(&timerbuf, 8, timerb);	// 初始化定时器缓冲区队列
+	setTimer(1000, &timerbuf, 1);	// 设置定时器信息 一定要在IRQ0中断开放后
 	
 	initKeyboard();
 	enableMouse(&mdec);	// 激活鼠标
@@ -151,9 +158,9 @@ void Main(){
 		
 		sheetRefresh(sheetWin, 40, 28, 120, 44);
 		
-		io_cli();
-		if(QueueSize(&keybuf) + QueueSize(&mousebuf) == 0) {	// 只有在两个缓冲区都没有数据时才能开启中断并进入hlt模式
-			io_sti();
+		io_cli();	// 关中断
+		if(QueueSize(&keybuf) + QueueSize(&mousebuf) + QueueSize(&timerbuf) == 0) {	// 只有在两个缓冲区都没有数据时才能开启中断并进入hlt模式
+			io_sti();	// 开中断
 		} else {
 			if (QueueSize(&keybuf) != 0) {
 				bufval = QueuePop(&keybuf);
@@ -200,6 +207,11 @@ void Main(){
 					sheetRefresh(sheetBack, 0, 0, 80, 16);
 					sheetSlide(sheetMouse, mx, my);
 				} 
+			} else if (QueueSize(&timerbuf) != 0) {
+				bufval = QueuePop(&timerbuf);	// 获取定时器缓冲区队列队首数据
+				io_sti();	// 开中断
+				putFont8_asc(bufBack, binfo->scrnx, 0, 80, COL8_FFFFFF, "10[sec]");
+				sheetRefresh(sheetBack, 0, 64, 56, 64 + 16 + 16 + 76);
 			}
 		}
 	}
