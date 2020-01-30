@@ -236,6 +236,17 @@ struct SHTCTL {
 	struct SHEET sheets[MAX_SHEETS];
 };
 
+/********************************************************************************
+*
+* timer control 计时器控制
+* Parameter:
+*	@count	记录计时器中断发生的次数	unsigned int
+*
+********************************************************************************/
+struct TIMERCTL {
+	unsigned int count;
+};
+
 // queue.c 函数声明
 void QueueInit(struct QUEUE *fifo, int size, unsigned char *buf);
 int QueuePush(struct QUEUE *fifo, unsigned char data);
