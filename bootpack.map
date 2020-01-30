@@ -1,5 +1,5 @@
 text size :   7529(0x01D69)
-data size :   4808(0x012C8)
+data size :   4816(0x012D0)
 bss  size :      0(0x00000)
 
 0x00000000 : (.text)
@@ -44,9 +44,9 @@ bss  size :      0(0x00000)
 0x00000F6C : _sheetSlide
 0x00001009 : _sheetFree
 0x0000102C : _initPit
-0x0000104F : _interruptHandler20
-0x0000105D : _makeWindow
-0x000011C9 : _Main
+0x00001059 : _interruptHandler20
+0x0000106D : _makeWindow
+0x000011D9 : _Main
 0x00001797 : (.text)
 0x00001797 : _io_hlt
 0x00001799 : _io_cli
@@ -81,9 +81,10 @@ bss  size :      0(0x00000)
 0x00310000 : (.data)
 0x00310270 : _keybuf
 0x00310290 : _mousebuf
-0x003102A8 : _font
-0x003102A8 : (.data)
-0x003112A8 : (.data)
+0x003102A8 : _timerctl
+0x003102B0 : _font
+0x003102B0 : (.data)
+0x003112B0 : (.data)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
