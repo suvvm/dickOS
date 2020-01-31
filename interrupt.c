@@ -99,7 +99,6 @@ void interruptHandler2c(int *esp){
 *
 **********************************************************/
 void interruptHandler20(int *esp) {
-	int i;
 	struct TIMER *timer;
 	io_out8(PIC0_OCW2, 0x60);	// 将IRQ-0信号接收完毕的消息通知给PIC
 	timerctl.count++;	// 计时器控制块中的计数
@@ -107,7 +106,7 @@ void interruptHandler20(int *esp) {
 		return;
 	}
 	timer = timerctl.timerHead;	// timer链表head
-	for (i = 0; i < timerctl.nowUsing; i++) {	// 处理所有超时定时器并记录个数
+	for (;;) {	// 处理所有超时定时器并记录个数
 		if (timer->timeout > timerctl.count) {	// i定时器未超时
 			break;
 		}
@@ -116,14 +115,10 @@ void interruptHandler20(int *esp) {
 		QueuePush(timer->queue, timer->data);	// 对应超时信息入队对应缓冲区队列
 		timer = timer->next;
 	}
-	// i现在的值为超时定时器数量
-	timerctl.nowUsing -= i;	// 正在运行定时器数量减去已经超时的定时器
+
 	timerctl.timerHead = timer;	// 当前timer为活动定时器链表头 链表省去了位移操作
-	if (timerctl.nowUsing > 0) {	// 若还有正在运行的定时器
-		timerctl.next = timerctl.timerHead->timeout;	// 更新下一个超时时限
-	} else {	// 没有正在运行的定时器
-		timerctl.next = 0xffffffff;
-	}
+	
+	timerctl.next = timerctl.timerHead->timeout;	// 有哨兵存在 不会出现没有头结点的情况
 }
 
 #endif // INTERRUPT_C
