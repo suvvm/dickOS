@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: timer.c
 * @Author: suvvm
-* @Version: 0.0.4
+* @Version: 0.0.5
 * @Date: 2020-01-31
 * @Description: 定义定时器相关函数
 ********************************************************************************/
@@ -20,6 +20,7 @@ void initPit() {
 	io_out8(PIT_CNT0, 0x9c);
 	io_out8(PIT_CNT0, 0x2e);
 	timerctl.count = 0;	// /定时器中断次数初始化为0
+	timerctl.next = 0xffffffff;	// 初始没有正在运行的定时器
 	int i;
 	for (i = 0; i < MAX_TIMER; i++) {
 		timerctl.timer[i].status = 0;	// 初始化所有定时器未使用
@@ -84,6 +85,9 @@ void timerInit(struct TIMER *timer, struct QUEUE *queue, unsigned char data) {
 void timerSetTime(struct TIMER *timer, unsigned int timeout) {
 	timer->timeout = timeout + timerctl.count;
 	timer->status = TIMER_USING;	// 定时器正在运行
+	if (timerctl.next > timer->timeout) {	// 若新的超时时间早于当前下一次超时时间
+		timerctl.next = timer->timeout;	// 更新下一次超时时间
+	}
 }
 
 
@@ -99,11 +103,18 @@ void interruptHandler20(int *esp) {
 	int i;
 	io_out8(PIC0_OCW2, 0x60);	// 将IRQ-0信号接收完毕的消息通知给PIC
 	timerctl.count++;	// 计时器控制块中的计数
-	for (i = 0; i < MAX_TIMER; i++) {
+	if (timerctl.next > timerctl.count) {	// 还不到下一个超时时刻
+		return;
+	}
+	for (i = 0; i < MAX_TIMER; i++) {	
 		if (timerctl.timer[i].status == TIMER_USING) {	// 如果定时器正在运行
 			if (timerctl.timer[i].timeout <= timerctl.count) {	// 若超时就将超时数据写入缓冲队列中(timeout现在表示指定超时时限，不在发生变动以减少中断处理时间)
 				timerctl.timer[i].status = TIMER_ALLOC;	// 定时器设为已分配可使用态
 				QueuePush(timerctl.timer[i].queue, timerctl.timer[i].data);	// 对应超时信息入队对应缓冲区队列
+			} else {	// 当前定时器还未超时
+				if (timerctl.next > timerctl.timer[i].timeout) {	// 判断是否需要更新下一个超时时刻的值
+					timerctl.next = timerctl.timer[i].timeout;
+				}
 			}
 		}	
 	}
