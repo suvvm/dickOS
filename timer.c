@@ -21,6 +21,7 @@ void initPit() {
 	io_out8(PIT_CNT0, 0x2e);
 	timerctl.count = 0;	// /定时器中断次数初始化为0
 	timerctl.next = 0xffffffff;	// 初始没有正在运行的定时器
+	timerctl.nowUsing = 0;
 	int i;
 	for (i = 0; i < MAX_TIMER; i++) {
 		timerctl.timer[i].status = 0;	// 初始化所有定时器未使用
@@ -83,11 +84,23 @@ void timerInit(struct TIMER *timer, struct QUEUE *queue, unsigned char data) {
 *
 **********************************************************/
 void timerSetTime(struct TIMER *timer, unsigned int timeout) {
+	int eflags, i, j;
 	timer->timeout = timeout + timerctl.count;
 	timer->status = TIMER_USING;	// 定时器正在运行
-	if (timerctl.next > timer->timeout) {	// 若新的超时时间早于当前下一次超时时间
-		timerctl.next = timer->timeout;	// 更新下一次超时时间
+	eflags = io_load_eflags();	// 保存eflags状态
+	io_cli();	// 关中断
+	for (i = 0; i < timerctl.nowUsing; i++) {	// 找到当前定时器在timerAcs中应插入的位置
+		if (timerctl.timerAcs[i]->timeout >= timer->timeout)
+			break;	
 	}
+	for (j = timerctl.nowUsing; j > i; j--) {	// i位置之后的元素后移
+		timerctl.timerAcs[j] = timerctl.timerAcs[j - 1];
+	}
+	timerctl.nowUsing++;	// 当运行寄存器数量加一
+	
+	timerctl.timerAcs[i] = timer;	// 将当前定时器插入指定位置
+	timerctl.next = timerctl.timerAcs[0]->timeout;	// 更新下一次超时的时限
+	io_store_eflags(eflags);	// 恢复eflags（恢复中断位开放中断）
 }
 
 
@@ -106,16 +119,23 @@ void interruptHandler20(int *esp) {
 	if (timerctl.next > timerctl.count) {	// 还不到下一个超时时刻
 		return;
 	}
-	for (i = 0; i < MAX_TIMER; i++) {	
-		if (timerctl.timer[i].status == TIMER_USING) {	// 如果定时器正在运行
-			if (timerctl.timer[i].timeout <= timerctl.count) {	// 若超时就将超时数据写入缓冲队列中(timeout现在表示指定超时时限，不在发生变动以减少中断处理时间)
-				timerctl.timer[i].status = TIMER_ALLOC;	// 定时器设为已分配可使用态
-				QueuePush(timerctl.timer[i].queue, timerctl.timer[i].data);	// 对应超时信息入队对应缓冲区队列
-			} else {	// 当前定时器还未超时
-				if (timerctl.next > timerctl.timer[i].timeout) {	// 判断是否需要更新下一个超时时刻的值
-					timerctl.next = timerctl.timer[i].timeout;
-				}
-			}
-		}	
+	for (i = 0; i < timerctl.nowUsing; i++) {	// 处理所有超时定时器并记录个数
+		if (timerctl.timerAcs[i]->timeout > timerctl.count) {	// i定时器未超时
+			break;
+		}
+		// 超时
+		timerctl.timerAcs[i]->status = TIMER_ALLOC;	// 定时器设为已分配可使用态
+		QueuePush(timerctl.timerAcs[i]->queue, timerctl.timerAcs[i]->data);	// 对应超时信息入队对应缓冲区队列
+	}
+	// i现在的值为超时定时器数量
+	timerctl.nowUsing -= i;	// 正在运行定时器数量减去已经超时的定时器
+	int j;
+	for (j = 0; j < timerctl.nowUsing; j++) {	// 将剩余正在运行的定时器前移
+		timerctl.timerAcs[j] = timerctl.timerAcs[i + j];
+	}
+	if (timerctl.nowUsing > 0) {	// 若还有正在运行的定时器
+		timerctl.next = timerctl.timerAcs[0]->timeout;	// 更新下一个超时时限
+	} else {	// 没有正在运行的定时器
+		timerctl.next = 0xffffffff;
 	}
 }
