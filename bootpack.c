@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.5
+* @Version: 0.2.6
 * @Date: 2020-01-31
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -82,9 +82,9 @@ void makeWindow(unsigned char *buf, int width, int height, char *title) {
 void Main(){
 	struct BOOTINFO *binfo;
 	char s[40], keyb[32], mouseb[128], timerb[8];	// s保存要输出的变量信息 keyb键盘缓冲区 mouseb鼠标缓冲区 timerb定时器缓冲区
-	int mx, my, bufval; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
+	int mx, my, bufval, count = 0; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
 	struct MouseDec mdec;	// 保存鼠标信息
-	unsigned int memtotal, count = 0;
+	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHTCTL *shtctl;	// 图层控制块指针
 	struct SHEET *sheetBack, *sheetMouse, *sheetWin;	// 背景图层 鼠标图层 窗口图层
@@ -171,8 +171,9 @@ void Main(){
 	*/
 	//处理键盘与鼠标中断与进入hlt
 	for(;;){
-		sprintf(s, "%010d", timerctl.count);	
-		putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 10);
+		count++;
+		// sprintf(s, "%010d", timerctl.count);	
+		// putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 10);
 		/*
 		boxFill8(bufWin, 160, COL8_C6C6C6, 40, 28, 119, 43);
 		putFont8_asc(bufWin, 160, 40, 28, COL8_000000, s);	// 打印10宽数字
@@ -243,8 +244,11 @@ void Main(){
 				io_sti();	// 开中断
 				if (bufval == 10) {
 					putFont8AscSheet(sheetBack, 0, 80, COL8_FFFFFF, COL8_008484,  "10[sec]", 7);	
+					sprintf(s, "%010d", count);
+					putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 11);
 				} else if (bufval == 3) {
 					putFont8AscSheet(sheetBack, 0, 96, COL8_FFFFFF, COL8_008484,  "3[sec]", 6);	
+					count = 0;
 				} else {
 					if (bufval != 0) {	// 超时信息不为0
 						timerInit(timer3, &timerbuf, 0);	// 超时信息置0
