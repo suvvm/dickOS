@@ -1,13 +1,18 @@
+#ifndef INTERRUPT_C
+#define INTERRUPT_C
 /********************************************************************************
 * @File name: interrupt.c
 * @Author: suvvm
-* @Version: 0.0.9
-* @Date: 2020-01-18
+* @Version: 0.1.0
+* @Date: 2020-01-31
 * @Description: 中断操作
 ********************************************************************************/
 
 #include "bootpack.h"
 #include "queue.h"
+#include "mouse.c"
+#include "keyboard.c"
+#include "timer.c"
 
 /*******************************************************
 *
@@ -42,10 +47,10 @@ void init_pic(){
 *
 *******************************************************/
 void interruptHandler21(int *esp){
-	unsigned char data;
+	int data;
 	io_out8(PIC0_OCW2, 0x61);	//通知PIC0 IRQ-01 已经受理完毕 0x60 + IRQ编号
 	data = io_in8(PORT_KEYDAT);
-	QueuePush(&keybuf, data);
+	QueuePush(keybuf, data + keyData0);
 	/* 直接处理方法
 	sprintf(s, "%02X", data);
 	boxFill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
@@ -77,9 +82,48 @@ void interruptHandler27(int *esp){
 *
 *******************************************************/
 void interruptHandler2c(int *esp){
-	unsigned char data;
+	int data;
 	io_out8(PIC1_OCW2, 0x64);	// 通知PIC1 IRQ-12 已经受理完毕 0x60 + IRQ编号
 	io_out8(PIC0_OCW2, 0x62);	// 通知PIC0 IRQ-02 已经受理完毕 0x60 + IRQ编号
 	data = io_in8(PORT_KEYDAT);
-	QueuePush(&mousebuf, data);
+	QueuePush(mousebuf, data + mouseData0);
 }
+
+
+/********************************************************
+*
+* Function name:	interruptHandler20
+* Description: IRQ0定时器中断处理程序
+* Parameter:
+* 	@esp	接收指针的值
+*
+**********************************************************/
+void interruptHandler20(int *esp) {
+	int i;
+	io_out8(PIC0_OCW2, 0x60);	// 将IRQ-0信号接收完毕的消息通知给PIC
+	timerctl.count++;	// 计时器控制块中的计数
+	if (timerctl.next > timerctl.count) {	// 还不到下一个超时时刻
+		return;
+	}
+	for (i = 0; i < timerctl.nowUsing; i++) {	// 处理所有超时定时器并记录个数
+		if (timerctl.timerAcs[i]->timeout > timerctl.count) {	// i定时器未超时
+			break;
+		}
+		// 超时
+		timerctl.timerAcs[i]->status = TIMER_ALLOC;	// 定时器设为已分配可使用态
+		QueuePush(timerctl.timerAcs[i]->queue, timerctl.timerAcs[i]->data);	// 对应超时信息入队对应缓冲区队列
+	}
+	// i现在的值为超时定时器数量
+	timerctl.nowUsing -= i;	// 正在运行定时器数量减去已经超时的定时器
+	int j;
+	for (j = 0; j < timerctl.nowUsing; j++) {	// 将剩余正在运行的定时器前移
+		timerctl.timerAcs[j] = timerctl.timerAcs[i + j];
+	}
+	if (timerctl.nowUsing > 0) {	// 若还有正在运行的定时器
+		timerctl.next = timerctl.timerAcs[0]->timeout;	// 更新下一个超时时限
+	} else {	// 没有正在运行的定时器
+		timerctl.next = 0xffffffff;
+	}
+}
+
+#endif // INTERRUPT_C
