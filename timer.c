@@ -86,22 +86,46 @@ void timerInit(struct TIMER *timer, struct QUEUE *queue, unsigned char data) {
 *
 **********************************************************/
 void timerSetTime(struct TIMER *timer, unsigned int timeout) {
-	int eflags, i, j;
+	int eflags;
+	struct TIMER *t, *s;
 	timer->timeout = timeout + timerctl.count;
 	timer->status = TIMER_USING;	// 定时器正在运行
 	eflags = io_load_eflags();	// 保存eflags状态
 	io_cli();	// 关中断
-	for (i = 0; i < timerctl.nowUsing; i++) {	// 找到当前定时器在timerAcs中应插入的位置
-		if (timerctl.timerAcs[i]->timeout >= timer->timeout)
-			break;	
+	timerctl.nowUsing++;	// 当前运行寄存器数量加一
+	if (timerctl.nowUsing == 1) {	// 处于运行态的定时器只有新加的这一个
+		timerctl.timerHead = timer;
+		timer->next = 0;	// 链表只有头结点
+		timerctl.next = timer->timeout;	// 更新下一次超时的时限
+		io_store_eflags(eflags);	// 恢复eflags（恢复中断位开放中断）
+		return;
 	}
-	for (j = timerctl.nowUsing; j > i; j--) {	// i位置之后的元素后移
-		timerctl.timerAcs[j] = timerctl.timerAcs[j - 1];
+	t = timerctl.timerHead;	// t为先前运行寄存器链表头节点
+	if (timer->timeout <= t->timeout) {	// 新的定时器超时时间比头结点短 头插
+		timerctl.timerHead = timer;
+		timer->next = t;
+		timerctl.next = timer->timeout;	// 更新下一次超时的时限
+		io_store_eflags(eflags);	// 恢复eflags（恢复中断位开放中断）
+		return;
 	}
-	timerctl.nowUsing++;	// 当运行寄存器数量加一
-	
-	timerctl.timerAcs[i] = timer;	// 将当前定时器插入指定位置
-	timerctl.next = timerctl.timerAcs[0]->timeout;	// 更新下一次超时的时限
+	for (;;) {	// 插入链表中间对应位置
+		s = t;
+		t = t->next;
+		if (t == 0) {	// 链表尾
+			break;
+		}
+		
+		if (timer->timeout <= t->timeout) {	// 找到位置，插入s与t之间
+			s->next = timer;
+			timer->next = t;
+			io_store_eflags(eflags);	// 恢复eflags（恢复中断位开放中断）
+			return;
+		}
+	}
+	// 插入链表尾
+	// s当前指向链表尾
+	s->next = timer;
+	timer->next = 0;	// timer为新的链表尾
 	io_store_eflags(eflags);	// 恢复eflags（恢复中断位开放中断）
 }
 
