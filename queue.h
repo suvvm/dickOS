@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: queue.c
 * @Author: suvvm
-* @Version: 1.0.1
-* @Date: 2019-10-23
+* @Version: 0.0.2
+* @Date: 2020-01-31
 * @Description: 队列操作
 ********************************************************************************/
 
@@ -15,12 +15,12 @@
 * Function name: QueueInit
 * Description: 初始化队列
 * Parameter:
-* 	@q	要初始化的队列
-* 	@size	队列的上限
-* 	@buf	队列数据空间
+* 	@q	要初始化的队列		struct QUEUE *
+* 	@size	队列的上限		int
+* 	@buf	队列数据空间	int
 *
 **********************************************************/
-void QueueInit(struct QUEUE *q, int size, unsigned char *buf){
+void QueueInit(struct QUEUE *q, int size, int *buf){
 	q->size = size;	// 初始队列长度
 	q->buf = buf;	// 初始化数据空间
 	q->free = size;	// 队列初始化为空
@@ -33,14 +33,14 @@ void QueueInit(struct QUEUE *q, int size, unsigned char *buf){
 * Function name: QueuePush
 * Description: 入队函数
 * Parameter:
-* 	@q	要执行入队操作的队列
-* 	@data	要入队的数据
+* 	@q	要执行入队操作的队列	struct QUEUE *
+* 	@data	要入队的数据		int
 * return: 如果数据没有溢出返回0 否则返回-1
 *
 **********************************************************/
-int QueuePush(struct QUEUE *q, unsigned char data){
+int QueuePush(struct QUEUE *q, int data){
 	if (q->free == 0) {
-		q->flags = FLAGS_OVERRUN;
+		q->flags |= FLAGS_OVERRUN;
 		return -1;
 	}
 	q->buf[q->back] = data;
@@ -55,7 +55,7 @@ int QueuePush(struct QUEUE *q, unsigned char data){
 * Function name: QueuePop
 * Description: 出队函数
 * Parameter:
-* 	@q	要执行出队操作的队列
+* 	@q	要执行出队操作的队列	struct QUEUE *
 * return: 如果数据不为空返回队首数据 否则返回-1
 *
 **********************************************************/
