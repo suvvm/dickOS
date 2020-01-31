@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.4
+* @Version: 0.2.5
 * @Date: 2020-01-31
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -261,11 +261,13 @@ struct TIMER {
 * timer control 定时器控制块
 * Parameter:
 *	@count		记录定时器中断发生次数	unsigned int
+*				count将在42949673秒后加爆
 *	@timer[]	储存定时器				struct TIMER
+*	@next		记录下一个将超时的时间	unsigned int
 *
 ********************************************************************************/
 struct TIMERCTL {
-	unsigned int count;
+	unsigned int count, next;
 	struct TIMER timer[MAX_TIMER];
 };
 
