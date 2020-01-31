@@ -150,9 +150,9 @@ struct GATE_DESCRIPTOR{
 *
 ********************************************************************************/
 struct QUEUE {
-	unsigned char *buf;
+	int *buf;
 	int back, front, size, free, flags;
-}keybuf, mousebuf;
+};
 
 /********************************************************************************
 *
@@ -244,13 +244,16 @@ struct SHTCTL {
 *
 * timer 定时器
 * Parameter:
-*	@status		记录定时器状态	unsigned int
-*	@timeout	超时限制		unsigned int
-*	@queue		缓冲区			struct QUEUE *
-*	@data		超时信息		unsigned char		
+*	@next		指向下一个定时器的指针	struct TIMER *
+*				定时器现为链表结构
+*	@status		记录定时器状态			unsigned int
+*	@timeout	超时限制				unsigned int
+*	@queue		缓冲区					struct QUEUE *
+*	@data		超时信息				unsigned char		
 *
 ********************************************************************************/
 struct TIMER {
+	struct TIMER *next;
 	unsigned int timeout, status;
 	struct QUEUE *queue;
 	unsigned char data;
@@ -260,23 +263,23 @@ struct TIMER {
 *
 * timer control 定时器控制块
 * Parameter:
-*	@count		记录定时器中断发生次数			unsigned int
+*	@count		记录定时器中断发生次数				unsigned int
 *				count将在42949673秒后加爆
-*	@timer[]	储存定时器						struct TIMER
-*	@next		记录下一个将超时的时间			unsigned int
-*	@timerAcs[]	按超时时间升序排列定时器指针	struct TIMER *
-*	@nowUsing	记录正在运行的定时器个数		unsigned int
+*	@timer[]	储存定时器							struct TIMER
+*	@next		记录下一个将超时的时间				unsigned int
+*	@timerHead	按超时时间升序排列定时器链表头指针	struct TIMER *
+*	@nowUsing	记录正在运行的定时器个数			unsigned int
 *
 ********************************************************************************/
 struct TIMERCTL {
 	unsigned int count, next, nowUsing;
-	struct TIMER *timerAcs[MAX_TIMER];
+	struct TIMER *timerHead;
 	struct TIMER timer[MAX_TIMER];
 };
 
 // queue.c 函数声明
-void QueueInit(struct QUEUE *fifo, int size, unsigned char *buf);
-int QueuePush(struct QUEUE *fifo, unsigned char data);
+void QueueInit(struct QUEUE *q, int size, int *buf);
+int QueuePush(struct QUEUE *fifo, int data);
 int QueuePop(struct QUEUE *fifo);
 int QueueSize(struct QUEUE *fifo);
 
@@ -318,16 +321,18 @@ void setGatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 
 // interrupt.c 函数声明
 void init_pic();
+void interruptHandler20(int *esp);
 void interruptHandler21(int *esp);
 void interruptHandler27(int *esp);
 void interruptHandler2c(int *esp);
 
 // keyboard.c 函数声明
-void initKeyboard();
+void initKeyboard(struct QUEUE *q, int data0);
 void waitKeyboardControllerReady();
 
 // mouse.c 函数声明
-void enableMouse();
+void enableMouse(struct QUEUE *q, int data0, struct MouseDec *mdec);
+int mouseDecode(struct MouseDec *mdec, unsigned char data);
 
 // memory.c 函数声明
 unsigned int memtest(unsigned int start, unsigned int end);
@@ -351,7 +356,6 @@ void sheetRefreshMap(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 
 // timer.c 函数声明
 void initPit();
-void interruptHandler20(int *esp);
 void timerSetTime(struct TIMER *timer, unsigned int timeout);
 void timerInit(struct TIMER *timer, struct QUEUE *queue, unsigned char data);
 void timerFree(struct TIMER *timer);
