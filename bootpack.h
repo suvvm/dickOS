@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.3
-* @Date: 2020-01-30
+* @Version: 0.2.4
+* @Date: 2020-01-31
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -79,6 +79,9 @@
 
 #define PIT_CTRL	0x0043
 #define PIT_CNT0	0x0040
+#define MAX_TIMER	500	// 最大定时器数量
+#define TIMER_ALLOC	1	// 定时器运行已配置
+#define TIMER_USING	2	// 定时器正在运行
 
 /********************************************************************************
 *
@@ -207,6 +210,7 @@ struct MEMSEGTABLE {
 *	@colInvNum	透明色号								int
 *	@index		图层索引编号							int
 *	@status		图层状态								int
+*	@shtctl		图层控制块指针							struct SHTCTL *
 *
 ********************************************************************************/
 struct SHEET {
@@ -219,14 +223,14 @@ struct SHEET {
 *
 * sheet control 图层控制，用于管理图层
 * Parameter:
-*	@vram		对应vram地址							unsigned char *
-*	@map		与vram大小相等的内存空间，				unsigned char *
-*				用于记录画面上正在显示的点属于哪个图层	
-*	@xSize		vram的画面宽度							int
-*	@ySize		vram的画面高度							int
-*	@top		最上层图层索引							int
-*	@sheetsAcs	存放按索引升序排列后的所有图层地址		int
-*	@sheets		存放所有图层							int
+*	@vram			对应vram地址							unsigned char *
+*	@map			与vram大小相等的内存空间，				unsigned char *
+*					用于记录画面上正在显示的点属于哪个图层	
+*	@xSize			vram的画面宽度							int
+*	@ySize			vram的画面高度							int
+*	@top			最上层图层索引							int
+*	@sheetsAcs[]	存放按索引升序排列后的所有图层地址		struct SHEET *
+*	@sheets[]		存放所有图层							struct SHEET sheets
 *
 ********************************************************************************/
 struct SHTCTL {
@@ -238,19 +242,31 @@ struct SHTCTL {
 
 /********************************************************************************
 *
-* timer control 计时器控制
+* timer 定时器
 * Parameter:
-*	@count		记录计时器中断发生的次数	unsigned int
-*	@timeout	超时限制					unsigned int
-*	@queue		缓冲区						struct QUEUE *
-*	@data		超时信息					unsigned char		
+*	@status		记录定时器状态	unsigned int
+*	@timeout	超时限制		unsigned int
+*	@queue		缓冲区			struct QUEUE *
+*	@data		超时信息		unsigned char		
+*
+********************************************************************************/
+struct TIMER {
+	unsigned int timeout, status;
+	struct QUEUE *queue;
+	unsigned char data;
+};
+
+/********************************************************************************
+*
+* timer control 定时器控制块
+* Parameter:
+*	@count		记录定时器中断发生次数	unsigned int
+*	@timer[]	储存定时器				struct TIMER
 *
 ********************************************************************************/
 struct TIMERCTL {
 	unsigned int count;
-	unsigned int timeout;
-	struct QUEUE *queue;
-	unsigned char data;
+	struct TIMER timer[MAX_TIMER];
 };
 
 // queue.c 函数声明
@@ -330,6 +346,10 @@ void sheetRefreshMap(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 // timer.c 函数声明
 void initPit();
 void interruptHandler20(int *esp);
-void setTimer(unsigned int timeout, struct QUEUE *queue, unsigned char data);
+void timerSetTime(struct TIMER *timer, unsigned int timeout);
+void timerInit(struct TIMER *timer, struct QUEUE *queue, unsigned char data);
+void timerFree(struct TIMER *timer);
+struct TIMER *timerAlloc();
+
 
 #endif // BOOTPACK_H
