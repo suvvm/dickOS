@@ -164,6 +164,26 @@ void putFont8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s)
 
 /*******************************************************
 *
+* Function name:putFont8AscSheet
+* Description: 利用图层操作在屏幕中打印字符串
+* Parameter:
+* 	@sheet	要打印字符串的图层指针	struct SHEET *
+* 	@x	x轴起始位置					int
+* 	@y	y轴起始位置					int
+* 	@c	颜色标号(0~15)				int
+*	@b	背景颜色标号(0~15)			int
+* 	@s	字符串首位指针				char *
+*	@l	字符串长度					int
+*
+**********************************************************/
+void putFont8AscSheet(struct SHEET *sheet, int x, int y, int c, int b, char *s, int l) {
+	boxFill8(sheet->buf, sheet->width, b, x, y, x + l * 8 - 1, y + 15);
+	putFont8_asc(sheet->buf, sheet->width, x, y, c, s);
+	sheetRefresh(sheet, x, y, x + l * 8, y + 16);
+}
+
+/*******************************************************
+*
 * Function name:initMouseCursor8
 * Description: 初始化鼠标图像
 * Parameter:

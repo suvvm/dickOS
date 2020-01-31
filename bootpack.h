@@ -308,7 +308,8 @@ void putFont8(char *vram, int xsize, int x, int y, char c, char *font);
 void putFont8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s);
 void initMouseCursor8(char *mouse, char bc);
 void putblock8_8(char *vram, int vxsize, int pxsize,
-int pysize, int px0, int py0, char *buf, int bxsize);
+	int pysize, int px0, int py0, char *buf, int bxsize);
+void putFont8AscSheet(struct SHEET *sheet, int x, int y, int c, int b, char *s, int l);
 	
 // desctab.c 函数声明
 void initGdtit();

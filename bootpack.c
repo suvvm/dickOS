@@ -154,21 +154,30 @@ void Main(){
 	sheetUpdown(sheetBack, 0);	// 将背景图层置于索引0
 	sheetUpdown(sheetWin, 1);	// 将窗口图层置于背景之上鼠标之下
 	sheetUpdown(sheetMouse, 2);	// 将鼠标图层置于背景层上方索引1
+	
+	putFont8AscSheet(sheetBack, 30, 32, COL8_FFFFFF, COL8_008484,  "DickOS", 6);
+	sprintf(s, "(%3d, %3d)", mx, my);	// 将鼠标位置存入s
+	putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484,  s, 10);
+	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
+	putFont8AscSheet(sheetBack, 0, 48, COL8_FFFFFF, COL8_008484,  s, 26);
+	
+	/*
 	putFont8_asc(bufBack, binfo->scrnx, 30, 32, COL8_FFFFFF, "DickOS");	// 将DickOS写入背景层
 	sprintf(s, "(%d, %d)", mx, my);	// 将鼠标位置存入s
 	putFont8_asc(bufBack, binfo->scrnx, 0, 0, COL8_FFFFFF, s);	// 将s写入背景图层
 	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
 	putFont8_asc(bufBack, binfo->scrnx, 0, 64, COL8_FFFFFF, s);	// 将s写入背景图层
 	sheetRefresh(sheetBack, 0, 0, binfo->scrnx, 64 + 16 + 16 + 76);	// 刷新图层
-	
+	*/
 	//处理键盘与鼠标中断与进入hlt
 	for(;;){
-		sprintf(s, "%010d", timerctl.count);
+		sprintf(s, "%010d", timerctl.count);	
+		putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 10);
+		/*
 		boxFill8(bufWin, 160, COL8_C6C6C6, 40, 28, 119, 43);
-		putFont8_asc(bufWin, 160, 40, 28, COL8_000000, s);
-		
+		putFont8_asc(bufWin, 160, 40, 28, COL8_000000, s);	// 打印10宽数字
 		sheetRefresh(sheetWin, 40, 28, 120, 44);
-		
+		*/
 		io_cli();	// 关中断
 		if(QueueSize(&keybuf) + QueueSize(&mousebuf) + QueueSize(&timerbuf1) + QueueSize(&timerbuf2) + QueueSize(&timerbuf3) == 0) {	// 只有在两个缓冲区都没有数据时才能开启中断并进入hlt模式
 			io_sti();	// 开中断
@@ -177,9 +186,12 @@ void Main(){
 				bufval = QueuePop(&keybuf);
 				io_sti();
 				sprintf(s, "%02X", bufval);
+				putFont8AscSheet(sheetBack, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);
+				/*
 				boxFill8(bufBack, binfo->scrnx, COL8_008484, 0, 16, 15, 31);
 				putFont8_asc(bufBack, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
 				sheetRefresh(sheetBack, 0, 16, 16, 32);
+				*/
 			} else if (QueueSize(&mousebuf) != 0) {
 				bufval = QueuePop(&mousebuf);
 				io_sti();
@@ -195,10 +207,13 @@ void Main(){
 						s[2] = 'C';
 					}
 					
+					putFont8AscSheet(sheetBack, 32, 16, COL8_FFFFFF, COL8_008484, s, 15);
+					/*
 					boxFill8(bufBack, binfo->scrnx, COL8_008484, 32, 16, 32 + 15 * 8 - 1, 31);	// 用背景色覆盖原有鼠标信息
 					putFont8_asc(bufBack, binfo->scrnx, 32, 16, COL8_FFFFFF, s);	//打印鼠标信息
 					// 鼠标坐标加上偏移量
 					sheetRefresh(sheetBack, 32, 16, 32 + 15 * 8, 32);
+					*/
 					mx += mdec.x;
 					my += mdec.y;
 					
@@ -213,21 +228,32 @@ void Main(){
 						my = binfo->scrny - 1;
 					
 					sprintf(s, "(%3d, %3d)", mx, my);
+					
+					putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484, s, 10);
+					
+					/*
 					boxFill8(bufBack, binfo->scrnx, COL8_008484, 0, 0, 79, 15);	// 覆盖原有坐标信息
 					putFont8_asc(bufBack, binfo->scrnx, 0, 0, COL8_FFFFFF, s);	// 显示新的坐标信息
 					sheetRefresh(sheetBack, 0, 0, 80, 16);
+					*/
 					sheetSlide(sheetMouse, mx, my);
 				} 
 			} else if (QueueSize(&timerbuf1) != 0) {	// 10秒超时显示
 				bufval = QueuePop(&timerbuf1);	// 获取定时器缓冲区队列队首数据
 				io_sti();	// 开中断
+				putFont8AscSheet(sheetBack, 0, 80, COL8_FFFFFF, COL8_008484,  "10[sec]", 7);
+				/*
 				putFont8_asc(bufBack, binfo->scrnx, 0, 80, COL8_FFFFFF, "10[sec]");
 				sheetRefresh(sheetBack, 0, 80, 56, 96);
+				*/
 			} else if (QueueSize(&timerbuf2) != 0) {	// 3秒超时显示
 				bufval = QueuePop(&timerbuf2);	// 获取定时器缓冲区队列队首数据
 				io_sti();	// 开中断
+				putFont8AscSheet(sheetBack, 0, 96, COL8_FFFFFF, COL8_008484,  "3[sec]", 6);
+				/*
 				putFont8_asc(bufBack, binfo->scrnx, 0, 96, COL8_FFFFFF, "3[sec]");
 				sheetRefresh(sheetBack, 0, 64, 56, 112);
+				*/
 			} else if (QueueSize(&timerbuf3) != 0) {	// 显示闪烁符
 				bufval = QueuePop(&timerbuf3);	// 获取定时器缓冲区队列队首数据
 				io_sti();	// 开中断
