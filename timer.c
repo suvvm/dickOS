@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: timer.c
 * @Author: suvvm
-* @Version: 0.0.3
+* @Version: 0.0.4
 * @Date: 2020-01-31
 * @Description: 定义定时器相关函数
 ********************************************************************************/
@@ -82,7 +82,7 @@ void timerInit(struct TIMER *timer, struct QUEUE *queue, unsigned char data) {
 *
 **********************************************************/
 void timerSetTime(struct TIMER *timer, unsigned int timeout) {
-	timer->timeout = timeout;
+	timer->timeout = timeout + timerctl.count;
 	timer->status = TIMER_USING;	// 定时器正在运行
 }
 
@@ -101,8 +101,7 @@ void interruptHandler20(int *esp) {
 	timerctl.count++;	// 计时器控制块中的计数
 	for (i = 0; i < MAX_TIMER; i++) {
 		if (timerctl.timer[i].status == TIMER_USING) {	// 如果定时器正在运行
-			timerctl.timer[i].timeout--;
-			if (timerctl.timer[i].timeout == 0) {	// 若超时就将超时数据写入缓冲队列中
+			if (timerctl.timer[i].timeout <= timerctl.count) {	// 若超时就将超时数据写入缓冲队列中(timeout现在表示指定超时时限，不在发生变动以减少中断处理时间)
 				timerctl.timer[i].status = TIMER_ALLOC;	// 定时器设为已分配可使用态
 				QueuePush(timerctl.timer[i].queue, timerctl.timer[i].data);	// 对应超时信息入队对应缓冲区队列
 			}
