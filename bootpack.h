@@ -268,11 +268,10 @@ struct TIMER {
 *	@timer[]	储存定时器							struct TIMER
 *	@next		记录下一个将超时的时间				unsigned int
 *	@timerHead	按超时时间升序排列定时器链表头指针	struct TIMER *
-*	@nowUsing	记录正在运行的定时器个数			unsigned int
 *
 ********************************************************************************/
 struct TIMERCTL {
-	unsigned int count, next, nowUsing;
+	unsigned int count, next;
 	struct TIMER *timerHead;
 	struct TIMER timer[MAX_TIMER];
 };
