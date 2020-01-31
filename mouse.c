@@ -1,13 +1,19 @@
+#ifndef MOUSE_C
+#define MOUSE_C
 /********************************************************************************
-* @File name: keyboard.c
+* @File name: mouse.c
 * @Author: suvvm
-* @Version: 1.0.4
-* @Date: 2019-10-30
-* @Description: 键盘设置
+* @Version: 0.0.1
+* @Date: 2020-01-31
+* @Description: 鼠标设置
 ********************************************************************************/
 
 #include "bootpack.h"
 #include "keyboard.c"
+
+struct QUEUE *mousebuf;
+
+int mouseData0;	// 鼠标缓冲区数据起点值
 
 /*******************************************************
 *
@@ -16,9 +22,13 @@
 *	当键盘控制电路收到指令0xd4则下一条收到的数据将会发送给鼠标
 *	向鼠标发送0xf4激活鼠标 鼠标将会向cpu产生中断发送答复数据0xfa
 * Parameter:
-* 	@mdec	保存鼠标信息的结构体
+*	@q		缓冲区队列指针			struct QUEUE *
+*	@data0	设置mouseData0的值		int
+* 	@mdec	保存鼠标信息的结构体	struct MouseDec
 *******************************************************/
-void enableMouse(struct MouseDec *mdec) {
+void enableMouse(struct QUEUE *q, int data0, struct MouseDec *mdec) {
+	mousebuf = q;
+	mouseData0 = data0;
 	waitKeyboardControllerReady();
 	io_out8(PORT_KEYCMD, KEYCMD_SENDTO_MOUSE);
 	waitKeyboardControllerReady();
@@ -80,3 +90,5 @@ int mouseDecode(struct MouseDec *mdec, unsigned char data) {
 	// 按理说phase会去到其他值，也就是不会到达这里
 	return -1;
 }
+
+#endif // MOUSE_C
