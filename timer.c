@@ -1,3 +1,5 @@
+#ifndef TIMER_C
+#define TIMER_C
 /********************************************************************************
 * @File name: timer.c
 * @Author: suvvm
@@ -103,39 +105,4 @@ void timerSetTime(struct TIMER *timer, unsigned int timeout) {
 	io_store_eflags(eflags);	// 恢复eflags（恢复中断位开放中断）
 }
 
-
-/********************************************************
-*
-* Function name:	interruptHandler20
-* Description: IRQ0中断处理程序
-* Parameter:
-* 	@esp	接收指针的值
-*
-**********************************************************/
-void interruptHandler20(int *esp) {
-	int i;
-	io_out8(PIC0_OCW2, 0x60);	// 将IRQ-0信号接收完毕的消息通知给PIC
-	timerctl.count++;	// 计时器控制块中的计数
-	if (timerctl.next > timerctl.count) {	// 还不到下一个超时时刻
-		return;
-	}
-	for (i = 0; i < timerctl.nowUsing; i++) {	// 处理所有超时定时器并记录个数
-		if (timerctl.timerAcs[i]->timeout > timerctl.count) {	// i定时器未超时
-			break;
-		}
-		// 超时
-		timerctl.timerAcs[i]->status = TIMER_ALLOC;	// 定时器设为已分配可使用态
-		QueuePush(timerctl.timerAcs[i]->queue, timerctl.timerAcs[i]->data);	// 对应超时信息入队对应缓冲区队列
-	}
-	// i现在的值为超时定时器数量
-	timerctl.nowUsing -= i;	// 正在运行定时器数量减去已经超时的定时器
-	int j;
-	for (j = 0; j < timerctl.nowUsing; j++) {	// 将剩余正在运行的定时器前移
-		timerctl.timerAcs[j] = timerctl.timerAcs[i + j];
-	}
-	if (timerctl.nowUsing > 0) {	// 若还有正在运行的定时器
-		timerctl.next = timerctl.timerAcs[0]->timeout;	// 更新下一个超时时限
-	} else {	// 没有正在运行的定时器
-		timerctl.next = 0xffffffff;
-	}
-}
+#endif // TIMER_C
