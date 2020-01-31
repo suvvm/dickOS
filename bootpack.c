@@ -81,7 +81,7 @@ void makeWindow(unsigned char *buf, int width, int height, char *title) {
 **********************************************************/
 void Main(){
 	struct BOOTINFO *binfo;
-	char s[40], keyb[32], mouseb[128], timerb1[8], timerb2[8], timerb3[8];	// s保存要输出的变量信息 keyb键盘缓冲区 mouseb鼠标缓冲区 timerb定时器缓冲区
+	char s[40], keyb[32], mouseb[128], timerb[8];	// s保存要输出的变量信息 keyb键盘缓冲区 mouseb鼠标缓冲区 timerb定时器缓冲区
 	int mx, my, bufval; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal, count = 0;
@@ -89,7 +89,7 @@ void Main(){
 	struct SHTCTL *shtctl;	// 图层控制块指针
 	struct SHEET *sheetBack, *sheetMouse, *sheetWin;	// 背景图层 鼠标图层 窗口图层
 	unsigned char *bufBack, bufMouse[256], *bufWin;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
-	struct QUEUE timerbuf1, timerbuf2, timerbuf3;	// 三个定时器缓冲区
+	struct QUEUE timerbuf;	// 三个定时器缓冲区
 	struct TIMER *timer1, *timer2, *timer3;	// 三个定时器指针
 	
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
@@ -108,17 +108,17 @@ void Main(){
 	io_out8(PIC0_IMR, 0xf8); // 主PIC IRQ0(定时器) IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111000)
 	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
 	
-	QueueInit(&timerbuf1, 8, timerb1);	// 初始化定时器缓冲区队列
+	QueueInit(&timerbuf, 8, timerb);	// 初始化定时器缓冲区队列
 	timer1 = timerAlloc();	// 获取一个可使用的定时器
-	timerInit(timer1, &timerbuf1, 1);	// 初始化定时器1
+	timerInit(timer1, &timerbuf, 10);	// 初始化定时器1
 	timerSetTime(timer1, 1000);
-	QueueInit(&timerbuf2, 8, timerb2);	// 初始化定时器缓冲区队列
+
 	timer2 = timerAlloc();	// 获取一个可使用的定时器
-	timerInit(timer2, &timerbuf2, 1);	// 初始化定时器1
+	timerInit(timer2, &timerbuf, 3);	// 初始化定时器1
 	timerSetTime(timer2, 300);
-	QueueInit(&timerbuf3, 8, timerb3);	// 初始化定时器缓冲区队列
+
 	timer3 = timerAlloc();	// 获取一个可使用的定时器
-	timerInit(timer3, &timerbuf3, 1);	// 初始化定时器1
+	timerInit(timer3, &timerbuf, 1);	// 初始化定时器1
 	timerSetTime(timer3, 50);
 	
 	initKeyboard();
@@ -179,7 +179,7 @@ void Main(){
 		sheetRefresh(sheetWin, 40, 28, 120, 44);
 		*/
 		io_cli();	// 关中断
-		if(QueueSize(&keybuf) + QueueSize(&mousebuf) + QueueSize(&timerbuf1) + QueueSize(&timerbuf2) + QueueSize(&timerbuf3) == 0) {	// 只有在两个缓冲区都没有数据时才能开启中断并进入hlt模式
+		if(QueueSize(&keybuf) + QueueSize(&mousebuf) + QueueSize(&timerbuf) == 0) {	// 只有在两个缓冲区都没有数据时才能开启中断并进入hlt模式
 			io_sti();	// 开中断
 		} else {
 			if (QueueSize(&keybuf) != 0) {
@@ -238,36 +238,25 @@ void Main(){
 					*/
 					sheetSlide(sheetMouse, mx, my);
 				} 
-			} else if (QueueSize(&timerbuf1) != 0) {	// 10秒超时显示
-				bufval = QueuePop(&timerbuf1);	// 获取定时器缓冲区队列队首数据
+			} else if (QueueSize(&timerbuf) != 0) {	// 10秒超时显示
+				bufval = QueuePop(&timerbuf);	// 获取定时器缓冲区队列队首数据
 				io_sti();	// 开中断
-				putFont8AscSheet(sheetBack, 0, 80, COL8_FFFFFF, COL8_008484,  "10[sec]", 7);
-				/*
-				putFont8_asc(bufBack, binfo->scrnx, 0, 80, COL8_FFFFFF, "10[sec]");
-				sheetRefresh(sheetBack, 0, 80, 56, 96);
-				*/
-			} else if (QueueSize(&timerbuf2) != 0) {	// 3秒超时显示
-				bufval = QueuePop(&timerbuf2);	// 获取定时器缓冲区队列队首数据
-				io_sti();	// 开中断
-				putFont8AscSheet(sheetBack, 0, 96, COL8_FFFFFF, COL8_008484,  "3[sec]", 6);
-				/*
-				putFont8_asc(bufBack, binfo->scrnx, 0, 96, COL8_FFFFFF, "3[sec]");
-				sheetRefresh(sheetBack, 0, 64, 56, 112);
-				*/
-			} else if (QueueSize(&timerbuf3) != 0) {	// 显示闪烁符
-				bufval = QueuePop(&timerbuf3);	// 获取定时器缓冲区队列队首数据
-				io_sti();	// 开中断
-				if (bufval != 0) {	// 超时信息不为0
-					timerInit(timer3, &timerbuf3, 0);	// 超时信息置0
-					boxFill8(bufBack, binfo->scrnx, COL8_FFFFFF, 8, 112, 15, 127);
-				} else {	// 超时信息为0
-					timerInit(timer3, &timerbuf3, 1);	// 超时信息置1
-					boxFill8(bufBack, binfo->scrnx, COL8_008484, 8, 112, 15, 127);
+				if (bufval == 10) {
+					putFont8AscSheet(sheetBack, 0, 80, COL8_FFFFFF, COL8_008484,  "10[sec]", 7);	
+				} else if (bufval == 3) {
+					putFont8AscSheet(sheetBack, 0, 96, COL8_FFFFFF, COL8_008484,  "3[sec]", 6);	
+				} else {
+					if (bufval != 0) {	// 超时信息不为0
+						timerInit(timer3, &timerbuf, 0);	// 超时信息置0
+						boxFill8(bufBack, binfo->scrnx, COL8_FFFFFF, 8, 112, 15, 127);
+					} else {	// 超时信息为0
+						timerInit(timer3, &timerbuf, 1);	// 超时信息置1
+						boxFill8(bufBack, binfo->scrnx, COL8_008484, 8, 112, 15, 127);
+					}
+					timerSetTime(timer3, 50);	// 设置超时时限0.5秒
+					sheetRefresh(sheetBack, 8, 112, 16, 128);
 				}
-				timerSetTime(timer3, 50);	// 设置超时时限0.5秒
-				sheetRefresh(sheetBack, 8, 112, 16, 128);
-				
-			}
+			} 
 		}
 	}
 }
