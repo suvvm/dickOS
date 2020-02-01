@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.7
+* @Version: 0.2.8
 * @Date: 2020-01-31
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -167,7 +167,7 @@ void Main(){
 			bufval = QueuePop(&queue);	// 取出缓冲区队列队首数据
 			io_sti();	// 开中断
 			if (256 <= bufval && bufval <= 511) {	// 键盘中断数据
-				sprintf(s, "%02X", bufval);
+				sprintf(s, "%02X", bufval - 256);
 				putFont8AscSheet(sheetBack, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);	// 将键盘中断信息打印至背景层
 			} else if (512 <= bufval && bufval <= 767) {	// 鼠标中断数据
 				if (mouseDecode(&mdec, bufval - 512) != 0) {	// 完成一波三个字节数据的接收或者出现未知差错
