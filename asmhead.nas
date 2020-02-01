@@ -1,9 +1,13 @@
 ; dickos-os boot asm
 ; TAB=4
 
-BOTPAK		EQU		0x00280000		;装载bootpack 
-DSKCAC 		EQU		0x00100000		;磁盘缓存位置
-DSKCAC0		EQU		0x00008000		;磁盘缓存位置（实时模式）
+[INSTRSET "i486p"]
+
+VBEMODE 	EQU		0x105			; 画面模式 1024 * 768
+
+BOTPAK		EQU		0x00280000		; 装载bootpack 
+DSKCAC 		EQU		0x00100000		; 磁盘缓存位置
+DSKCAC0		EQU		0x00008000		; 磁盘缓存位置（实时模式）
 
 ; BOOT_INFO
 CYLS 		EQU		0x0ff0			; 启动区设置
@@ -15,20 +19,78 @@ VRAM		EQU		0x0ff8			; 图像缓冲区开始地址
 
 		ORG		0xc200			; 程序被装载的内存位置
 
-; 画面模式设定
+; 确认是否支持VBE
 
-		MOV		AL,0x13
+		MOV		AX,0x9000	; 为AX赋值0x9000
+		MOV		ES,AX		; 为ES赋值0x9000
+		MOV		DI,0		; 为DI赋值0
+		MOV		AX,0x4f00	; 为AX赋值0x4f00
+		INT		0x10		; 发出中断信号 调用bios16号函数（16号中断处理函数调用显卡）
+		CMP		AX,0x004f	; 比较AX与0x004f（有VBE AX会变为0x004f）
+		JNE		scrn320		; VBE不存在就跳转 scrn320
+
+; 检查VBE版本 VBE2.0以下版本不支持320 * 200以上的分辨率
+
+		MOV		AX,[ES:DI+4]	; 获取VBE版本号
+		CMP		AX,0x0200		; 与0x200比较
+		JB		scrn320			; 版本号小于2.0 跳转至scrn320 
+
+; 获取画面模式信息
+
+		MOV		CX,VBEMODE		; CX赋值当前画面模式号
+		MOV		AX,0x4f01		; AX赋值
+		INT		0x10			; 发出中断信号 调用bios16号函数（16号中断处理函数调用显卡）
+		CMP		AX,0x004f		; 比较AX与0x004f
+		JNE		scrn320			; 不相等就跳转scrn320
+
+; WORD	[ES:DI+0x00]	模式属性
+; WORD	[ES:DI+0x12]	X分辨率
+; WORD	[ES:DI+0x14]	Y分辨率
+; BYTE	[ES:DI+0x19]	颜色数
+; BYTE	[ES:DI+0x1b]	颜色指定方式 4为调色板模式
+; DWORD	[ES:DI+0x28]	VRAM地址
+
+; 确认画面模式信息
+
+		CMP		BYTE [ES:DI+0x19],8		; 确认颜色数是否为8 不为8跳转scrn320
+		JNE		scrn320					
+		CMP		BYTE [ES:DI+0x1b],4		; 确认颜色的指定方式是否为调色板模式 不为4跳转scrn320
+		JNE		scrn320
+		MOV		AX,[ES:DI+0x00]
+		AND		AX,0x0080
+		JZ		scrn320					; 模式属性bit7为0 跳转至scrn320（不能+0x4000）
+
+; 画面模式设定
+; 使用VBE（VESA BIOS extension）时使用 AX = 0x4f02 BX = 画面模式号
+
+		MOV		BX,VBEMODE+0x4000		; 向BX赋值画面模式号
+		MOV		AX,0x4f02
+		INT		0x10					; 发出中断信号 调用bios16号函数（16号中断处理函数调用显卡）
+		MOV		BYTE [VMODE],8			; 记录画面模式
+		MOV		AX,[ES:DI+0x12]
+		MOV		[SCRNX],AX				; 设置X分辨率
+		MOV		AX,[ES:DI+0x14]
+		MOV		[SCRNY],AX				; 设置Y分辨率
+		MOV		EAX,[ES:DI+0x28]
+		MOV		[VRAM],EAX
+		JMP		keystatus
+
+; 不能使用VBE
+
+scrn320:
+		MOV		AL,0x13					; VGA模式 320 * 200 8bit
 		MOV		AH,0x00
-		INT		0x10			; 调用bios16号函数（调用显卡）
-		MOV		BYTE [VMODE],8	; 记录画面模式
+		INT		0x10
+		MOV		BYTE [VMODE],8
 		MOV		WORD [SCRNX],320
 		MOV		WORD [SCRNY],200
 		MOV		DWORD [VRAM],0x000a0000
-		
+
 ;BIOS获得键盘LED指示灯状态
 
+keystatus:
 		MOV		AH,0x02
-		INT		0x16			; 调用bios22号函数 （调用键盘）
+		INT		0x16			; 发出中断信号调用bios22号函数 （22号中断处理函数调用键盘）
 		MOV		[LEDS],AL
 		
 ; 使PCI不接受一切中断
