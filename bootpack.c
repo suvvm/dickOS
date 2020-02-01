@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.8
+* @Version: 0.2.9
 * @Date: 2020-01-31
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -156,19 +156,22 @@ void Main(){
 	
 	//处理中断与进入hlt
 	for(;;){
-		count++;
+		// count++;
 		// sprintf(s, "%010d", timerctl.count);	
 		// putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 10);	// 显示定时器计时
 
 		io_cli();	// 关中断
 		if(QueueSize(&queue) == 0) {	// 只有缓冲区没有数据时才能开启中断并进入hlt模式
-			io_sti();	// 开中断
+			io_stihlt();	// 开中断进入htl
 		} else {
 			bufval = QueuePop(&queue);	// 取出缓冲区队列队首数据
 			io_sti();	// 开中断
 			if (256 <= bufval && bufval <= 511) {	// 键盘中断数据
 				sprintf(s, "%02X", bufval - 256);
 				putFont8AscSheet(sheetBack, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);	// 将键盘中断信息打印至背景层
+				if (bufval == 0x1e + 256) {	// 按下键盘A
+					putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6, "A", 1);	// 将A打印至窗口层
+				}
 			} else if (512 <= bufval && bufval <= 767) {	// 鼠标中断数据
 				if (mouseDecode(&mdec, bufval - 512) != 0) {	// 完成一波三个字节数据的接收或者出现未知差错
 					sprintf(s, "[lcr %4d %4d]", mdec.x, mdec.y);
@@ -203,11 +206,11 @@ void Main(){
 				} 			
 			} else if (bufval == 10) {	// 10秒定时器中断信息
 				putFont8AscSheet(sheetBack, 0, 80, COL8_FFFFFF, COL8_008484,  "10[sec]", 7);	// 在背景层打印10秒提示	
-				sprintf(s, "%010d", count);
-				putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 11);	// 在窗口层打印count的值
+				// sprintf(s, "%010d", count);
+				// putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 11);	// 在窗口层打印count的值
 			} else if (bufval == 3) {	// 3秒定时器中断信息
 				putFont8AscSheet(sheetBack, 0, 96, COL8_FFFFFF, COL8_008484,  "3[sec]", 6);	// 在背景层打印3秒提示	
-				count = 0;
+				// count = 0;
 			} else if (bufval == 1) {
 				timerInit(timer3, &queue, 0);	// 超时信息置0
 				boxFill8(bufBack, binfo->scrnx, COL8_FFFFFF, 8, 112, 15, 127);
