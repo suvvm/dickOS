@@ -38,6 +38,7 @@
 #define LIMIT_BOTPAK	0x0007ffff
 #define AR_DATA32_RW	0x4092
 #define AR_CODE32_ER	0x409a
+#define AR_TSS32		0x0089
 #define AR_INTGATE32	0x008e
 
 /*PIC端口信息*/
@@ -137,6 +138,22 @@ struct GATE_DESCRIPTOR{
 	short offsetLow, selector;
 	char dwCount, accessRight;
 	short offsetHigh;
+};
+
+
+/********************************************************************************
+*
+* task status segment	任务状态段 104字节
+* Description: 保存任务相关设置于寄存器信息
+* Parameter:
+*	第一行与第四行保存任务相关设置，第二行第三行为寄存器信息
+*
+********************************************************************************/
+struct TSS32 {
+	int backlink, esp0, ss0, esp1, ss1, esp2, ss2, cr3;
+	int eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;
+	int es, cs, ss, ds, fs, gs;
+	int ldtr, iomap;
 };
 
 /********************************************************************************
@@ -276,6 +293,7 @@ struct TIMERCTL {
 	struct TIMER timer[MAX_TIMER];
 };
 
+
 // queue.c 函数声明
 void QueueInit(struct QUEUE *q, int size, int *buf);
 int QueuePush(struct QUEUE *fifo, int data);
@@ -292,6 +310,7 @@ void io_out8(int port, int data);
 int io_load_eflags();
 void io_store_eflags(int eflags);
 int loadCr0();
+void loadTr(int tr);
 void storeCr0(int cr0);
 void loadGdtr(int limit, int addr);
 void loadIdtr(int limit, int addr);
@@ -300,6 +319,7 @@ void asm_interruptHandler21();
 void asm_interruptHandler27();
 void asm_interruptHandler2c();
 unsigned int memtest_sub(unsigned int start, unsigned int end);
+void taskSwitch4();
 
 // graphic.c 函数声明
 void init_palette();
