@@ -18,12 +18,29 @@
 /********************************************************
 *
 * Function name: taskBmain
-* Description: 任务B的主函数
+* Description: 进程B的主函数
 *
 **********************************************************/
 void taskBmain() {
+	struct QUEUE queue;	// 缓冲区队列
+	struct TIMER * timer;	// 定时器
+	int bufval, buf[128];
+	QueueInit(&queue, 128, buf);	// 初始化缓冲区队列
+	timer = timerAlloc();
+	timerInit(timer, &queue, 1);
+	timerSetTime(timer, 500);	// 5秒超时
+	
 	for(;;) {
-		io_hlt();
+		io_cli();
+		if (QueueSize(&queue) == 0) {
+			io_stihlt();	// 开中断进入htl
+		} else {
+			io_sti();	// 开中断
+			bufval = QueuePop(&queue);
+			if (bufval == 1) {	// 定时器超时
+				taskSwitch3();	// 返回进程A
+			}
+		}
 	}
 }
 
@@ -132,7 +149,7 @@ void Main(){
 	unsigned char *bufBack, bufMouse[256], *bufWin;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
 	struct QUEUE queue;	// 总缓冲区
 	struct TIMER *timer1, *timer2, *timer3;	// 三个定时器指针
-	struct TSS32 tssA, tssB;	// 任务A控制段 任务B控制段
+	struct TSS32 tssA, tssB;	// 进程A控制段 进程B控制段
 	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;	// 段描述符存放GDT内容
 	
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
@@ -204,17 +221,17 @@ void Main(){
 	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
 	putFont8AscSheet(sheetBack, 0, 48, COL8_FFFFFF, COL8_008484,  s, 26);	// 将s写入背景层
 	
-	// 为两个任务的ldtr与iomap赋值
+	// 为两个进程的ldtr与iomap赋值
 	tssA.ldtr = 0;
 	tssA.iomap = 0x40000000;
 	tssB.ldtr = 0;
 	tssB.iomap = 0x40000000;
 	
-	// 在全局描述符表中定义两个任务状态段
+	// 在全局描述符表中定义两个进程状态段
 	setSegmdesc(gdt + 3, 103, (int) &tssA, AR_TSS32);	// 将TSSA添加至GDT3号 段长上限103字节
 	setSegmdesc(gdt + 4, 103, (int) &tssB, AR_TSS32);	// 将TSSB添加至GDT4号 段长上限103字节
 	
-	loadTr(3 * 8);	// 为TR寄存器赋值 让cpu记住当前运行的任务是任务A
+	loadTr(3 * 8);	// 为TR寄存器赋值 让cpu记住当前运行的进程是进程A
 	taskBesp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024;	// 为任务B栈分配64KB内存并计算栈底地址给B的ESP
 	tssB.eip = (int) &taskBmain;	// B的下一条指令执行taskBmain
 	tssB.eflags = 0x00000202;	// 中断标准IF位为1
