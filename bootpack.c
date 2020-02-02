@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.2.9
-* @Date: 2020-01-31
+* @Version: 0.3.0
+* @Date: 2020-02-02
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -10,6 +10,7 @@
 #include "graphic.c"
 #include "queue.h"
 #include "mouse.c"
+#include "keyboard.c"
 #include "memory.c"
 #include "sheet.c"
 #include "timer.c"
@@ -169,8 +170,12 @@ void Main(){
 			if (256 <= bufval && bufval <= 511) {	// 键盘中断数据
 				sprintf(s, "%02X", bufval - 256);
 				putFont8AscSheet(sheetBack, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);	// 将键盘中断信息打印至背景层
-				if (bufval == 0x1e + 256) {	// 按下键盘A
-					putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6, "A", 1);	// 将A打印至窗口层
+				if (bufval < 256 + 0x80) {	// 按下键盘
+					if (keyboardTable[bufval - 256] != 0) {
+						s[0] = keyboardTable[bufval - 256];
+						s[1] = 0;
+						putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6, s, 1);	// 将A打印至窗口层
+					}
 				}
 			} else if (512 <= bufval && bufval <= 767) {	// 鼠标中断数据
 				if (mouseDecode(&mdec, bufval - 512) != 0) {	// 完成一波三个字节数据的接收或者出现未知差错
