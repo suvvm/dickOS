@@ -13,6 +13,7 @@
 #include "mouse.c"
 #include "keyboard.c"
 #include "timer.c"
+#include "multiProcess.c"
 
 /*******************************************************
 *
@@ -99,6 +100,7 @@ void interruptHandler2c(int *esp){
 *
 **********************************************************/
 void interruptHandler20(int *esp) {
+	char mpflag = 0;	// mpTimer超时标准
 	struct TIMER *timer;
 	io_out8(PIC0_OCW2, 0x60);	// 将IRQ-0信号接收完毕的消息通知给PIC
 	timerctl.count++;	// 计时器控制块中的计数
@@ -112,13 +114,19 @@ void interruptHandler20(int *esp) {
 		}
 		// 超时
 		timer->status = TIMER_ALLOC;	// 定时器设为已分配可使用态
-		QueuePush(timer->queue, timer->data);	// 对应超时信息入队对应缓冲区队列
+		if (timer != mpTimer) {	// 一般定时器超时
+			QueuePush(timer->queue, timer->data);	// 对应超时信息入队对应缓冲区队列
+		} else {	// 进程切换定时器超时
+			mpflag = 1;
+		}
 		timer = timer->next;
 	}
 
 	timerctl.timerHead = timer;	// 当前timer为活动定时器链表头 链表省去了位移操作
-	
 	timerctl.next = timerctl.timerHead->timeout;	// 有哨兵存在 不会出现没有头结点的情况
+	if (mpflag != 0) {
+		processSwitch();
+	}
 }
 
 #endif // INTERRUPT_C
