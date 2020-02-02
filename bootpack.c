@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.3.1
+* @Version: 0.3.3
 * @Date: 2020-02-02
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -24,13 +24,20 @@
 void taskBmain() {
 	struct QUEUE queue;	// 缓冲区队列
 	struct TIMER * timerTs;	// 定时器
-	int bufval, buf[128];
+	int bufval, buf[128], count = 0;
+	char s[11];
+	struct SHEET *sheetBack;
+	
 	QueueInit(&queue, 128, buf);	// 初始化缓冲区队列
 	timerTs = timerAlloc();
 	timerInit(timerTs, &queue, 1);
 	timerSetTime(timerTs, 2);	// 0.02秒超时
+	sheetBack = (struct SHEET *) *((int *) 0x0fec);	// 在指定内存地址取得背景层指针
 	
 	for(;;) {
+		count ++;
+		sprintf(s, "%010d", count);
+		putFont8AscSheet(sheetBack, 0, 144, COL8_FFFFFF, COL8_008484, s, 10);
 		io_cli();
 		if (QueueSize(&queue) == 0) {
 			io_stihlt();	// 开中断进入htl
@@ -254,7 +261,7 @@ void Main(){
 	tssB.ds = 1 * 8;
 	tssB.fs = 1 * 8;
 	tssB.gs = 1 * 8;
-	
+	*((int *) 0x0fec) = (int) sheetBack;	// 将sheetBack地址存入内存地址0x0fec 极其危险的强行进程间通信，小孩子不要模仿
 	//处理中断与进入hlt
 	for(;;){
 		// count++;
