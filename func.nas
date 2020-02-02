@@ -17,7 +17,7 @@
 		GLOBAL	_loadTr
 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
 		GLOBAL	_memtest_sub
-		GLOBAL	_taskSwitch4, _taskSwitch3
+		GLOBAL	_farJmp
 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
 ; 实际的函数
 
@@ -210,10 +210,6 @@ mts_fin:
 		POP		EDI
 		RET
 
-_taskSwitch4:							; void taskSwitch4()	切换至进程B
-		JMP		4*8:0					; far JMP 后面地址段+偏移量 地址段指向GDT中TSSB
-		RET
-
-_taskSwitch3:							; void taskSwitch3()	切换至进程A
-		JMP		3*8:0
+_farJmp:								; void farJmp(int eip, int cs);
+		JMP		FAR [ESP+4]
 		RET
