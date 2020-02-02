@@ -23,12 +23,12 @@
 **********************************************************/
 void taskBmain() {
 	struct QUEUE queue;	// 缓冲区队列
-	struct TIMER * timer;	// 定时器
+	struct TIMER * timerTs;	// 定时器
 	int bufval, buf[128];
 	QueueInit(&queue, 128, buf);	// 初始化缓冲区队列
-	timer = timerAlloc();
-	timerInit(timer, &queue, 1);
-	timerSetTime(timer, 500);	// 5秒超时
+	timerTs = timerAlloc();
+	timerInit(timerTs, &queue, 1);
+	timerSetTime(timerTs, 2);	// 0.02秒超时
 	
 	for(;;) {
 		io_cli();
@@ -38,7 +38,8 @@ void taskBmain() {
 			io_sti();	// 开中断
 			bufval = QueuePop(&queue);
 			if (bufval == 1) {	// 定时器超时
-				taskSwitch3();	// 返回进程A
+				farJmp(0, 3 * 8);	// 切换至进程A
+				timerSetTime(timerTs, 2);
 			}
 		}
 	}
@@ -148,7 +149,7 @@ void Main(){
 	struct SHEET *sheetBack, *sheetMouse, *sheetWin;	// 背景图层 鼠标图层 窗口图层
 	unsigned char *bufBack, bufMouse[256], *bufWin;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
 	struct QUEUE queue;	// 总缓冲区
-	struct TIMER *timer1, *timer2, *timer3;	// 三个定时器指针
+	struct TIMER *timer1, *timer2, *timer3, *timerTs;	// 四个定时器指针 timerTs用于控制进程A与进程B之间的切换
 	struct TSS32 tssA, tssB;	// 进程A控制段 进程B控制段
 	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;	// 段描述符存放GDT内容
 	
@@ -178,6 +179,10 @@ void Main(){
 	timer3 = timerAlloc();	// 获取一个可使用的定时器
 	timerInit(timer3, &queue, 1);	// 初始化定时器1
 	timerSetTime(timer3, 50);
+	
+	timerTs = timerAlloc();
+	timerInit(timerTs, &queue, 2);
+	timerSetTime(timerTs, 2);	// 0.02秒切换一次
 	
 	memtotal = memtest(0x00400000, 0xbfffffff);	// 获取内存总和
 	memsegInit(memsegtable);
@@ -314,13 +319,15 @@ void Main(){
 					sheetSlide(sheetMouse, mx, my);
 				} 			
 			} else if (bufval == 10) {	// 10秒定时器中断信息
-				putFont8AscSheet(sheetBack, 0, 80, COL8_FFFFFF, COL8_008484,  "10[sec]", 7);	// 在背景层打印10秒提示	
-				taskSwitch4();	// 切换至任务B
+				putFont8AscSheet(sheetBack, 0, 80, COL8_FFFFFF, COL8_008484,  "10[sec]", 7);	// 在背景层打印10秒提示
 				// sprintf(s, "%010d", count);
 				// putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 11);	// 在窗口层打印count的值
 			} else if (bufval == 3) {	// 3秒定时器中断信息
 				putFont8AscSheet(sheetBack, 0, 96, COL8_FFFFFF, COL8_008484,  "3[sec]", 6);	// 在背景层打印3秒提示	
 				// count = 0;
+			} else if (bufval == 2) {	// 0.02秒切换进程
+				farJmp(0, 4 * 8);	// 切换至进程B
+				timerSetTime(timerTs, 2);
 			} else if (bufval <= 1) {
 				if (bufval == 1) {
 					timerInit(timer3, &queue, 0);	// 超时信息置0
