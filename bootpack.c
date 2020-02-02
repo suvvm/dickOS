@@ -15,6 +15,18 @@
 #include "sheet.c"
 #include "timer.c"
 
+/********************************************************
+*
+* Function name: taskBmain
+* Description: 任务B的主函数
+*
+**********************************************************/
+void taskBmain() {
+	for(;;) {
+		io_hlt();
+	}
+}
+
 /*******************************************************
 *
 * Function name: makeTextBox
@@ -111,7 +123,7 @@ void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
 	int	buf[128];	// s保存要输出的变量信息 buf为总缓冲区
-	int mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
+	int mx, my, bufval, cursorX, cursorC, taskBesp; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
@@ -120,6 +132,9 @@ void Main(){
 	unsigned char *bufBack, bufMouse[256], *bufWin;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
 	struct QUEUE queue;	// 总缓冲区
 	struct TIMER *timer1, *timer2, *timer3;	// 三个定时器指针
+	struct TSS32 tssA, tssB;	// 任务A控制段 任务B控制段
+	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;	// 段描述符存放GDT内容
+	
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
 	
 	initGdtit();	// 初始化GDT IDT
@@ -189,6 +204,35 @@ void Main(){
 	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
 	putFont8AscSheet(sheetBack, 0, 48, COL8_FFFFFF, COL8_008484,  s, 26);	// 将s写入背景层
 	
+	// 为两个任务的ldtr与iomap赋值
+	tssA.ldtr = 0;
+	tssA.iomap = 0x40000000;
+	tssB.ldtr = 0;
+	tssB.iomap = 0x40000000;
+	
+	// 在全局描述符表中定义两个任务状态段
+	setSegmdesc(gdt + 3, 103, (int) &tssA, AR_TSS32);	// 将TSSA添加至GDT3号 段长上限103字节
+	setSegmdesc(gdt + 4, 103, (int) &tssB, AR_TSS32);	// 将TSSB添加至GDT4号 段长上限103字节
+	
+	loadTr(3 * 8);	// 为TR寄存器赋值 让cpu记住当前运行的任务是任务A
+	taskBesp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024;	// 为任务B栈分配64KB内存并计算栈底地址给B的ESP
+	tssB.eip = (int) &taskBmain;	// B的下一条指令执行taskBmain
+	tssB.eflags = 0x00000202;	// 中断标准IF位为1
+	tssB.eax = 0;
+	tssB.ecx = 0;
+	tssB.edx = 0;
+	tssB.ebx = 0;
+	tssB.esp = taskBesp;
+	tssB.ebp = 0;
+	tssB.esi = 0;
+	tssB.edi = 0;
+	tssB.es = 1 * 8;
+	tssB.cs = 2 * 8;
+	tssB.ss = 1 * 8;
+	tssB.ds = 1 * 8;
+	tssB.fs = 1 * 8;
+	tssB.gs = 1 * 8;
+	
 	//处理中断与进入hlt
 	for(;;){
 		// count++;
@@ -254,6 +298,7 @@ void Main(){
 				} 			
 			} else if (bufval == 10) {	// 10秒定时器中断信息
 				putFont8AscSheet(sheetBack, 0, 80, COL8_FFFFFF, COL8_008484,  "10[sec]", 7);	// 在背景层打印10秒提示	
+				taskSwitch4();	// 切换至任务B
 				// sprintf(s, "%010d", count);
 				// putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 11);	// 在窗口层打印count的值
 			} else if (bufval == 3) {	// 3秒定时器中断信息
