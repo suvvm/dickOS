@@ -21,32 +21,35 @@
 * Description: 进程B的主函数
 *
 **********************************************************/
-void taskBmain() {
+void taskBmain(struct SHEET *sheetBack) {
 	struct QUEUE queue;	// 缓冲区队列
-	struct TIMER * timerTs;	// 定时器
+	struct TIMER * timerTs, *timerPrint;	// 定时器
 	int bufval, buf[128], count = 0;
 	char s[11];
-	struct SHEET *sheetBack;
 	
 	QueueInit(&queue, 128, buf);	// 初始化缓冲区队列
 	timerTs = timerAlloc();
-	timerInit(timerTs, &queue, 1);
+	timerInit(timerTs, &queue, 2);
 	timerSetTime(timerTs, 2);	// 0.02秒超时
-	sheetBack = (struct SHEET *) *((int *) 0x0fec);	// 在指定内存地址取得背景层指针
+	timerPrint = timerAlloc();
+	timerInit(timerPrint, &queue, 1);
+	timerSetTime(timerPrint, 1);	// 0.01秒打印一次
 	
 	for(;;) {
 		count ++;
-		sprintf(s, "%010d", count);
-		putFont8AscSheet(sheetBack, 0, 144, COL8_FFFFFF, COL8_008484, s, 10);
 		io_cli();
 		if (QueueSize(&queue) == 0) {
 			io_stihlt();	// 开中断进入htl
 		} else {
 			io_sti();	// 开中断
 			bufval = QueuePop(&queue);
-			if (bufval == 1) {	// 定时器超时
+			if (bufval == 2) {	// 定时器超时
 				farJmp(0, 3 * 8);	// 切换至进程A
 				timerSetTime(timerTs, 2);
+			} else if (bufval == 1) {
+				sprintf(s, "%010d", count);
+				putFont8AscSheet(sheetBack, 0, 144, COL8_FFFFFF, COL8_008484, s, 10);
+				timerSetTime(timerPrint, 1);
 			}
 		}
 	}
@@ -244,7 +247,9 @@ void Main(){
 	setSegmdesc(gdt + 4, 103, (int) &tssB, AR_TSS32);	// 将TSSB添加至GDT4号 段长上限103字节
 	
 	loadTr(3 * 8);	// 为TR寄存器赋值 让cpu记住当前运行的进程是进程A
-	taskBesp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024;	// 为任务B栈分配64KB内存并计算栈底地址给B的ESP
+	taskBesp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 8;	// 为任务B栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8
+	*((int *) (taskBesp + 4)) = (int) sheetBack;	// 将sheetBack地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
+	
 	tssB.eip = (int) &taskBmain;	// B的下一条指令执行taskBmain
 	tssB.eflags = 0x00000202;	// 中断标准IF位为1
 	tssB.eax = 0;
@@ -261,7 +266,6 @@ void Main(){
 	tssB.ds = 1 * 8;
 	tssB.fs = 1 * 8;
 	tssB.gs = 1 * 8;
-	*((int *) 0x0fec) = (int) sheetBack;	// 将sheetBack地址存入内存地址0x0fec 极其危险的强行进程间通信，小孩子不要模仿
 	//处理中断与进入hlt
 	for(;;){
 		// count++;
