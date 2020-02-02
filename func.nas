@@ -14,8 +14,10 @@
 		GLOBAL	_io_load_eflags, _io_store_eflags
 		GLOBAL	_loadGdtr, _loadIdtr
 		GLOBAL	_loadCr0, _storeCr0
+		GLOBAL	_loadTr
 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
 		GLOBAL	_memtest_sub
+		GLOBAL	_taskSwitch4, _taskSwitch3
 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
 ; 实际的函数
 
@@ -103,6 +105,10 @@ _loadCr0:						; int loadCr0; 读取cr0寄存器
 _storeCr0:						; void storeCr0(int cr0) 写入cr0寄存器
 		MOV		EAX,[ESP+4]
 		MOV		CR0,EAX
+		RET
+
+_loadTr:						; void loadTr(int tr) 为TR寄存器赋值
+		LTR		[ESP+4]
 		RET
 		
 _asm_interruptHandler20:
@@ -202,4 +208,12 @@ mts_fin:
 		POP		EBX
 		POP		ESI
 		POP		EDI
+		RET
+
+_taskSwitch4:							; void taskSwitch4()	切换至进程B
+		JMP		4*8:0					; far JMP 后面地址段+偏移量 地址段指向GDT中TSSB
+		RET
+
+_taskSwitch3:							; void taskSwitch3()	切换至进程A
+		JMP		3*8:0
 		RET
