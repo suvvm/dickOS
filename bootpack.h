@@ -319,8 +319,7 @@ void asm_interruptHandler21();
 void asm_interruptHandler27();
 void asm_interruptHandler2c();
 unsigned int memtest_sub(unsigned int start, unsigned int end);
-void taskSwitch4();
-void taskSwitch3();
+void farJmp(int eip, int cs);
 
 // graphic.c 函数声明
 void init_palette();
