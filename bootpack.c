@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.3.3
+* @Version: 0.3.4
 * @Date: 2020-02-02
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -23,14 +23,14 @@
 **********************************************************/
 void taskBmain(struct SHEET *sheetBack) {
 	struct QUEUE queue;	// 缓冲区队列
-	struct TIMER * timerTs, *timerPrint;	// 定时器
-	int bufval, buf[128], count = 0;
-	char s[11];
+	struct TIMER * timer1s, *timerPrint;	// 定时器
+	int bufval, buf[128], count = 0, count0 = 0;
+	char s[12];
 	
 	QueueInit(&queue, 128, buf);	// 初始化缓冲区队列
-	timerTs = timerAlloc();
-	timerInit(timerTs, &queue, 2);
-	timerSetTime(timerTs, 2);	// 0.02秒超时
+	timer1s = timerAlloc();
+	timerInit(timer1s, &queue, 100);
+	timerSetTime(timer1s, 100);	// 1秒超时
 	timerPrint = timerAlloc();
 	timerInit(timerPrint, &queue, 1);
 	timerSetTime(timerPrint, 1);	// 0.01秒打印一次
@@ -39,16 +39,19 @@ void taskBmain(struct SHEET *sheetBack) {
 		count ++;
 		io_cli();
 		if (QueueSize(&queue) == 0) {
-			io_stihlt();	// 开中断进入htl
-		} else {
 			io_sti();	// 开中断
+		} else {
 			bufval = QueuePop(&queue);
-			if (bufval == 2) {	// 定时器超时
-				farJmp(0, 3 * 8);	// 切换至进程A
-				timerSetTime(timerTs, 2);
+			io_sti();	// 开中断
+			
+			if (bufval == 100) {	// 1s定时器超时 显示速度
+				sprintf(s, "%011d", count - count0);
+				putFont8AscSheet(sheetBack, 0, 128, COL8_FFFFFF, COL8_008484, s, 11);
+				count0 = count;
+				timerSetTime(timer1s, 100);
 			} else if (bufval == 1) {
-				sprintf(s, "%010d", count);
-				putFont8AscSheet(sheetBack, 0, 144, COL8_FFFFFF, COL8_008484, s, 10);
+				sprintf(s, "%011d", count);
+				putFont8AscSheet(sheetBack, 0, 144, COL8_FFFFFF, COL8_008484, s, 11);
 				timerSetTime(timerPrint, 1);
 			}
 		}
@@ -159,7 +162,7 @@ void Main(){
 	struct SHEET *sheetBack, *sheetMouse, *sheetWin;	// 背景图层 鼠标图层 窗口图层
 	unsigned char *bufBack, bufMouse[256], *bufWin;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
 	struct QUEUE queue;	// 总缓冲区
-	struct TIMER *timer1, *timer2, *timer3, *timerTs;	// 四个定时器指针 timerTs用于控制进程A与进程B之间的切换
+	struct TIMER *timer1, *timer2, *timer3;	// 四个定时器指针
 	struct TSS32 tssA, tssB;	// 进程A控制段 进程B控制段
 	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;	// 段描述符存放GDT内容
 	
@@ -189,10 +192,6 @@ void Main(){
 	timer3 = timerAlloc();	// 获取一个可使用的定时器
 	timerInit(timer3, &queue, 1);	// 初始化定时器1
 	timerSetTime(timer3, 50);
-	
-	timerTs = timerAlloc();
-	timerInit(timerTs, &queue, 2);
-	timerSetTime(timerTs, 2);	// 0.02秒切换一次
 	
 	memtotal = memtest(0x00400000, 0xbfffffff);	// 获取内存总和
 	memsegInit(memsegtable);
@@ -267,6 +266,7 @@ void Main(){
 	tssB.fs = 1 * 8;
 	tssB.gs = 1 * 8;
 	//处理中断与进入hlt
+	multiProcessInit();	// 初始化多进程控制
 	for(;;){
 		// count++;
 		// sprintf(s, "%010d", timerctl.count);	
@@ -336,10 +336,7 @@ void Main(){
 			} else if (bufval == 3) {	// 3秒定时器中断信息
 				putFont8AscSheet(sheetBack, 0, 96, COL8_FFFFFF, COL8_008484,  "3[sec]", 6);	// 在背景层打印3秒提示	
 				// count = 0;
-			} else if (bufval == 2) {	// 0.02秒切换进程
-				farJmp(0, 4 * 8);	// 切换至进程B
-				timerSetTime(timerTs, 2);
-			} else if (bufval <= 1) {
+			}  else if (bufval <= 1) {
 				if (bufval == 1) {
 					timerInit(timer3, &queue, 0);	// 超时信息置0
 					cursorC = COL8_000000;	
