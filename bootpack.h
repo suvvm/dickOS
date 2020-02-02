@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.2.7
+* @Version: 0.2.8
 * @Date: 2020-02-02
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -380,5 +380,8 @@ void timerInit(struct TIMER *timer, struct QUEUE *queue, unsigned char data);
 void timerFree(struct TIMER *timer);
 struct TIMER *timerAlloc();
 
+// multiProcess 函数声明
+void multiProcessInit();
+void processSwitch();
 
 #endif // BOOTPACK_H
