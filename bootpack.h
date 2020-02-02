@@ -144,9 +144,9 @@ struct GATE_DESCRIPTOR{
 /********************************************************************************
 *
 * task status segment	任务状态段 104字节
-* Description: 保存任务相关设置于寄存器信息
+* Description: 保存进程相关设置于寄存器信息
 * Parameter:
-*	第一行与第四行保存任务相关设置，第二行第三行为寄存器信息
+*	第一行与第四行保存进程相关设置，第二行第三行为寄存器信息
 *
 ********************************************************************************/
 struct TSS32 {
@@ -320,6 +320,7 @@ void asm_interruptHandler27();
 void asm_interruptHandler2c();
 unsigned int memtest_sub(unsigned int start, unsigned int end);
 void taskSwitch4();
+void taskSwitch3();
 
 // graphic.c 函数声明
 void init_palette();
