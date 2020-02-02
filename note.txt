@@ -24,8 +24,12 @@
 	FS——无名
 	GS——无名
 	
+	TR——任务寄存器 使CPU记住当前在运行哪一个任务 任务切换时TR会自动变化 英特尔规定为tr赋值时要把GDT编号乘以8
+	IP——指令指针寄存器 保存下一条指令所在地址
+	EIP——扩展指令指针寄存器 IP寄存器的32位扩展
+	
 	MOV 赋值
-	JMP 跳转
+	JMP 跳转 普通情况下的JMP为near模式 切换任务的JMP为 far模式 需要指定地址与偏移量
 	ADD 加
 	IMUL 乘法
 	SUB 减法
@@ -43,6 +47,7 @@
 	EQU equal相当于C语言#define
 	RET 子程序返回
 	NOP 让cpu休息一个时钟周期
+	LTR 为TR寄存器赋值的指令
 	
 	WORD 16位（2字节）
 	DWORD 32位（4字节）
