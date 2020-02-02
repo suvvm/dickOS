@@ -17,6 +17,33 @@
 
 /*******************************************************
 *
+* Function name: makeTextBox
+* Description: 创建文本输入框
+* Parameter:
+*	@sheet	图称指针	struct SHEET *
+*	@startX	x轴起始位置	int
+*	@startY	y轴起始位置	int
+*	@width	宽度		int
+*	@height	高度		int
+*	@c		文本框颜色	int
+*
+**********************************************************/
+void makeTextBox(struct SHEET *sheet, int startX, int startY, int width, int height, int c) {
+	int endX = startX + width, endY = startY + height;
+	boxFill8(sheet->buf, sheet->width, COL8_848484, startX - 2, startY - 3, endX + 1, startY - 3);	// 暗灰色 (startX-2,startY-3)~(endX+1,startY-3) 一条上部边框横线
+	boxFill8(sheet->buf, sheet->width, COL8_848484, startX - 3, startY - 3, startX - 3, endY + 1);	// 暗灰色 (startX-3,startY-3)~(startX-3,endY+1) 一条左侧边框竖线
+	boxFill8(sheet->buf, sheet->width, COL8_FFFFFF, startX - 3, endY + 2, endX + 1, endY + 2);		// 白色 (startX-3,endY+2)~(endX+1,endY+2) 一条底部边框横线
+	boxFill8(sheet->buf, sheet->width, COL8_FFFFFF, endX + 2, startY - 3, endX + 2, endY + 2);		// 白色 (endX+2,startY-2)~(endX+2,endY+2) 一条右侧边框竖线
+	boxFill8(sheet->buf, sheet->width, COL8_000000, startX - 1, startY - 2, endX, startY - 2);		// 黑色	(startX-1,startY-2)~(endX,startY-2) 一条顶部边框横线
+	boxFill8(sheet->buf, sheet->width, COL8_000000, startX - 2, startY - 2, startX - 2, endY);		// 黑色 (startX-2,startY-2)~(startX-2,endY) 一条左侧边框竖线
+	boxFill8(sheet->buf, sheet->width, COL8_C6C6C6, startX - 2, endY + 1, endX, endY + 1);			// 亮灰色 (startX-2,endY+1,endX,endY+1) 一条底部边框横线
+	boxFill8(sheet->buf, sheet->width, COL8_C6C6C6, endX + 1, startY - 2, endX + 1, endY + 1);		// 亮灰色 (endX+1,startY-2)~(endX+1,endY+1) 一条右侧边框竖线
+	
+	boxFill8(sheet->buf, sheet->width, c, startX - 1, startY - 1, endX, endY);	// 文本输入区
+}
+
+/*******************************************************
+*
 * Function name: makeWindow
 * Description: 创建窗口
 * Parameter:
@@ -84,7 +111,7 @@ void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
 	int	buf[128];	// s保存要输出的变量信息 buf为总缓冲区
-	int mx, my, bufval, count = 0; //鼠标x轴位置 鼠标y轴位置 要显示的缓冲区信息
+	int mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
@@ -133,12 +160,19 @@ void Main(){
 	sheetWin = sheetAlloc(shtctl);
 	bufBack = (unsigned char *) memsegAlloc4K(memsegtable, binfo->scrnx * binfo->scrny);	// 以4KB为单位为背景分配内存
 	bufWin = (unsigned char *) memsegAlloc4K(memsegtable, 160 * 52);
+	
 	sheetSetbuf(sheetBack, bufBack, binfo->scrnx, binfo->scrny, -1);	// 设置背景图层缓冲区，背景不需要透明色设为-1
 	sheetSetbuf(sheetMouse, bufMouse, 16, 16, COL8_008484);	// 设置鼠标图层缓冲区与透明色
 	sheetSetbuf(sheetWin, bufWin, 160, 52, -1);	// 设置窗口图层缓冲区 无透明色
+	
 	init_GUI(bufBack, binfo->scrnx, binfo->scrny);	// 初始化GUI至bufBack
 	initMouseCursor8(bufMouse, COL8_008484);	// 初始化鼠标至bufMouse
-	makeWindow(bufWin, 160, 52, "counter");	// 显示窗口
+	
+	makeWindow(bufWin, 160, 52, "window");	// 显示窗口
+	makeTextBox(sheetWin, 8, 28, 144, 16, COL8_FFFFFF);	// 显示文本输入区
+	cursorX = 8;	// 设置光标起始位置
+	cursorC = COL8_FFFFFF;	// 设置光标颜色
+	
 	sheetSlide(sheetBack, 0, 0);	// 背景图层起始坐标(0,0)
 	// 初始鼠标坐标为屏幕正中
 	mx = (binfo->scrnx - 16) / 2;	// 鼠标x轴位置
@@ -171,12 +205,20 @@ void Main(){
 				sprintf(s, "%02X", bufval - 256);
 				putFont8AscSheet(sheetBack, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);	// 将键盘中断信息打印至背景层
 				if (bufval < 256 + 0x80) {	// 按下键盘
-					if (keyboardTable[bufval - 256] != 0) {
+					if (keyboardTable[bufval - 256] != 0 && cursorX < 144) {	// 键盘对应值有字符且光标没有到输入框末尾
 						s[0] = keyboardTable[bufval - 256];
 						s[1] = 0;
-						putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6, s, 1);	// 将A打印至窗口层
+						putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, s, 1);	// 将字符打印至窗口层
+						cursorX += 8;	// 光标后移一个字符
 					}
 				}
+				if (bufval == 256 + 0x0e && cursorX > 8) {	// 按下退格键且光标不在输入框起始位置
+					putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, " ", 1);	// 用空格消去当前光标
+					cursorX -= 8;	// 光标前移一个字符
+				}
+				// 重新显示光标
+				boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
+				sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
 			} else if (512 <= bufval && bufval <= 767) {	// 鼠标中断数据
 				if (mouseDecode(&mdec, bufval - 512) != 0) {	// 完成一波三个字节数据的接收或者出现未知差错
 					sprintf(s, "[lcr %4d %4d]", mdec.x, mdec.y);
@@ -216,16 +258,17 @@ void Main(){
 			} else if (bufval == 3) {	// 3秒定时器中断信息
 				putFont8AscSheet(sheetBack, 0, 96, COL8_FFFFFF, COL8_008484,  "3[sec]", 6);	// 在背景层打印3秒提示	
 				// count = 0;
-			} else if (bufval == 1) {
-				timerInit(timer3, &queue, 0);	// 超时信息置0
-				boxFill8(bufBack, binfo->scrnx, COL8_FFFFFF, 8, 112, 15, 127);
+			} else if (bufval <= 1) {
+				if (bufval == 1) {
+					timerInit(timer3, &queue, 0);	// 超时信息置0
+					cursorC = COL8_000000;	
+				} else {
+					timerInit(timer3, &queue, 1);	// 超时信息置1
+					cursorC = COL8_FFFFFF;
+				}
+				boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
 				timerSetTime(timer3, 50);	// 设置超时时限0.5秒
-				sheetRefresh(sheetBack, 8, 112, 16, 128);
-			} else if (bufval == 0) {
-				timerInit(timer3, &queue, 1);	// 超时信息置1
-				boxFill8(bufBack, binfo->scrnx, COL8_008484, 8, 112, 15, 127);
-				timerSetTime(timer3, 50);	// 设置超时时限0.5秒
-				sheetRefresh(sheetBack, 8, 112, 16, 128);
+				sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
 			}
 		}
 	}
