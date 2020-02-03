@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.2.9
+* @Version: 0.3.0
 * @Date: 2020-02-03
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -200,12 +200,14 @@ struct PROCESSCTL {
 * back为队尾，作为下一个写入（入队）位置，front为队首，作为下一个读取（出队）位置
 * size为队列大小
 * free记录当前可用空间
+* process记录缓冲区所属的进程
 * 如果缓冲区满时又来了一个数据则将flags标记为1 表明有过溢出
 *
 ********************************************************************************/
 struct QUEUE {
 	int *buf;
 	int back, front, size, free, flags;
+	struct PCB *process;
 };
 
 /********************************************************************************
@@ -332,7 +334,7 @@ struct TIMERCTL {
 
 
 // queue.c 函数声明
-void QueueInit(struct QUEUE *q, int size, int *buf);
+void QueueInit(struct QUEUE *q, int size, int *buf, struct PCB *process);
 int QueuePush(struct QUEUE *fifo, int data);
 int QueuePop(struct QUEUE *fifo);
 int QueueSize(struct QUEUE *fifo);
@@ -422,6 +424,6 @@ struct PCB *processInit(struct MEMSEGTABLE *memsegtable);
 struct PCB *processAlloc();
 void processRun(struct PCB *process);
 void processSwitch();
-
+void processSleep(struct PCB *process);
 
 #endif // BOOTPACK_H
