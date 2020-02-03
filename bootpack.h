@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.3.0
+* @Version: 0.3.1
 * @Date: 2020-02-03
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -84,8 +84,10 @@
 #define TIMER_ALLOC	1	// 定时器运行已配置
 #define TIMER_USING	2	// 定时器正在运行
 
-#define MAX_PROCESS 	1000	// 最大进程数量
-#define	PROCESS_GDT0	3		// 分配给进程的GDT开始编号
+#define MAX_PROCESS 		1000	// 最大进程数量
+#define	PROCESS_GDT0		3		// 分配给进程的GDT开始编号
+#define MAX_PROCESS_LV		100		// 每级最大进程数量
+#define MAX_PROCESSLEVELS	10		// 最大级数
 
 /********************************************************************************
 *
@@ -164,32 +166,49 @@ struct TSS32 {
 * Processing Control Block	进程控制块
 * Description: 记录进程的外部特征，描述进程的运动变化过程
 * Parameter:
-*	@pid	进程GDT编号直接作为pid使用		int
-*	@status	记录进程状态					int
-*	@tss	尽量进程相关设置于寄存器信息	TSS32
+*	@pid		进程GDT编号直接作为pid使用		int
+*	@status		记录进程状态					int
+*	@level		分级反馈等级					int
+*	@priority	进程优先级（定时器超时时间）	int
+*	@tss		尽量进程相关设置于寄存器信息	TSS32
 *
 ********************************************************************************/
 struct PCB {
 	int pid, status;
+	int level, priority;
 	struct TSS32 tss;
 };
 
+/********************************************************************************
+*
+* Processing LEVEL	进程等级
+* Description: 分级反馈队列
+* Parameter:
+*	@running		该级正在运行的进程数量		int
+*	@now			当前正在运行哪个进程		int
+*	@processesAcs	改级就绪队列				struct PCB *
+********************************************************************************/
+struct PROCESSLEVEL {
+	int running;
+	int now;
+	struct PCB *processesAcs[MAX_PROCESS_LV];
+};
 
 /********************************************************************************
 *
 * Processes control	进程控制
 * Description: 控制和管理进程信息
 * Parameter:
-*	@running		正在运行的进程数量	int
-*	@now			当前运行的进程		int
-*	@processesAcs	就绪队列			struct PCB *
-*	@processes		所有进程			struct PCB
+*	@nowLv		当前活动等级				int
+*	@lvChange	下次进程切换是否要改变等级	char
+*	@level		多级反馈队列				struct PROCESSLEVEL[]
+*	@processes	所有进程					struct PCB[]
 *
 ********************************************************************************/
 struct PROCESSCTL {
-	int running;
-	int now;
-	struct PCB *processesAcs[MAX_PROCESS];
+	int nowLv;
+	char lvChange;
+	struct PROCESSLEVEL level[MAX_PROCESSLEVELS];
 	struct PCB processes[MAX_PROCESS];
 };
 
@@ -420,9 +439,13 @@ void timerFree(struct TIMER *timer);
 struct TIMER *timerAlloc();
 
 // multiProcess 函数声明
+struct PCB *processNow();
+void processAdd(struct PCB *process);
+void processRemove(struct PCB *process);
+void processSwitchSub();
 struct PCB *processInit(struct MEMSEGTABLE *memsegtable);
 struct PCB *processAlloc();
-void processRun(struct PCB *process);
+void processRun(struct PCB *process, int level, int priority);
 void processSwitch();
 void processSleep(struct PCB *process);
 
