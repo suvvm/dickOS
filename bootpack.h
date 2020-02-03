@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.2.8
-* @Date: 2020-02-02
+* @Version: 0.2.9
+* @Date: 2020-02-03
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -84,6 +84,9 @@
 #define TIMER_ALLOC	1	// 定时器运行已配置
 #define TIMER_USING	2	// 定时器正在运行
 
+#define MAX_PROCESS 	1000	// 最大进程数量
+#define	PROCESS_GDT0	3		// 分配给进程的GDT开始编号
+
 /********************************************************************************
 *
 * 启动信息，与asmhead.nas中设置一致
@@ -154,6 +157,40 @@ struct TSS32 {
 	int eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;
 	int es, cs, ss, ds, fs, gs;
 	int ldtr, iomap;
+};
+
+/********************************************************************************
+*
+* Processing Control Block	进程控制块
+* Description: 记录进程的外部特征，描述进程的运动变化过程
+* Parameter:
+*	@pid	进程GDT编号直接作为pid使用		int
+*	@status	记录进程状态					int
+*	@tss	尽量进程相关设置于寄存器信息	TSS32
+*
+********************************************************************************/
+struct PCB {
+	int pid, status;
+	struct TSS32 tss;
+};
+
+
+/********************************************************************************
+*
+* Processes control	进程控制
+* Description: 控制和管理进程信息
+* Parameter:
+*	@running		正在运行的进程数量	int
+*	@now			当前运行的进程		int
+*	@processesAcs	就绪队列			struct PCB *
+*	@processes		所有进程			struct PCB
+*
+********************************************************************************/
+struct PROCESSCTL {
+	int running;
+	int now;
+	struct PCB *processesAcs[MAX_PROCESS];
+	struct PCB processes[MAX_PROCESS];
 };
 
 /********************************************************************************
@@ -381,7 +418,10 @@ void timerFree(struct TIMER *timer);
 struct TIMER *timerAlloc();
 
 // multiProcess 函数声明
-void multiProcessInit();
+struct PCB *processInit(struct MEMSEGTABLE *memsegtable);
+struct PCB *processAlloc();
+void processRun(struct PCB *process);
 void processSwitch();
+
 
 #endif // BOOTPACK_H
