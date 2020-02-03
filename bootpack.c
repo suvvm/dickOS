@@ -21,9 +21,9 @@
 * Description: 进程B的主函数
 *
 **********************************************************/
-void taskBmain(struct SHEET *sheetBack) {
+void taskBmain(struct SHEET *sheetWinB) {
 	struct QUEUE queue;	// 缓冲区队列
-	struct TIMER * timer1s, *timerPrint;	// 定时器
+	struct TIMER * timer1s;	// 定时器
 	int bufval, buf[128], count = 0, count0 = 0;
 	char s[12];
 	
@@ -31,9 +31,6 @@ void taskBmain(struct SHEET *sheetBack) {
 	timer1s = timerAlloc();
 	timerInit(timer1s, &queue, 100);
 	timerSetTime(timer1s, 100);	// 1秒超时
-	timerPrint = timerAlloc();
-	timerInit(timerPrint, &queue, 1);
-	timerSetTime(timerPrint, 1);	// 0.01秒打印一次
 	
 	for(;;) {
 		count ++;
@@ -46,13 +43,9 @@ void taskBmain(struct SHEET *sheetBack) {
 			
 			if (bufval == 100) {	// 1s定时器超时 显示速度
 				sprintf(s, "%011d", count - count0);
-				putFont8AscSheet(sheetBack, 0, 128, COL8_FFFFFF, COL8_008484, s, 11);
+				putFont8AscSheet(sheetWinB, 24, 28, COL8_000000, COL8_C6C6C6, s, 11);
 				count0 = count;
 				timerSetTime(timer1s, 100);
-			} else if (bufval == 1) {
-				sprintf(s, "%011d", count);
-				putFont8AscSheet(sheetBack, 0, 144, COL8_FFFFFF, COL8_008484, s, 11);
-				timerSetTime(timerPrint, 1);
 			}
 		}
 	}
@@ -94,9 +87,10 @@ void makeTextBox(struct SHEET *sheet, int startX, int startY, int width, int hei
 *	@width	窗口宽度		int
 *	@height	窗口高度		int
 *	@title	窗口标题		char *
+*	@act	活动标识		char
 *
 **********************************************************/
-void makeWindow(unsigned char *buf, int width, int height, char *title) {
+void makeWindow(unsigned char *buf, int width, int height, char *title, char act) {
 	static char closeBtn[14][16] = {	// 关闭按钮
 		"OOOOOOOOOOOOOOO@",
 		"OQQQQQQQQQQQQQ$@",
@@ -114,7 +108,14 @@ void makeWindow(unsigned char *buf, int width, int height, char *title) {
 		"@@@@@@@@@@@@@@@@"
 	};
 	int x, y;
-	char c;
+	char c, tc, tbc;	// closeBtn对应位置字符 title文字颜色 窗口标题栏颜色
+	if (act != 0) {	// 窗口为活动窗口
+		tc = COL8_FFFFFF;	// 白色
+		tbc = COL8_000084;	// 暗青色
+	} else {	// 窗口不为活动窗口
+		tc = COL8_C6C6C6;	// 亮灰色
+		tbc = COL8_848484;	// 暗灰色
+	}
 	// 绘制窗口（坐标都为相对坐标，起始(0,0)）
 	boxFill8(buf, width, COL8_C6C6C6, 0, 0, width - 1, 0);	// 亮灰色 (0,0)~(width-1,0)顶部横线
 	boxFill8(buf, width, COL8_FFFFFF, 1, 1, width - 2, 1);	// 白色 (1,1)~(width-2,1)顶部横线
@@ -123,10 +124,10 @@ void makeWindow(unsigned char *buf, int width, int height, char *title) {
 	boxFill8(buf, width, COL8_848484, width - 2, 1, width - 2, height - 2);	//暗灰色 (width - 2,1)~(width - 2, height - 2)一条右侧竖线
 	boxFill8(buf, width, COL8_000000, width - 1, 0, width - 1, height - 1);	// 黑色 (width - 1,0)~(width - 1, height - 1)一条右侧竖线
 	boxFill8(buf, width, COL8_C6C6C6, 2, 2, width - 3, height - 3);	// 亮灰色 (2,2)~(width - 3,height - 3) 中心矩形
-	boxFill8(buf, width, COL8_000084, 3, 3, width - 4, 20);	// 暗青色(3,3)~(width - 4, 20)顶部矩形
+	boxFill8(buf, width, tbc, 3, 3, width - 4, 20);	// tbc(3,3)~(width - 4, 20)顶部矩形
 	boxFill8(buf, width, COL8_848484, 1, height - 2, width - 2, height - 2);	// 暗灰色(1,height-2)~(width-2,height-2)底部横线
 	boxFill8(buf, width, COL8_000000, 0, height - 1, width - 1, height - 1);	// 黑色(0,height-1)~(width-1,height-1)底部横线
-	putFont8_asc(buf, width, 24, 4, COL8_FFFFFF, title);
+	putFont8_asc(buf, width, 24, 4, tc, title);
 	for (y = 0; y < 14; y++) {
 		for (x = 0; x < 16; x++) {
 			c = closeBtn[y][x];
@@ -154,16 +155,16 @@ void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
 	int	buf[128];	// s保存要输出的变量信息 buf为总缓冲区
-	int mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
+	int i, mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHTCTL *shtctl;	// 图层控制块指针
-	struct SHEET *sheetBack, *sheetMouse, *sheetWin;	// 背景图层 鼠标图层 窗口图层
-	unsigned char *bufBack, bufMouse[256], *bufWin;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
+	struct SHEET *sheetBack, *sheetMouse, *sheetWin, *sheetWinB[3];	// 背景图层 鼠标图层 窗口图层
+	unsigned char *bufBack, bufMouse[256], *bufWin, *bufWinB;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
 	struct QUEUE queue;	// 总缓冲区
 	struct TIMER *timer;	// 四个定时器指针
-	struct PCB *processA, *processB;
+	struct PCB *processA, *processB[3];
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
 	
 	initGdtit();	// 初始化GDT IDT
@@ -191,69 +192,79 @@ void Main(){
 	init_palette();	// 初始化16色调色板
 	
 	shtctl = shtctlInit(memsegtable, binfo->vram, binfo->scrnx, binfo->scrny);
+	
+	processA = processInit(memsegtable);	// 多进程初始化
+	queue.process = processA;
+	
 	sheetBack = sheetAlloc(shtctl);
-	sheetMouse = sheetAlloc(shtctl);
-	sheetWin = sheetAlloc(shtctl);
 	bufBack = (unsigned char *) memsegAlloc4K(memsegtable, binfo->scrnx * binfo->scrny);	// 以4KB为单位为背景分配内存
-	bufWin = (unsigned char *) memsegAlloc4K(memsegtable, 160 * 52);
-	
 	sheetSetbuf(sheetBack, bufBack, binfo->scrnx, binfo->scrny, -1);	// 设置背景图层缓冲区，背景不需要透明色设为-1
-	sheetSetbuf(sheetMouse, bufMouse, 16, 16, COL8_008484);	// 设置鼠标图层缓冲区与透明色
-	sheetSetbuf(sheetWin, bufWin, 160, 52, -1);	// 设置窗口图层缓冲区 无透明色
-	
 	init_GUI(bufBack, binfo->scrnx, binfo->scrny);	// 初始化GUI至bufBack
-	initMouseCursor8(bufMouse, COL8_008484);	// 初始化鼠标至bufMouse
 	
-	makeWindow(bufWin, 160, 52, "window");	// 显示窗口
-	makeTextBox(sheetWin, 8, 28, 144, 16, COL8_FFFFFF);	// 显示文本输入区
+	for (i = 0; i < 3; i++) {
+		sheetWinB[i] = sheetAlloc(shtctl);
+		bufWinB = (unsigned char *) memsegAlloc4K(memsegtable, 144 * 52);	// 以4KB为单位为进程B的窗口分配内存
+		sheetSetbuf(sheetWinB[i], bufWinB, 144, 52, -1);	//设置进程B窗口缓冲区，不需要透明色
+		sprintf(s, "processB%d", i);
+		makeWindow(bufWinB, 144, 52, s, 0);
+		processB[i] = processAlloc();	// 分配进程B_i
+		processB[i]->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 8;	// 为进程B_i栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
+		*((int *) (processB[i]->tss.esp + 4)) = (int) sheetWinB[i];	// 将sheetWinB[i]地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
+		
+		processB[i]->tss.eip = (int) &taskBmain;	// B_i的下一条指令执行taskBmain
+		
+		processB[i]->tss.es = 1 * 8;
+		processB[i]->tss.cs = 2 * 8;
+		processB[i]->tss.ss = 1 * 8;
+		processB[i]->tss.ds = 1 * 8;
+		processB[i]->tss.fs = 1 * 8;
+		processB[i]->tss.gs = 1 * 8;
+		
+		processRun(processB[i]);	// 进程B_i进入就绪队列
+		
+	}
+	
+	sheetWin = sheetAlloc(shtctl);
+	bufWin = (unsigned char *) memsegAlloc4K(memsegtable, 160 * 52);
+	sheetSetbuf(sheetWin, bufWin, 144, 52, -1);	// 设置窗口图层缓冲区 无透明色
+	makeWindow(bufWin, 144, 52, "processA", 1);	// 显示窗口
+	makeTextBox(sheetWin, 8, 28, 128, 16, COL8_FFFFFF);	// 显示文本输入区
+	
 	cursorX = 8;	// 设置光标起始位置
 	cursorC = COL8_FFFFFF;	// 设置光标颜色
-	
-	sheetSlide(sheetBack, 0, 0);	// 背景图层起始坐标(0,0)
+	sheetMouse = sheetAlloc(shtctl);
+	sheetSetbuf(sheetMouse, bufMouse, 16, 16, COL8_008484);	// 设置鼠标图层缓冲区与透明色
+	initMouseCursor8(bufMouse, COL8_008484);	// 初始化鼠标至bufMouse
 	// 初始鼠标坐标为屏幕正中
 	mx = (binfo->scrnx - 16) / 2;	// 鼠标x轴位置
 	my = (binfo->scrny - 28 - 16) / 2;	// 鼠标y轴位置
-	sheetSlide(sheetMouse, mx, my);	// 将鼠标图层滑动至对应位置
-	sheetSlide(sheetWin, 80, 80);	// 将窗口图层滑动至目标位置
-	sheetUpdown(sheetBack, 0);	// 将背景图层置于索引0
-	sheetUpdown(sheetWin, 1);	// 将窗口图层置于背景之上鼠标之下
-	sheetUpdown(sheetMouse, 2);	// 将鼠标图层置于背景层上方索引1
 	
-	putFont8AscSheet(sheetBack, 30, 32, COL8_FFFFFF, COL8_008484,  "DickOS", 6);	// 将DickOS写入背景层
+	sheetSlide(sheetBack, 0, 0);	// 背景图层起始坐标(0,0)
+	sheetSlide(sheetWinB[0], 168, 64);	// 进程B_0 窗口起始坐标(168, 56)
+	sheetSlide(sheetWinB[1], 8, 124);	// 进程B_1 窗口起始坐标(8, 116)
+	sheetSlide(sheetWinB[2], 168, 124);	// 进程B_2 窗口起始坐标(168, 116)
+	sheetSlide(sheetWin, 8, 64);	// 进程A 窗口起始坐标(8, 56);
+	sheetSlide(sheetMouse, mx, my);	// 将鼠标图层滑动至对应位置
+	
+	sheetUpdown(sheetBack, 0);	// 将背景图层置于索引0
+	sheetUpdown(sheetWinB[0], 1);	// 将进程B0窗口图层置于索引1
+	sheetUpdown(sheetWinB[1], 2);	// 将进程B1窗口图层置于索引2
+	sheetUpdown(sheetWinB[2], 3);	// 将进程B2窗口图层置于索引3
+	sheetUpdown(sheetWin, 4);	// 将进程A窗口图层置于置于索引4
+	sheetUpdown(sheetMouse, 5);	// 将鼠标图层置于索引5
+	
+	putFont8AscSheet(sheetBack, 0, 32, COL8_FFFFFF, COL8_008484,  "Welcome to DickOS", 17);	// 将DickOS写入背景层
 	sprintf(s, "(%3d, %3d)", mx, my);	// 将鼠标位置存入s
 	putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484,  s, 10);	// 将s写入背景层
 	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
 	putFont8AscSheet(sheetBack, 0, 48, COL8_FFFFFF, COL8_008484,  s, 26);	// 将s写入背景层
 	
-	processA = processInit(memsegtable);	// 多进程初始化
-	
-	queue.process = processA;
-	
-	processB = processAlloc();	// 分配进程B
-	processB->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 8;	// 为进程B栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
-	*((int *) (processB->tss.esp + 4)) = (int) sheetBack;	// 将sheetBack地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
-	
-	processB->tss.eip = (int) &taskBmain;	// B的下一条指令执行taskBmain
-	
-	processB->tss.es = 1 * 8;
-	processB->tss.cs = 2 * 8;
-	processB->tss.ss = 1 * 8;
-	processB->tss.ds = 1 * 8;
-	processB->tss.fs = 1 * 8;
-	processB->tss.gs = 1 * 8;
-	
-	processRun(processB);	// 进程B进入就绪队列
-	
 	//处理中断与进入hlt
 	
 	for(;;){
-		// count++;
-		// sprintf(s, "%010d", timerctl.count);	
-		// putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 10);	// 显示定时器计时
-
 		io_cli();	// 关中断
-		if(QueueSize(&queue) == 0) {	// 只有缓冲区没有数据时才能开启中断并进入hlt模式
-			processSleep(processA);
+		if(QueueSize(&queue) == 0) {	// 只有缓冲区没有数据时才能开启中断
+			processSleep(processA);	// 进程A休眠
 			io_sti();	// 开中断
 		} else {
 			bufval = QueuePop(&queue);	// 取出缓冲区队列队首数据
