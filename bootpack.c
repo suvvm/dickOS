@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.3.5
+* @Version: 0.3.6
 * @Date: 2020-02-03
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -27,7 +27,7 @@ void taskBmain(struct SHEET *sheetBack) {
 	int bufval, buf[128], count = 0, count0 = 0;
 	char s[12];
 	
-	QueueInit(&queue, 128, buf);	// 初始化缓冲区队列
+	QueueInit(&queue, 128, buf, 0);	// 初始化缓冲区队列
 	timer1s = timerAlloc();
 	timerInit(timer1s, &queue, 100);
 	timerSetTime(timer1s, 100);	// 1秒超时
@@ -163,14 +163,14 @@ void Main(){
 	unsigned char *bufBack, bufMouse[256], *bufWin;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
 	struct QUEUE queue;	// 总缓冲区
 	struct TIMER *timer1, *timer2, *timer3;	// 四个定时器指针
-	struct PCB *processB;
+	struct PCB *processA, *processB;
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
 	
 	initGdtit();	// 初始化GDT IDT
 	init_pic();	// 初始化可编程中断控制器
 	io_sti();	// 解除cpu中断禁止
 		
-	QueueInit(&queue, 128, buf);	// 初始化缓冲区队列
+	QueueInit(&queue, 128, buf, 0);	// 初始化缓冲区队列
 	
 	initPit();	// 初始化定时器
 	initKeyboard(&queue, 256);	// 初始化键盘控制电路
@@ -233,7 +233,10 @@ void Main(){
 	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
 	putFont8AscSheet(sheetBack, 0, 48, COL8_FFFFFF, COL8_008484,  s, 26);	// 将s写入背景层
 	
-	processInit(memsegtable);	// 多进程初始化
+	processA = processInit(memsegtable);	// 多进程初始化
+	
+	queue.process = processA;
+	
 	processB = processAlloc();	// 分配进程B
 	processB->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 8;	// 为进程B栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
 	*((int *) (processB->tss.esp + 4)) = (int) sheetBack;	// 将sheetBack地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
@@ -258,7 +261,8 @@ void Main(){
 
 		io_cli();	// 关中断
 		if(QueueSize(&queue) == 0) {	// 只有缓冲区没有数据时才能开启中断并进入hlt模式
-			io_stihlt();	// 开中断进入htl
+			processSleep(processA);
+			io_sti();	// 开中断
 		} else {
 			bufval = QueuePop(&queue);	// 取出缓冲区队列队首数据
 			io_sti();	// 开中断
