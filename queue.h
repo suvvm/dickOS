@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: queue.c
 * @Author: suvvm
-* @Version: 0.0.2
-* @Date: 2020-01-31
+* @Version: 0.0.3
+* @Date: 2020-02-03
 * @Description: 队列操作
 ********************************************************************************/
 
@@ -15,17 +15,19 @@
 * Function name: QueueInit
 * Description: 初始化队列
 * Parameter:
-* 	@q	要初始化的队列		struct QUEUE *
-* 	@size	队列的上限		int
-* 	@buf	队列数据空间	int
+* 	@q			要初始化的队列		struct QUEUE *
+* 	@size		队列的上限			int
+* 	@buf		队列数据空间		int
+*	@process	指定进程控制块指针	struct PCB *
 *
 **********************************************************/
-void QueueInit(struct QUEUE *q, int size, int *buf){
+void QueueInit(struct QUEUE *q, int size, int *buf, struct PCB *process){
 	q->size = size;	// 初始队列长度
 	q->buf = buf;	// 初始化数据空间
 	q->free = size;	// 队列初始化为空
 	q->flags = 0;	// 没有溢出记录
 	q->back = q->front = 0;	// 初始化队首队尾
+	q->process = process;
 }
 
 /*******************************************************
@@ -47,6 +49,11 @@ int QueuePush(struct QUEUE *q, int data){
 	q->back++;
 	q->back %= q->size;
 	q->free--;
+	if (q->process != 0) {	// 缓冲区有所属进程
+		if (q->process->status != 2) {	// 缓冲区所属进程没有在运行
+			processRun(q->process);	// 唤醒进程
+		}
+	}
 	return 0;
 }
 
