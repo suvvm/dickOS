@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.3.7
+* @Version: 0.3.9
 * @Date: 2020-02-03
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -195,6 +195,7 @@ void Main(){
 	
 	processA = processInit(memsegtable);	// 多进程初始化
 	queue.process = processA;
+	processRun(processA, 1, 0);	// 进程A处于第1级
 	
 	sheetBack = sheetAlloc(shtctl);
 	bufBack = (unsigned char *) memsegAlloc4K(memsegtable, binfo->scrnx * binfo->scrny);	// 以4KB为单位为背景分配内存
@@ -220,7 +221,7 @@ void Main(){
 		processB[i]->tss.fs = 1 * 8;
 		processB[i]->tss.gs = 1 * 8;
 		
-		processRun(processB[i]);	// 进程B_i进入就绪队列
+		processRun(processB[i], 2, i + 1);	// 进程B_i第2级 优先级i+1 进入就绪队列
 		
 	}
 	
@@ -264,7 +265,8 @@ void Main(){
 	for(;;){
 		io_cli();	// 关中断
 		if(QueueSize(&queue) == 0) {	// 只有缓冲区没有数据时才能开启中断
-			processSleep(processA);	// 进程A休眠
+			processSleep(processA);	
+			// 进程A休眠 若A不休眠则永远不会调度至进程B
 			io_sti();	// 开中断
 		} else {
 			bufval = QueuePop(&queue);	// 取出缓冲区队列队首数据
