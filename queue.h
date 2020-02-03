@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: queue.c
 * @Author: suvvm
-* @Version: 0.0.3
+* @Version: 0.0.5
 * @Date: 2020-02-03
 * @Description: 队列操作
 ********************************************************************************/
@@ -51,7 +51,7 @@ int QueuePush(struct QUEUE *q, int data){
 	q->free--;
 	if (q->process != 0) {	// 缓冲区有所属进程
 		if (q->process->status != 2) {	// 缓冲区所属进程没有在运行
-			processRun(q->process);	// 唤醒进程
+			processRun(q->process, -1, 0);	// 不改变级唤醒进程
 		}
 	}
 	return 0;
