@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.3.4
-* @Date: 2020-02-02
+* @Version: 0.3.5
+* @Date: 2020-02-03
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -154,7 +154,7 @@ void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
 	int	buf[128];	// s保存要输出的变量信息 buf为总缓冲区
-	int mx, my, bufval, cursorX, cursorC, taskBesp; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
+	int mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
@@ -163,9 +163,7 @@ void Main(){
 	unsigned char *bufBack, bufMouse[256], *bufWin;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
 	struct QUEUE queue;	// 总缓冲区
 	struct TIMER *timer1, *timer2, *timer3;	// 四个定时器指针
-	struct TSS32 tssA, tssB;	// 进程A控制段 进程B控制段
-	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;	// 段描述符存放GDT内容
-	
+	struct PCB *processB;
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
 	
 	initGdtit();	// 初始化GDT IDT
@@ -235,38 +233,24 @@ void Main(){
 	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
 	putFont8AscSheet(sheetBack, 0, 48, COL8_FFFFFF, COL8_008484,  s, 26);	// 将s写入背景层
 	
-	// 为两个进程的ldtr与iomap赋值
-	tssA.ldtr = 0;
-	tssA.iomap = 0x40000000;
-	tssB.ldtr = 0;
-	tssB.iomap = 0x40000000;
+	processInit(memsegtable);	// 多进程初始化
+	processB = processAlloc();	// 分配进程B
+	processB->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 8;	// 为进程B栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
+	*((int *) (processB->tss.esp + 4)) = (int) sheetBack;	// 将sheetBack地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
 	
-	// 在全局描述符表中定义两个进程状态段
-	setSegmdesc(gdt + 3, 103, (int) &tssA, AR_TSS32);	// 将TSSA添加至GDT3号 段长上限103字节
-	setSegmdesc(gdt + 4, 103, (int) &tssB, AR_TSS32);	// 将TSSB添加至GDT4号 段长上限103字节
+	processB->tss.eip = (int) &taskBmain;	// B的下一条指令执行taskBmain
 	
-	loadTr(3 * 8);	// 为TR寄存器赋值 让cpu记住当前运行的进程是进程A
-	taskBesp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 8;	// 为任务B栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8
-	*((int *) (taskBesp + 4)) = (int) sheetBack;	// 将sheetBack地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
+	processB->tss.es = 1 * 8;
+	processB->tss.cs = 2 * 8;
+	processB->tss.ss = 1 * 8;
+	processB->tss.ds = 1 * 8;
+	processB->tss.fs = 1 * 8;
+	processB->tss.gs = 1 * 8;
 	
-	tssB.eip = (int) &taskBmain;	// B的下一条指令执行taskBmain
-	tssB.eflags = 0x00000202;	// 中断标准IF位为1
-	tssB.eax = 0;
-	tssB.ecx = 0;
-	tssB.edx = 0;
-	tssB.ebx = 0;
-	tssB.esp = taskBesp;
-	tssB.ebp = 0;
-	tssB.esi = 0;
-	tssB.edi = 0;
-	tssB.es = 1 * 8;
-	tssB.cs = 2 * 8;
-	tssB.ss = 1 * 8;
-	tssB.ds = 1 * 8;
-	tssB.fs = 1 * 8;
-	tssB.gs = 1 * 8;
+	processRun(processB);	// 进程B进入就绪队列
+	
 	//处理中断与进入hlt
-	multiProcessInit();	// 初始化多进程控制
+	
 	for(;;){
 		// count++;
 		// sprintf(s, "%010d", timerctl.count);	
