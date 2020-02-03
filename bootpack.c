@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.3.6
+* @Version: 0.3.7
 * @Date: 2020-02-03
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -162,7 +162,7 @@ void Main(){
 	struct SHEET *sheetBack, *sheetMouse, *sheetWin;	// 背景图层 鼠标图层 窗口图层
 	unsigned char *bufBack, bufMouse[256], *bufWin;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
 	struct QUEUE queue;	// 总缓冲区
-	struct TIMER *timer1, *timer2, *timer3;	// 四个定时器指针
+	struct TIMER *timer;	// 四个定时器指针
 	struct PCB *processA, *processB;
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
 	
@@ -178,18 +178,10 @@ void Main(){
 	
 	io_out8(PIC0_IMR, 0xf8); // 主PIC IRQ0(定时器) IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111000)
 	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
-	
-	timer1 = timerAlloc();	// 获取一个可使用的定时器
-	timerInit(timer1, &queue, 10);	// 初始化定时器1
-	timerSetTime(timer1, 1000);
 
-	timer2 = timerAlloc();	// 获取一个可使用的定时器
-	timerInit(timer2, &queue, 3);	// 初始化定时器1
-	timerSetTime(timer2, 300);
-
-	timer3 = timerAlloc();	// 获取一个可使用的定时器
-	timerInit(timer3, &queue, 1);	// 初始化定时器1
-	timerSetTime(timer3, 50);
+	timer = timerAlloc();	// 获取一个可使用的定时器
+	timerInit(timer, &queue, 1);	// 初始化定时器1
+	timerSetTime(timer, 50);
 	
 	memtotal = memtest(0x00400000, 0xbfffffff);	// 获取内存总和
 	memsegInit(memsegtable);
@@ -317,23 +309,16 @@ void Main(){
 					putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484, s, 10);	// 在背景层打印鼠标坐标信息
 					sheetSlide(sheetMouse, mx, my);
 				} 			
-			} else if (bufval == 10) {	// 10秒定时器中断信息
-				putFont8AscSheet(sheetBack, 0, 80, COL8_FFFFFF, COL8_008484,  "10[sec]", 7);	// 在背景层打印10秒提示
-				// sprintf(s, "%010d", count);
-				// putFont8AscSheet(sheetWin, 40, 28, COL8_000000, COL8_C6C6C6,  s, 11);	// 在窗口层打印count的值
-			} else if (bufval == 3) {	// 3秒定时器中断信息
-				putFont8AscSheet(sheetBack, 0, 96, COL8_FFFFFF, COL8_008484,  "3[sec]", 6);	// 在背景层打印3秒提示	
-				// count = 0;
-			}  else if (bufval <= 1) {
+			} else if (bufval <= 1) {
 				if (bufval == 1) {
-					timerInit(timer3, &queue, 0);	// 超时信息置0
+					timerInit(timer, &queue, 0);	// 超时信息置0
 					cursorC = COL8_000000;	
 				} else {
-					timerInit(timer3, &queue, 1);	// 超时信息置1
+					timerInit(timer, &queue, 1);	// 超时信息置1
 					cursorC = COL8_FFFFFF;
 				}
 				boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
-				timerSetTime(timer3, 50);	// 设置超时时限0.5秒
+				timerSetTime(timer, 50);	// 设置超时时限0.5秒
 				sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
 			}
 		}
