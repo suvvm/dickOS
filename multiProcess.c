@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: multiProcess.c
 * @Author: suvvm
-* @Version: 0.0.2
+* @Version: 0.0.3
 * @Date: 2020-02-03
 * @Description: 定义启动多进程操作相关变量与函数
 ********************************************************************************/
@@ -64,7 +64,7 @@ struct PCB *processAlloc() {
 	for (i = 0; i < MAX_PROCESS; i++) {
 		if (processctl->processes[i].status == 0) {	// 找到未活动的进程
 			process = &processctl->processes[i];
-			process->status = 1;	// 正在分配标识
+			process->status = 1;	// 已分配不工作
 			process->tss.eflags = 0x00000202;	// eflags IF位置1
 			process->tss.eax = 0;
 			process->tss.ecx = 0;
@@ -113,8 +113,46 @@ void processSwitch() {
 	if (processctl->running >= 2) {	// 只有一个进程取需切换
 		processctl->now++;
 		processctl->now %= processctl->running;
+		farJmp(0, processctl->processesAcs[processctl->now]->pid);
 	}
-	farJmp(0, processctl->processesAcs[processctl->now]->pid);
+}
+
+/*******************************************************
+*
+* Function name: processSleep
+* Description: 进程休眠
+* Parameter:
+*	@process	想要休眠的进程控制块指针	struct PCB *	
+*
+*******************************************************/
+void processSleep(struct PCB *process) {
+	int i;
+	char tp = 0;	// 标志是否需要切换进程
+	if (process->status == 2) {	// 进程处于运行态
+		if (process == processctl->processesAcs[processctl->now]) {	// 让自己休眠需要切换进程
+			tp = 1;
+		}
+		
+		for (i = 0; i < processctl->running; i++) {
+			if (processctl->processesAcs[i] == process) {	// 在就绪队列里找到对应进程
+				break;
+			}
+		}
+		processctl->running--;
+		if (i < processctl->now) {	// 在当前进程前
+			processctl->now--;
+		}
+		for (; i < processctl->running; i++) {
+			processctl->processesAcs[i] = processctl->processesAcs[i + 1];	// 后方进程前移
+		}
+		process->status = 1;	// 已分配不工作
+		if (tp != 0) {	// 需要切换进程
+			if (processctl->now >= processctl->running) {	// 修正now值
+				processctl->now = 0;
+			}
+			farJmp(0, processctl->processesAcs[processctl->now]->pid);
+		}
+	}
 }
 
 #endif // MULTIPOCESS_C
