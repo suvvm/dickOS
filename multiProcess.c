@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: multiProcess.c
 * @Author: suvvm
-* @Version: 0.0.3
+* @Version: 0.0.5
 * @Date: 2020-02-03
 * @Description: 定义启动多进程操作相关变量与函数
 ********************************************************************************/
@@ -13,6 +13,80 @@
 
 struct PROCESSCTL *processctl;
 struct TIMER *mpTimer;	// 进程切换定时器
+
+/*******************************************************
+*
+* Function name: processNow
+* Description: 获取当前正在占用处理机的进程的地址
+* Return:
+*	返回当前活动进程PCB地址指针
+*
+*******************************************************/
+struct PCB *processNow() {
+	struct PROCESSLEVEL *pl = &processctl->level[processctl->nowLv];	// 获取当前活动级
+	return pl->processesAcs[pl->now];
+}
+
+/*******************************************************
+*
+* Function name: processAdd
+* Description: 向PROSCESSLEVEL中添加指定进程
+* Parameter:
+*	@process	指定进程PCB地址	struct PCB *	
+*
+*******************************************************/
+void processAdd(struct PCB *process) {
+	struct PROCESSLEVEL *pl = &processctl->level[process->level];	// 获取要添加进程的级
+	pl->processesAcs[pl->running] = process;	// 将指定进程添加至该级就绪队列队尾
+	pl->running++;
+	process->status = 2;	// 标记该进程为活动状态
+}
+
+/*******************************************************
+*
+* Function name: processRemove
+* Description: 在PROSCESSLEVEL中删除指定进程
+* Parameter:
+*	@process	指定进程PCB地址	struct PCB *	
+*
+*******************************************************/
+void processRemove(struct PCB *process) {
+	int i;
+	struct PROCESSLEVEL *pl = &processctl->level[process->level];
+	for (i = 0; i < pl->running; i++) {	// 找到指定进程的位置
+		if (pl->processesAcs[i] == process) {
+			break;
+		}
+	}
+	pl->running--;
+	if (i < pl->now) {
+		pl->now--;
+	}
+	if (pl->now >= pl->running) {
+		pl->now = 0;
+	}
+	process->status = 1;	// 进程已分配不工作
+	for (; i < pl->running; i++) {
+		pl->processesAcs[i] = pl->processesAcs[i + 1];
+	}
+}
+
+/*******************************************************
+*
+* Function name: processSwitchSub
+* Description: 切换进程时决定切换到哪一层
+*
+*******************************************************/
+void processSwitchSub() {
+	int i;
+	for (i = 0; i < MAX_PROCESSLEVELS; i++) {
+		if (processctl->level[i].running > 0) {	// 找到有活动进程的级
+			break;
+		}
+	}
+	processctl->nowLv = i;
+	processctl->lvChange = 0;
+}
 
 /*******************************************************
 *
@@ -34,16 +108,20 @@ struct PCB *processInit(struct MEMSEGTABLE *memsegtable) {
 		processctl->processes[i].pid = (PROCESS_GDT0 + i) * 8;	// 记录进程GDT编号为pid
 		setSegmdesc(gdt + PROCESS_GDT0 + i, 103, (int)&processctl->processes[i].tss, AR_TSS32); // 在全局描述符表中定义每个进程状态段 限长103字节
 	}
+	
+	for (i = 0; i < MAX_PROCESSLEVELS; i++) {	// 初始化分级反馈队列
+		processctl->level[i].running = 0;
+		processctl->level[i].now = 0;
+	}
 	process = processAlloc();	// 获取一个可使用的未运行进程
 	process->status = 2;	// 标记进程为活动状态
+	process->priority = 2;
+	process->level = 0;	// 将最初的进程至于第0级（最高级）
 	
-	processctl->running = 1;	// 当前运行进程数量为1
-	processctl->now = 0;
-	
-	processctl->processesAcs[0] = process;
+	processAdd(process);	// 将该进程添加至对应级
+	processSwitchSub();
 	
 	loadTr(process->pid);	// 通知CPU当前活动进程pid（向TR寄存器赋值）
-	
 	mpTimer = timerAlloc();
 	// 不使用timerInit 因为超时后不向缓冲区中写入数据
 	timerSetTime(mpTimer, 2);	// 0.02秒超时一次
@@ -93,13 +171,26 @@ struct PCB *processAlloc() {
 * Function name: processRun
 * Description: 进程添加至就绪队列末尾
 * Parameter:
-*	@process	想要运行的进程控制块指针	struct PCB *	
+*	@process	想要运行的进程控制块指针	struct PCB *
+*	@level		传入指定进程的层			int
+*	@priority	优先级						int
 *
 *******************************************************/
-void processRun(struct PCB *process) {
-	process->status = 2;	// 进程运行标志
-	processctl->processesAcs[processctl->running] = process;	// 添加至就绪队列末尾
-	processctl->running++;	// 运行进程加一
+void processRun(struct PCB *process, int level, int priority) {
+	if (level < 0) {	// 不改变进程的级
+		level = process->level;
+	}
+	if (priority > 0) {
+		process->priority = priority;
+	}
+	if (process->status == 2 && process->level != level) {	// 改变正在运行的进程的层
+		processRemove(process);	// 先将目标进程在原先的层中移除并停止进程的运行
+	}
+	if (process->status != 2) {
+		process->level = level;	// 改变进程的级
+		processAdd(process);	// 将进程添加至对应级并运行
+	}
+	processctl->lvChange = 1;	//  下次任务切换时检查更换级
 }
 
 /*******************************************************
@@ -109,11 +200,20 @@ void processRun(struct PCB *process) {
 *
 *******************************************************/
 void processSwitch() {
-	timerSetTime(mpTimer, 2);
-	if (processctl->running >= 2) {	// 只有一个进程取需切换
-		processctl->now++;
-		processctl->now %= processctl->running;
-		farJmp(0, processctl->processesAcs[processctl->now]->pid);
+	struct PROCESSLEVEL *pl = &processctl->level[processctl->nowLv];
+	struct PCB *newProcess, *nowProcess = pl->processesAcs[pl->now];
+	pl->now++;
+	if (pl->now == pl->running) {	// 修正now
+		pl->now = 0;
+	}
+	if (processctl->lvChange != 0) {
+		processSwitchSub();	// 获取当前有就绪进程的最高层并把lvChange置1
+		pl = &processctl->level[processctl->nowLv];
+	}	
+	newProcess = pl->processesAcs[pl->now];
+	timerSetTime(mpTimer, newProcess->priority);
+	if (newProcess != nowProcess) {
+		farJmp(0, newProcess->pid);
 	}
 }
 
@@ -126,31 +226,15 @@ void processSwitch() {
 *
 *******************************************************/
 void processSleep(struct PCB *process) {
-	int i;
-	char tp = 0;	// 标志是否需要切换进程
-	if (process->status == 2) {	// 进程处于运行态
-		if (process == processctl->processesAcs[processctl->now]) {	// 让自己休眠需要切换进程
-			tp = 1;
-		}
-		
-		for (i = 0; i < processctl->running; i++) {
-			if (processctl->processesAcs[i] == process) {	// 在就绪队列里找到对应进程
-				break;
-			}
-		}
-		processctl->running--;
-		if (i < processctl->now) {	// 在当前进程前
-			processctl->now--;
-		}
-		for (; i < processctl->running; i++) {
-			processctl->processesAcs[i] = processctl->processesAcs[i + 1];	// 后方进程前移
-		}
-		process->status = 1;	// 已分配不工作
-		if (tp != 0) {	// 需要切换进程
-			if (processctl->now >= processctl->running) {	// 修正now值
-				processctl->now = 0;
-			}
-			farJmp(0, processctl->processesAcs[processctl->now]->pid);
+	struct PCB *nowProcess;
+	if (process->status == 2) {	// 要休眠的进程处于活动状态
+		nowProcess = processNow();	// 获取当前正在占用处理机的进程
+		processRemove(process);	// 将指定进程在其对应级中移除并标记为休眠态
+		if (process == nowProcess) {	// 若指定进程便是当前活动进程
+			// 进行进程切换
+			processSwitchSub();
+			nowProcess = processNow();	// 获取新的进程
+			farJmp(0, nowProcess->pid);	// 切换至新的进程
 		}
 	}
 }
