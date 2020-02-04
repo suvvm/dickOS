@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.3.9
-* @Date: 2020-02-03
+* @Version: 0.4.0
+* @Date: 2020-02-04
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -221,7 +221,8 @@ void Main(){
 		processB[i]->tss.fs = 1 * 8;
 		processB[i]->tss.gs = 1 * 8;
 		
-		processRun(processB[i], 2, i + 1);	// 进程B_i第2级 优先级i+1 进入就绪队列
+		// processRun(processB[i], 2, i + 1);	
+		// 进程B_i第2级 优先级i+1 进入就绪队列
 		
 	}
 	
