@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.4.4
+* @Version: 0.4.6
 * @Date: 2020-02-04
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -192,20 +192,20 @@ void makeWindow(unsigned char *buf, int width, int height, char *title, char act
 void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
-	int	buf[128];	// s保存要输出的变量信息 buf为总缓冲区
+	int	buf[128], keyCmdBuf[32];	// s保存要输出的变量信息 buf为总缓冲区
 	int mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
-	int keyShift = 0, keyTo = 0;	// shift按下标识	活动窗口标识
+	int keyShift = 0, keyTo = 0, keyLeds, keyCmdWait = -1;	// shift按下标识	活动窗口标识
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHTCTL *shtctl;	// 图层控制块指针
 	struct SHEET *sheetBack, *sheetMouse, *sheetWin, *sheetCons;	// 背景图层 鼠标图层 窗口图层 控制台图层
 	unsigned char *bufBack, bufMouse[256], *bufWin, *bufCons;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区 控制台图像缓冲区
-	struct QUEUE queue;	// 总缓冲区
+	struct QUEUE queue, keyCmd;	// 总缓冲区 存储欲向键盘控制电路发送的数据的缓冲区
 	struct TIMER *timer;	// 四个定时器指针
 	struct PCB *processA, *processConsole;
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
-	
+	keyLeds = (binfo->leds >> 4) & 7;	// 获取键盘各锁定键状态 binfo->leds的4~6位
 	initGdtit();	// 初始化GDT IDT
 	init_pic();	// 初始化可编程中断控制器
 	io_sti();	// 解除cpu中断禁止
@@ -218,6 +218,7 @@ void Main(){
 	
 	io_out8(PIC0_IMR, 0xf8); // 主PIC IRQ0(定时器) IRQ1（键盘）与IRQ2（从PIC）不被屏蔽(11111000)
 	io_out8(PIC1_IMR, 0xef); // 从PIC IRQ12（鼠标）不被控制(11101111)
+	QueueInit(&keyCmd, 32, keyCmdBuf, 0);
 
 	timer = timerAlloc();	// 获取一个可使用的定时器
 	timerInit(timer, &queue, 1);	// 初始化定时器1
@@ -294,9 +295,15 @@ void Main(){
 	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
 	putFont8AscSheet(sheetBack, 0, 48, COL8_FFFFFF, COL8_008484,  s, 26);	// 将s写入背景层
 	
-	//处理中断与进入hlt
-	
+	// 为了避免和键盘当前状态冲突，在一开始先进行设置指示灯状态
+	QueuePush(&keyCmd, KEYCMD_LED);	// 0xed
+	QueuePush(&keyCmd, keyLeds);
 	for(;;){
+		if (QueueSize(&keyCmd) > 0 && keyCmdWait < 0) {	// 如果存在要向键盘控制器发送的数据就发送它
+			keyCmdWait = QueuePop(&keyCmd);
+			waitKeyboardControllerReady();
+			io_out8(PORT_KEYDAT, keyCmdWait);	// 向键盘控制电路发送
+		}
 		io_cli();	// 关中断
 		if(QueueSize(&queue) == 0) {	// 只有缓冲区没有数据时才能开启中断
 			processSleep(processA);	
@@ -309,14 +316,21 @@ void Main(){
 				sprintf(s, "%02X", bufval - 256);
 				putFont8AscSheet(sheetBack, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);	// 将键盘中断信息打印至背景层
 				if (bufval < 256 + 0x80) {	// 按下键盘
-					if (keyShift == 0) {	// shift正在按下
+					if (keyShift == 0) {	// 并未按下shift
 						s[0] = keyboardTable0[bufval - 256];
-					} else {	// 并未按下shift
+					} else {	// shift正在按下
 						s[0] = keyboardTable1[bufval - 256];
 					}
 				} else {
 					s[0] = 0;
 				}
+				
+				if ('A' <= s[0] && s[0] <= 'Z') {	// s[0]为英文字母
+					if (((keyLeds & 4) == 0 && keyShift == 0) || ((keyLeds & 4) != 0 && keyShift != 0)) {	// 需要转换为小写
+						s[0] += 0x20;
+					}
+				}
+				
 				if (s[0] != 0) {	// 普通字符
 					if (keyTo == 0) {	// processA 窗口
 						if (cursorX < 128) {
@@ -352,19 +366,43 @@ void Main(){
 					sheetRefresh(sheetWin, 0, 0, sheetWin->width, 21);
 					sheetRefresh(sheetCons, 0, 0, sheetCons->width, 21);
 				}
-				if (bufval = 256 + 0x2a) {	// 左shift按下
+				if (bufval == 256 + 0x2a) {	// 左shift按下
 					keyShift |= 1;
 				}
-				if (bufval = 256 + 0x36) {	// 右shift按下
+				if (bufval == 256 + 0x36) {	// 右shift按下
 					keyShift |= 2;
 				}
-				if (bufval = 256 + 0xaa) {	// 左shift抬起
+				if (bufval == 256 + 0xaa) {	// 左shift抬起
 					keyShift &= ~1;
 				}
-				if (bufval = 256 + 0x2a) {	// 右shift抬起
-					keyShift &= ~1;
+				if (bufval == 256 + 0xb6) {	// 右shift抬起
+					keyShift &= ~2;
 				}
-				
+				if (bufval == 256 + 0x3a) {	// CapsLock
+					keyLeds ^= 4;	// 改变keyLeds对应位
+					QueuePush(&keyCmd, KEYCMD_LED);
+					QueuePush(&keyCmd, keyLeds);
+					// 将0xed keyLeds存入缓冲区等待向键盘控制电路发送
+				}
+				if (bufval == 256 + 0x45) {	// NumLock
+					keyLeds ^= 2;	// 改变keyLeds对应位
+					QueuePush(&keyCmd, KEYCMD_LED);
+					QueuePush(&keyCmd, keyLeds);
+					// 将0xed keyLeds存入缓冲区等待向键盘控制电路发送
+				}
+				if (bufval == 256 + 0x46) {	// ScrollLock
+					keyLeds ^= 1;	// 改变keyLeds对应位
+					QueuePush(&keyCmd, KEYCMD_LED);
+					QueuePush(&keyCmd, keyLeds);
+					// 将0xed keyLeds存入缓冲区等待向键盘控制电路发送
+				}
+				if (bufval == 256 + 0xfa) {	// 键盘控制电路返回成功数据
+					keyCmdWait = -1; // 等待进行下一次发送
+				}
+				if (bufval == 256 + 0xfe) {	// 键盘控制电路返回失败数据
+					waitKeyboardControllerReady();	// 等待键盘控制电路就绪
+					io_out8(PORT_KEYDAT, keyCmdWait);	// 重新向键盘控制电路发送8位数据
+				}
 				// 重新显示光标
 				boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
 				sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
