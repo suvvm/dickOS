@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.4.0
+* @Version: 0.4.1
 * @Date: 2020-02-04
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -17,35 +17,42 @@
 
 /********************************************************
 *
-* Function name: taskBmain
-* Description: 进程B的主函数
+* Function name: consoleMain
+* Description: 控制台进程主函数
 *
 **********************************************************/
-void taskBmain(struct SHEET *sheetWinB) {
+void consoleMain(struct SHEET *sheet) {
 	struct QUEUE queue;	// 缓冲区队列
-	struct TIMER * timer1s;	// 定时器
-	int bufval, buf[128], count = 0, count0 = 0;
-	char s[12];
+	struct TIMER * timer;	// 定时器
+	struct PCB *process = processNow();	// 取得当前占有处理机的进程
 	
-	QueueInit(&queue, 128, buf, 0);	// 初始化缓冲区队列
-	timer1s = timerAlloc();
-	timerInit(timer1s, &queue, 100);
-	timerSetTime(timer1s, 100);	// 1秒超时
+	int bufval, buf[128], cursorX = 8, cursorC = COL8_000000;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色
+	
+	QueueInit(&queue, 128, buf, process);	// 初始化缓冲区队列
+	timer = timerAlloc();
+	timerInit(timer, &queue, 1);
+	timerSetTime(timer, 50);	// 0.5秒超时
 	
 	for(;;) {
-		count ++;
 		io_cli();
 		if (QueueSize(&queue) == 0) {
+			processSleep(process);	// 无用时进程休眠
 			io_sti();	// 开中断
 		} else {
 			bufval = QueuePop(&queue);
 			io_sti();	// 开中断
-			
-			if (bufval == 100) {	// 1s定时器超时 显示速度
-				sprintf(s, "%011d", count - count0);
-				putFont8AscSheet(sheetWinB, 24, 28, COL8_000000, COL8_C6C6C6, s, 11);
-				count0 = count;
-				timerSetTime(timer1s, 100);
+			if (bufval <= 1) {	// 光标定时器超时
+				if (bufval != 0) {
+					timerInit(timer, &queue, 0);
+					cursorC = COL8_FFFFFF;	// 光标白色
+				} else {
+					timerInit(timer, &queue, 1);
+					cursorC = COL8_000000;	// 光标黑色
+				}
+				timerSetTime(timer, 50);
+				boxFill8(sheet->buf, sheet->width, cursorC, cursorX, 28, cursorX + 7, 43);	// 重新绘制光标
+				sheetRefresh(sheet, cursorX, 28, cursorX + 8, 44);
+				
 			}
 		}
 	}
@@ -155,16 +162,16 @@ void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
 	int	buf[128];	// s保存要输出的变量信息 buf为总缓冲区
-	int i, mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
+	int mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHTCTL *shtctl;	// 图层控制块指针
-	struct SHEET *sheetBack, *sheetMouse, *sheetWin, *sheetWinB[3];	// 背景图层 鼠标图层 窗口图层
-	unsigned char *bufBack, bufMouse[256], *bufWin, *bufWinB;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区
+	struct SHEET *sheetBack, *sheetMouse, *sheetWin, *sheetCons;	// 背景图层 鼠标图层 窗口图层 控制台图层
+	unsigned char *bufBack, bufMouse[256], *bufWin, *bufCons;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区 控制台图像缓冲区
 	struct QUEUE queue;	// 总缓冲区
 	struct TIMER *timer;	// 四个定时器指针
-	struct PCB *processA, *processB[3];
+	struct PCB *processA, *processConsole;
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
 	
 	initGdtit();	// 初始化GDT IDT
@@ -202,29 +209,27 @@ void Main(){
 	sheetSetbuf(sheetBack, bufBack, binfo->scrnx, binfo->scrny, -1);	// 设置背景图层缓冲区，背景不需要透明色设为-1
 	init_GUI(bufBack, binfo->scrnx, binfo->scrny);	// 初始化GUI至bufBack
 	
-	for (i = 0; i < 3; i++) {
-		sheetWinB[i] = sheetAlloc(shtctl);
-		bufWinB = (unsigned char *) memsegAlloc4K(memsegtable, 144 * 52);	// 以4KB为单位为进程B的窗口分配内存
-		sheetSetbuf(sheetWinB[i], bufWinB, 144, 52, -1);	//设置进程B窗口缓冲区，不需要透明色
-		sprintf(s, "processB%d", i);
-		makeWindow(bufWinB, 144, 52, s, 0);
-		processB[i] = processAlloc();	// 分配进程B_i
-		processB[i]->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 8;	// 为进程B_i栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
-		*((int *) (processB[i]->tss.esp + 4)) = (int) sheetWinB[i];	// 将sheetWinB[i]地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
-		
-		processB[i]->tss.eip = (int) &taskBmain;	// B_i的下一条指令执行taskBmain
-		
-		processB[i]->tss.es = 1 * 8;
-		processB[i]->tss.cs = 2 * 8;
-		processB[i]->tss.ss = 1 * 8;
-		processB[i]->tss.ds = 1 * 8;
-		processB[i]->tss.fs = 1 * 8;
-		processB[i]->tss.gs = 1 * 8;
-		
-		// processRun(processB[i], 2, i + 1);	
-		// 进程B_i第2级 优先级i+1 进入就绪队列
-		
-	}
+	sheetCons = sheetAlloc(shtctl);	// 为控制台分配图层
+	bufCons = (unsigned char *) memsegAlloc4K(memsegtable, 256 * 165);
+	sheetSetbuf(sheetCons, bufCons, 256, 165, -1);	// 设置控制台图层缓冲区，控制台不需要透明色
+	makeWindow(bufCons, 256, 165, "console", 0);	// 创建控制台窗口
+	makeTextBox(sheetCons, 8, 28, 240, 128, COL8_000000);	// 创建控制台黑色输入框
+	
+	processConsole = processAlloc();	// 分配控制台进程
+	processConsole->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 8;	// 为控制台进程栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
+	*((int *) (processConsole->tss.esp + 4)) = (int) sheetCons;	// 将sheetCons地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
+	
+	processConsole->tss.eip = (int) &consoleMain;	// 控制台进程的下一条指令执行consoleMain
+	
+	processConsole->tss.es = 1 * 8;
+	processConsole->tss.cs = 2 * 8;
+	processConsole->tss.ss = 1 * 8;
+	processConsole->tss.ds = 1 * 8;
+	processConsole->tss.fs = 1 * 8;
+	processConsole->tss.gs = 1 * 8;
+	
+	processRun(processConsole, 2, 2);	
+	// 控制台进程 level2 2 进入就绪队列
 	
 	sheetWin = sheetAlloc(shtctl);
 	bufWin = (unsigned char *) memsegAlloc4K(memsegtable, 160 * 52);
@@ -242,18 +247,14 @@ void Main(){
 	my = (binfo->scrny - 28 - 16) / 2;	// 鼠标y轴位置
 	
 	sheetSlide(sheetBack, 0, 0);	// 背景图层起始坐标(0,0)
-	sheetSlide(sheetWinB[0], 168, 64);	// 进程B_0 窗口起始坐标(168, 56)
-	sheetSlide(sheetWinB[1], 8, 124);	// 进程B_1 窗口起始坐标(8, 116)
-	sheetSlide(sheetWinB[2], 168, 124);	// 进程B_2 窗口起始坐标(168, 116)
+	sheetSlide(sheetCons, 168, 64);	// 控制台进程窗口起始坐标(168, 56)
 	sheetSlide(sheetWin, 8, 64);	// 进程A 窗口起始坐标(8, 56);
 	sheetSlide(sheetMouse, mx, my);	// 将鼠标图层滑动至对应位置
 	
 	sheetUpdown(sheetBack, 0);	// 将背景图层置于索引0
-	sheetUpdown(sheetWinB[0], 1);	// 将进程B0窗口图层置于索引1
-	sheetUpdown(sheetWinB[1], 2);	// 将进程B1窗口图层置于索引2
-	sheetUpdown(sheetWinB[2], 3);	// 将进程B2窗口图层置于索引3
-	sheetUpdown(sheetWin, 4);	// 将进程A窗口图层置于置于索引4
-	sheetUpdown(sheetMouse, 5);	// 将鼠标图层置于索引5
+	sheetUpdown(sheetCons, 1);	// 将控制台进程窗口图层置于索引1
+	sheetUpdown(sheetWin, 2);	// 将进程A窗口图层置于置于索引4
+	sheetUpdown(sheetMouse, 3);	// 将鼠标图层置于索引5
 	
 	putFont8AscSheet(sheetBack, 0, 32, COL8_FFFFFF, COL8_008484,  "Welcome to DickOS", 17);	// 将DickOS写入背景层
 	sprintf(s, "(%3d, %3d)", mx, my);	// 将鼠标位置存入s
