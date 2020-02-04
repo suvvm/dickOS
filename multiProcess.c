@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: multiProcess.c
 * @Author: suvvm
-* @Version: 0.0.5
-* @Date: 2020-02-03
+* @Version: 0.0.6
+* @Date: 2020-02-04
 * @Description: 定义启动多进程操作相关变量与函数
 ********************************************************************************/
 
@@ -13,6 +13,18 @@
 
 struct PROCESSCTL *processctl;
 struct TIMER *mpTimer;	// 进程切换定时器
+
+/*******************************************************
+*
+* Function name: processIdle
+* Description: 闲置进程，在无活动进程时唤醒闲置进程
+*
+*******************************************************/
+void processIdle() {
+	for (;;) {
+		io_hlt();
+	}
+};
 
 /*******************************************************
 *
@@ -99,7 +111,7 @@ void processSwitchSub() {
 *
 *******************************************************/
 struct PCB *processInit(struct MEMSEGTABLE *memsegtable) {
-	struct PCB *process;
+	struct PCB *process, *idle;	 // 当前进程 空闲进程
 	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;	// 段描述符存放GDT内容
 	processctl = (struct PROCESSCTL *) memsegAlloc4K(memsegtable, sizeof(struct PROCESSCTL));	// 为进程管理结构体分配内存
 	int i;
@@ -125,6 +137,17 @@ struct PCB *processInit(struct MEMSEGTABLE *memsegtable) {
 	mpTimer = timerAlloc();
 	// 不使用timerInit 因为超时后不向缓冲区中写入数据
 	timerSetTime(mpTimer, 2);	// 0.02秒超时一次
+	
+	idle = processAlloc();
+	idle->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024;	// 为空闲进程栈分配64KB内存并计算栈底地址给空闲进程的ESP
+	idle->tss.eip = (int) &processIdle;	// 空闲进程下一跳指令
+	idle->tss.es = 1 * 8;
+	idle->tss.cs = 2 * 8;
+	idle->tss.ss = 1 * 8;
+	idle->tss.ds = 1 * 8;
+	idle->tss.fs = 1 * 8;
+	idle->tss.gs = 1 * 8;
+	processRun(idle, MAX_PROCESSLEVELS - 1, 1);	// 在最低level运行空闲进程
 	return process;
 }
 
