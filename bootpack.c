@@ -87,17 +87,16 @@ void makeTextBox(struct SHEET *sheet, int startX, int startY, int width, int hei
 
 /*******************************************************
 *
-* Function name: makeWindow
-* Description: 创建窗口
+* Function name: makeWindowTitle
+* Description: 绘制窗口标题栏
 * Parameter:
 *	@buf	窗口图像缓冲区	unsigned char *
 *	@width	窗口宽度		int
-*	@height	窗口高度		int
 *	@title	窗口标题		char *
 *	@act	活动标识		char
 *
 **********************************************************/
-void makeWindow(unsigned char *buf, int width, int height, char *title, char act) {
+void makeWindowTitle(unsigned char *buf, int width, char *title, char act) {
 	static char closeBtn[14][16] = {	// 关闭按钮
 		"OOOOOOOOOOOOOOO@",
 		"OQQQQQQQQQQQQQ$@",
@@ -123,19 +122,9 @@ void makeWindow(unsigned char *buf, int width, int height, char *title, char act
 		tc = COL8_C6C6C6;	// 亮灰色
 		tbc = COL8_848484;	// 暗灰色
 	}
-	// 绘制窗口（坐标都为相对坐标，起始(0,0)）
-	boxFill8(buf, width, COL8_C6C6C6, 0, 0, width - 1, 0);	// 亮灰色 (0,0)~(width-1,0)顶部横线
-	boxFill8(buf, width, COL8_FFFFFF, 1, 1, width - 2, 1);	// 白色 (1,1)~(width-2,1)顶部横线
-	boxFill8(buf, width, COL8_C6C6C6, 0, 0, 0, height - 1);	// 亮灰色 (0,0)~(0,height-1)左侧竖线
-	boxFill8(buf, width, COL8_FFFFFF, 1, 1, 1, height - 2);	// 白色 (1,1)~(1,height-2)左侧竖线
-	boxFill8(buf, width, COL8_848484, width - 2, 1, width - 2, height - 2);	//暗灰色 (width - 2,1)~(width - 2, height - 2)一条右侧竖线
-	boxFill8(buf, width, COL8_000000, width - 1, 0, width - 1, height - 1);	// 黑色 (width - 1,0)~(width - 1, height - 1)一条右侧竖线
-	boxFill8(buf, width, COL8_C6C6C6, 2, 2, width - 3, height - 3);	// 亮灰色 (2,2)~(width - 3,height - 3) 中心矩形
-	boxFill8(buf, width, tbc, 3, 3, width - 4, 20);	// tbc(3,3)~(width - 4, 20)顶部矩形
-	boxFill8(buf, width, COL8_848484, 1, height - 2, width - 2, height - 2);	// 暗灰色(1,height-2)~(width-2,height-2)底部横线
-	boxFill8(buf, width, COL8_000000, 0, height - 1, width - 1, height - 1);	// 黑色(0,height-1)~(width-1,height-1)底部横线
-	putFont8_asc(buf, width, 24, 4, tc, title);
-	for (y = 0; y < 14; y++) {
+	boxFill8(buf, width, tbc, 3, 3, width - 4, 20);	// tbc(3,3)~(width - 4, 20)标题矩形
+	putFont8_asc(buf, width, 24, 4, tc, title);	// 标题文字
+		for (y = 0; y < 14; y++) {
 		for (x = 0; x < 16; x++) {
 			c = closeBtn[y][x];
 			if (c == '@') {
@@ -154,6 +143,33 @@ void makeWindow(unsigned char *buf, int width, int height, char *title, char act
 
 /*******************************************************
 *
+* Function name: makeWindow
+* Description: 创建窗口
+* Parameter:
+*	@buf	窗口图像缓冲区	unsigned char *
+*	@width	窗口宽度		int
+*	@height	窗口高度		int
+*	@title	窗口标题		char *
+*	@act	活动标识		char
+*
+**********************************************************/
+void makeWindow(unsigned char *buf, int width, int height, char *title, char act) {
+	
+	// 绘制窗口（坐标都为相对坐标，起始(0,0)）
+	boxFill8(buf, width, COL8_C6C6C6, 0, 0, width - 1, 0);	// 亮灰色 (0,0)~(width-1,0)顶部横线
+	boxFill8(buf, width, COL8_FFFFFF, 1, 1, width - 2, 1);	// 白色 (1,1)~(width-2,1)顶部横线
+	boxFill8(buf, width, COL8_C6C6C6, 0, 0, 0, height - 1);	// 亮灰色 (0,0)~(0,height-1)左侧竖线
+	boxFill8(buf, width, COL8_FFFFFF, 1, 1, 1, height - 2);	// 白色 (1,1)~(1,height-2)左侧竖线
+	boxFill8(buf, width, COL8_848484, width - 2, 1, width - 2, height - 2);	//暗灰色 (width - 2,1)~(width - 2, height - 2)一条右侧竖线
+	boxFill8(buf, width, COL8_000000, width - 1, 0, width - 1, height - 1);	// 黑色 (width - 1,0)~(width - 1, height - 1)一条右侧竖线
+	boxFill8(buf, width, COL8_C6C6C6, 2, 2, width - 3, height - 3);	// 亮灰色 (2,2)~(width - 3,height - 3) 中心矩形
+	boxFill8(buf, width, COL8_848484, 1, height - 2, width - 2, height - 2);	// 暗灰色(1,height-2)~(width-2,height-2)底部横线
+	boxFill8(buf, width, COL8_000000, 0, height - 1, width - 1, height - 1);	// 黑色(0,height-1)~(width-1,height-1)底部横线
+	makeWindowTitle(buf, width, title, act);
+}
+
+/*******************************************************
+*
 * Function name:Main
 * Description: 主函数
 *
@@ -161,7 +177,7 @@ void makeWindow(unsigned char *buf, int width, int height, char *title, char act
 void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
-	int	buf[128];	// s保存要输出的变量信息 buf为总缓冲区
+	int	buf[128], keyTo = 0;	// s保存要输出的变量信息 buf为总缓冲区 keyTo 记录当前活动窗口
 	int mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
@@ -288,6 +304,19 @@ void Main(){
 					putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, " ", 1);	// 用空格消去当前光标
 					cursorX -= 8;	// 光标前移一个字符
 				}
+				if (bufval == 256 + 0x0f) {	// 按下tab键
+					if (keyTo == 0) {
+						keyTo = 1;
+						makeWindowTitle(bufWin, sheetWin->width, "processA", 0);
+						makeWindowTitle(bufCons, sheetCons->width, "console", 1);
+					} else {
+						keyTo = 0;
+						makeWindowTitle(bufWin, sheetWin->width, "processA", 1);
+						makeWindowTitle(bufCons, sheetCons->width, "console", 0);
+					}
+				}
+				sheetRefresh(sheetWin, 0, 0, sheetWin->width, 21);
+				sheetRefresh(sheetCons, 0, 0, sheetCons->width, 21);
 				// 重新显示光标
 				boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
 				sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
