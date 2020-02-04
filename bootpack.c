@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.4.1
+* @Version: 0.4.2
 * @Date: 2020-02-04
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -22,38 +22,53 @@
 *
 **********************************************************/
 void consoleMain(struct SHEET *sheet) {
-	struct QUEUE queue;	// 缓冲区队列
 	struct TIMER * timer;	// 定时器
 	struct PCB *process = processNow();	// 取得当前占有处理机的进程
+	int bufval, buf[128], cursorX = 16, cursorC = COL8_000000;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色
+	char s[2];
 	
-	int bufval, buf[128], cursorX = 8, cursorC = COL8_000000;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色
-	
-	QueueInit(&queue, 128, buf, process);	// 初始化缓冲区队列
+	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
 	timer = timerAlloc();
-	timerInit(timer, &queue, 1);
+	timerInit(timer, &process->queue, 1);
 	timerSetTime(timer, 50);	// 0.5秒超时
+	putFont8AscSheet(sheet, 8, 28, COL8_FFFFFF, COL8_000000, ">", 1);	// 打印提示符
 	
 	for(;;) {
 		io_cli();
-		if (QueueSize(&queue) == 0) {
+		if (QueueSize(&process->queue) == 0) {
 			processSleep(process);	// 无用时进程休眠
 			io_sti();	// 开中断
 		} else {
-			bufval = QueuePop(&queue);
+			bufval = QueuePop(&process->queue);
 			io_sti();	// 开中断
 			if (bufval <= 1) {	// 光标定时器超时
 				if (bufval != 0) {
-					timerInit(timer, &queue, 0);
+					timerInit(timer, &process->queue, 0);
 					cursorC = COL8_FFFFFF;	// 光标白色
 				} else {
-					timerInit(timer, &queue, 1);
+					timerInit(timer, &process->queue, 1);
 					cursorC = COL8_000000;	// 光标黑色
 				}
-				timerSetTime(timer, 50);
-				boxFill8(sheet->buf, sheet->width, cursorC, cursorX, 28, cursorX + 7, 43);	// 重新绘制光标
-				sheetRefresh(sheet, cursorX, 28, cursorX + 8, 44);
-				
+				timerSetTime(timer, 50);	
 			}
+			if (256 < bufval && bufval <= 511) {	// 键盘数据
+				if (bufval == 8 + 256) {	// 退格
+					if (cursorX > 16) {
+						putFont8AscSheet(sheet, cursorX, 28, COL8_FFFFFF, COL8_000000, " ", 1);
+						cursorX -= 8;
+					}
+				} else {	// 普通字符
+					if (cursorX < 240) {
+						s[0] = bufval - 256;
+						s[1] = 0;
+						putFont8AscSheet(sheet, cursorX, 28, COL8_FFFFFF, COL8_000000, s, 1);
+						cursorX += 8;
+					}
+				}
+			}
+			
+			boxFill8(sheet->buf, sheet->width, cursorC, cursorX, 28, cursorX + 7, 43);	// 重新绘制光标
+			sheetRefresh(sheet, cursorX, 28, cursorX + 8, 44);
 		}
 	}
 }
@@ -294,15 +309,28 @@ void Main(){
 				putFont8AscSheet(sheetBack, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);	// 将键盘中断信息打印至背景层
 				if (bufval < 256 + 0x80) {	// 按下键盘
 					if (keyboardTable[bufval - 256] != 0 && cursorX < 144) {	// 键盘对应值有字符且光标没有到输入框末尾
-						s[0] = keyboardTable[bufval - 256];
-						s[1] = 0;
-						putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, s, 1);	// 将字符打印至窗口层
-						cursorX += 8;	// 光标后移一个字符
+						if (keyTo == 0) {	// processA 窗口
+							if (cursorX < 128) {
+								s[0] = keyboardTable[bufval - 256];
+								s[1] = 0;
+								putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, s, 1);	// 将字符打印至窗口层
+								cursorX += 8;	// 光标后移一个字符
+							}
+						} else {
+							QueuePush(&processConsole->queue, keyboardTable[bufval - 256] + 256);
+						}
 					}
 				}
 				if (bufval == 256 + 0x0e && cursorX > 8) {	// 按下退格键且光标不在输入框起始位置
-					putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, " ", 1);	// 用空格消去当前光标
-					cursorX -= 8;	// 光标前移一个字符
+					if (keyTo == 0) {
+						if (cursorX > 8) {
+							putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, " ", 1);	// 用空格消去当前光标
+							cursorX -= 8;	// 光标前移一个字符
+						}
+					} else {
+						QueuePush(&processConsole->queue, 8 + 256);
+					}
+					
 				}
 				if (bufval == 256 + 0x0f) {	// 按下tab键
 					if (keyTo == 0) {
@@ -314,9 +342,9 @@ void Main(){
 						makeWindowTitle(bufWin, sheetWin->width, "processA", 1);
 						makeWindowTitle(bufCons, sheetCons->width, "console", 0);
 					}
+					sheetRefresh(sheetWin, 0, 0, sheetWin->width, 21);
+					sheetRefresh(sheetCons, 0, 0, sheetCons->width, 21);
 				}
-				sheetRefresh(sheetWin, 0, 0, sheetWin->width, 21);
-				sheetRefresh(sheetCons, 0, 0, sheetCons->width, 21);
 				// 重新显示光标
 				boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
 				sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
