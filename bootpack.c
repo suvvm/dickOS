@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.4.2
+* @Version: 0.4.4
 * @Date: 2020-02-04
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -192,8 +192,9 @@ void makeWindow(unsigned char *buf, int width, int height, char *title, char act
 void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
-	int	buf[128], keyTo = 0;	// s保存要输出的变量信息 buf为总缓冲区 keyTo 记录当前活动窗口
+	int	buf[128];	// s保存要输出的变量信息 buf为总缓冲区
 	int mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
+	int keyShift = 0, keyTo = 0;	// shift按下标识	活动窗口标识
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
@@ -308,20 +309,26 @@ void Main(){
 				sprintf(s, "%02X", bufval - 256);
 				putFont8AscSheet(sheetBack, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);	// 将键盘中断信息打印至背景层
 				if (bufval < 256 + 0x80) {	// 按下键盘
-					if (keyboardTable[bufval - 256] != 0 && cursorX < 144) {	// 键盘对应值有字符且光标没有到输入框末尾
-						if (keyTo == 0) {	// processA 窗口
-							if (cursorX < 128) {
-								s[0] = keyboardTable[bufval - 256];
-								s[1] = 0;
-								putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, s, 1);	// 将字符打印至窗口层
-								cursorX += 8;	// 光标后移一个字符
-							}
-						} else {
-							QueuePush(&processConsole->queue, keyboardTable[bufval - 256] + 256);
+					if (keyShift == 0) {	// shift正在按下
+						s[0] = keyboardTable0[bufval - 256];
+					} else {	// 并未按下shift
+						s[0] = keyboardTable1[bufval - 256];
+					}
+				} else {
+					s[0] = 0;
+				}
+				if (s[0] != 0) {	// 普通字符
+					if (keyTo == 0) {	// processA 窗口
+						if (cursorX < 128) {
+							s[1] = 0;
+							putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, s, 1);	// 将字符打印至窗口层
+							cursorX += 8;	// 光标后移一个字符
 						}
+					} else {
+						QueuePush(&processConsole->queue, s[0] + 256);
 					}
 				}
-				if (bufval == 256 + 0x0e && cursorX > 8) {	// 按下退格键且光标不在输入框起始位置
+				if (bufval == 256 + 0x0e) {	// 按下退格键且光标不在输入框起始位置
 					if (keyTo == 0) {
 						if (cursorX > 8) {
 							putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, " ", 1);	// 用空格消去当前光标
@@ -345,6 +352,19 @@ void Main(){
 					sheetRefresh(sheetWin, 0, 0, sheetWin->width, 21);
 					sheetRefresh(sheetCons, 0, 0, sheetCons->width, 21);
 				}
+				if (bufval = 256 + 0x2a) {	// 左shift按下
+					keyShift |= 1;
+				}
+				if (bufval = 256 + 0x36) {	// 右shift按下
+					keyShift |= 2;
+				}
+				if (bufval = 256 + 0xaa) {	// 左shift抬起
+					keyShift &= ~1;
+				}
+				if (bufval = 256 + 0x2a) {	// 右shift抬起
+					keyShift &= ~1;
+				}
+				
 				// 重新显示光标
 				boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
 				sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
