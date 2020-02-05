@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.4.7
+* @Version: 0.4.8
 * @Date: 2020-02-04
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -24,7 +24,7 @@
 void consoleMain(struct SHEET *sheet) {
 	struct TIMER * timer;	// 定时器
 	struct PCB *process = processNow();	// 取得当前占有处理机的进程
-	int bufval, buf[128], cursorX = 16, cursorC = COL8_000000;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色
+	int bufval, buf[128], cursorX = 16, cursorC = -1;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色-1为不显示光标
 	char s[2];
 	
 	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
@@ -44,12 +44,23 @@ void consoleMain(struct SHEET *sheet) {
 			if (bufval <= 1) {	// 光标定时器超时
 				if (bufval != 0) {
 					timerInit(timer, &process->queue, 0);
-					cursorC = COL8_FFFFFF;	// 光标白色
+					if (cursorC >= 0) {	// 光标处于显示状态
+						cursorC = COL8_FFFFFF;	// 光标白色
+					}
 				} else {
 					timerInit(timer, &process->queue, 1);
-					cursorC = COL8_000000;	// 光标黑色
+					if (cursorC >= 0) {	// 光标处于显示状态
+						cursorC = COL8_000000;	// 光标黑色
+					}
 				}
 				timerSetTime(timer, 50);	
+			}
+			if (bufval == 2) {	// 由进程A写入的显示光标通知
+				cursorC = COL8_FFFFFF;
+			}
+			if (bufval == 3) {	// 由进程A写入的隐藏光标通知
+				boxFill8(sheet->buf,  sheet->width, COL8_000000, cursorX, 28, cursorX + 7, 43);
+				cursorC = -1;
 			}
 			if (256 < bufval && bufval <= 511) {	// 键盘数据
 				if (bufval == 8 + 256) {	// 退格
@@ -66,8 +77,10 @@ void consoleMain(struct SHEET *sheet) {
 					}
 				}
 			}
-			
-			boxFill8(sheet->buf, sheet->width, cursorC, cursorX, 28, cursorX + 7, 43);	// 重新绘制光标
+			// 重新显示光标
+			if (cursorC >= 0) {
+				boxFill8(sheet->buf, sheet->width, cursorC, cursorX, 28, cursorX + 7, 43);	// 重新绘制光标
+			}
 			sheetRefresh(sheet, cursorX, 28, cursorX + 8, 44);
 		}
 	}
@@ -360,12 +373,13 @@ void Main(){
 						makeWindowTitle(bufCons, sheetCons->width, "console", 1);
 						cursorC = -1;	// 不显示光标
 						boxFill8(sheetWin->buf, sheetWin->width, COL8_FFFFFF, cursorX, 28, cursorX + 7, 43);
-						
+						QueuePush(&processConsole->queue, 2);	// 向控制台进程缓冲区写入3 通知其显示光标
 					} else {
 						keyTo = 0;
 						makeWindowTitle(bufWin, sheetWin->width, "processA", 1);
 						makeWindowTitle(bufCons, sheetCons->width, "console", 0);
 						cursorC = COL8_000000;	// 显示光标
+						QueuePush(&processConsole->queue, 3);	// 向控制台进程缓冲区写入2 通知其隐藏光标
 					}
 					sheetRefresh(sheetWin, 0, 0, sheetWin->width, 21);
 					sheetRefresh(sheetCons, 0, 0, sheetCons->width, 21);
