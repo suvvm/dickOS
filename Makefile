@@ -60,6 +60,8 @@ dickos.img : ipl.bin dickos.sys Makefile
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
 		copy from:dickos.sys to:@: \
+		copy from:ipl.nas to:@: \
+		copy from:make.bat to:@: \
 		imgout:dickos.img
 
 # 命令
