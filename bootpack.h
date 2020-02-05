@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.3.4
-* @Date: 2020-02-04
+* @Version: 0.3.5
+* @Date: 2020-02-05
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -56,6 +56,7 @@
 #define PIC1_ICW4		0x00a1	// 写从PIC ICW4的端口地址
 
 #define ADR_BOOTINFO	0x00000ff0
+#define ADR_DISKIMG		0x00100000
 #define PORT_KEYDAT		0x0060
 #define FLAGS_OVERRUN		0x0001
 
@@ -354,6 +355,26 @@ struct TIMERCTL {
 	struct TIMER timer[MAX_TIMER];
 };
 
+/********************************************************************************
+*
+* file information 文件信息 从fat16根目录中获取
+* Parameter:
+*	@name[8]		8字节文件名					unsigned char
+*	@ext[3]			3字节文件扩展名				unsigned char
+*	@type			文件属性，如只读可隐藏等	unsigned char
+*	@reserve[10]	10字节保留信息				char
+*	@time			文件时间					unsigned short(WORD整数)
+*	@date			文件日期					unsigned short(WORD整数)
+*	@clusterNum		簇号（从哪个扇区开始存放）	unsigned short(WORD整数)
+*	@size			文件大小					unsigned int(DWORD整数)
+*
+********************************************************************************/
+struct FILEINFO {
+	unsigned char name[8], ext[3], type;
+	char reverse[10];
+	unsigned short time, date, clusterNum;
+	unsigned int size;
+};
 
 // queue.c 函数声明
 void QueueInit(struct QUEUE *q, int size, int *buf, struct PCB *process);
