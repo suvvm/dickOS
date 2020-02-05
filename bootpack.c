@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.5.3
+* @Version: 0.5.4
 * @Date: 2020-02-05
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -57,7 +57,7 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	struct TIMER * timer;	// 定时器
 	struct PCB *process = processNow();	// 取得当前占有处理机的进程
 	int bufval, buf[128], cursorX = 16, cursorY = 28, cursorC = -1, x, y;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色-1为不显示光标
-	char s[30], cmdline[30];
+	char s[30], cmdline[30], *p;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
 	struct FILEINFO *fileInfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);	// 读取fat16根目录
 	
@@ -139,6 +139,62 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 							}
 						}
 						cursorY = consNewLine(cursorY, sheet);
+					} else if (strncmp(cmdline, "type ", 5) == 0) {
+						for (y = 0; y < 11; y++) {
+							s[y] = ' ';
+						}
+						y = 0;
+						for (x = 5; y < 11 && cmdline[x] != 0; x++) {	// 获取文件名转为与fat16根目录文件名相同格式存入s
+							if (cmdline[x] == '.' && y <= 8) {	// 找到文件名中的.
+								y = 8;	// 开始准备获取扩展名
+							} else {
+								s[y] = cmdline[x];
+								if ('a' <= s[y] && s[y] <= 'z') {	// 小写字母转大写
+									s[y] -= 0x20;
+								}
+								y++;
+							}
+						}
+						// 寻找文件
+						for (x = 0; x < 244;) {
+							if (fileInfo[x].name[0] == 0x00) {	// 不包含任何文件信息
+								break;
+							}
+							char flag = 0;
+							if ((fileInfo[x].type & 0x18) == 0) { // 不为目录
+								for (y = 0; y < 11; y++) {
+									if (fileInfo[x].name[y] != s[y]) {
+										flag = 1;
+										break;
+									}
+								}
+							}
+							if (flag == 1) {
+								x++;
+								continue;
+							}
+							break;
+						}
+						if (x < 224 && fileInfo[x].name[0] != 0x00) {
+							y = fileInfo[x].size;
+							p = (char *) (fileInfo[x].clusterNum * 512 + 0x003e00 + ADR_DISKIMG);	// 文件在磁盘中的地址 = clusterNum * 512（一个扇区） + 0x003e00
+							cursorX = 8;
+							for (x = 0; x < y; x++) {
+								s[0] = p[x];
+								s[1] = 0;
+								putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, s, 1);
+								cursorX += 8;
+								if (cursorX == 8 + 240) {
+									cursorX = 8;
+									cursorY =consNewLine(cursorY, sheet);
+								}
+							}
+						} else {
+							putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, "file not found", 14);
+							cursorY = consNewLine(cursorY, sheet);
+						}
+						cursorY = consNewLine(cursorY, sheet);
+						
 					} else if (cmdline[0] != 0) {
 						// 不是空行也不是命令
 						putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, "command not found", 17);
