@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.5.4
+* @Version: 0.5.5
 * @Date: 2020-02-05
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -179,14 +179,33 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 							y = fileInfo[x].size;
 							p = (char *) (fileInfo[x].clusterNum * 512 + 0x003e00 + ADR_DISKIMG);	// 文件在磁盘中的地址 = clusterNum * 512（一个扇区） + 0x003e00
 							cursorX = 8;
-							for (x = 0; x < y; x++) {
+							for (x = 0; x < y; x++) {	// 逐字打印
 								s[0] = p[x];
 								s[1] = 0;
-								putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, s, 1);
-								cursorX += 8;
-								if (cursorX == 8 + 240) {
+								if (s[0] == 0x09) {	// 制表符
+									for (;;) {
+										putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, " ", 1);
+										cursorX += 8;
+										if (cursorX == 8 + 240) {
+											cursorX = 8;
+											cursorY = consNewLine(cursorY, sheet);
+										}
+										if(((cursorX - 8) & 0x1f) == 0) {	// 一个制表符将会填充空格至当前行字符数量为4的倍数 一个字符8个像素 4 * 8 = 32
+											break;
+										}
+									}
+								} else if (s[0] == 0x0a) { // 换行
 									cursorX = 8;
-									cursorY =consNewLine(cursorY, sheet);
+									cursorY = consNewLine(cursorY, sheet);
+								} else if (s[0] == 0x0d) {	// 回车
+									// 暂无操作
+								}else {	// 一般字符
+									putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, s, 1);
+									cursorX += 8;
+									if (cursorX == 8 + 240) {
+										cursorX = 8;
+										cursorY =consNewLine(cursorY, sheet);
+									}
 								}
 							}
 						} else {
