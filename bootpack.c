@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.4.9
+* @Version: 0.5.0
 * @Date: 2020-02-05
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -24,7 +24,7 @@
 void consoleMain(struct SHEET *sheet) {
 	struct TIMER * timer;	// 定时器
 	struct PCB *process = processNow();	// 取得当前占有处理机的进程
-	int bufval, buf[128], cursorX = 16, cursorY = 28, cursorC = -1;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色-1为不显示光标
+	int bufval, buf[128], cursorX = 16, cursorY = 28, cursorC = -1, x, y;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色-1为不显示光标
 	char s[2];
 	
 	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
@@ -69,12 +69,24 @@ void consoleMain(struct SHEET *sheet) {
 						cursorX -= 8;
 					}
 				} else if (bufval == 10 + 256) {	// 回车
-					if (cursorY < 28 + 112) {
-						putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, " ", 1);
+					putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, " ", 1);	// 用空格消除光标
+					if (cursorY < 28 + 112) {	// 未触底不需要滚动
 						cursorY += 16;
-						putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, ">", 1);
-						cursorX = 16;
+					} else {	// 滚动
+						for (y = 28; y < 28 + 112; y ++) {	// 将第二行至最后一行上移
+							for (x = 8; x < 8 + 240; x ++) {	
+								sheet->buf[x + y * sheet->width] = sheet->buf[x + (y + 16) * sheet->width];
+							}
+						}
+						for (y = 28 + 112; y < 28 + 128; y ++) {	// 将最后一行绘制为黑色
+							for (x = 8; x < 8 + 240; x ++) {
+								sheet->buf[x + y * sheet->width] = COL8_000000;
+							}
+						}
+						sheetRefresh(sheet, 8, 28, 8 + 240, 28 + 128);
 					}
+					putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, ">", 1);
+					cursorX = 16;	
 				} else {	// 普通字符
 					if (cursorX < 240) {
 						s[0] = bufval - 256;
