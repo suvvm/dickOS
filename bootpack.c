@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.4.6
+* @Version: 0.4.7
 * @Date: 2020-02-04
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -358,10 +358,14 @@ void Main(){
 						keyTo = 1;
 						makeWindowTitle(bufWin, sheetWin->width, "processA", 0);
 						makeWindowTitle(bufCons, sheetCons->width, "console", 1);
+						cursorC = -1;	// 不显示光标
+						boxFill8(sheetWin->buf, sheetWin->width, COL8_FFFFFF, cursorX, 28, cursorX + 7, 43);
+						
 					} else {
 						keyTo = 0;
 						makeWindowTitle(bufWin, sheetWin->width, "processA", 1);
 						makeWindowTitle(bufCons, sheetCons->width, "console", 0);
+						cursorC = COL8_000000;	// 显示光标
 					}
 					sheetRefresh(sheetWin, 0, 0, sheetWin->width, 21);
 					sheetRefresh(sheetCons, 0, 0, sheetCons->width, 21);
@@ -404,7 +408,9 @@ void Main(){
 					io_out8(PORT_KEYDAT, keyCmdWait);	// 重新向键盘控制电路发送8位数据
 				}
 				// 重新显示光标
-				boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
+				if (cursorC > 0) {
+					boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
+				}
 				sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
 			} else if (512 <= bufval && bufval <= 767) {	// 鼠标中断数据
 				if (mouseDecode(&mdec, bufval - 512) != 0) {	// 完成一波三个字节数据的接收或者出现未知差错
@@ -442,14 +448,20 @@ void Main(){
 			} else if (bufval <= 1) {
 				if (bufval == 1) {
 					timerInit(timer, &queue, 0);	// 超时信息置0
-					cursorC = COL8_000000;	
+					if (cursorC >= 0) {
+						cursorC = COL8_000000;
+					}
 				} else {
 					timerInit(timer, &queue, 1);	// 超时信息置1
-					cursorC = COL8_FFFFFF;
+					if (cursorC >= 0) {
+						cursorC = COL8_FFFFFF;
+					}
 				}
-				boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
 				timerSetTime(timer, 50);	// 设置超时时限0.5秒
-				sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
+				if (cursorC >= 0) {
+					boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
+					sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
+				}
 			}
 		}
 	}
