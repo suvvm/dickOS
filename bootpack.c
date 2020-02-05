@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.5.2
+* @Version: 0.5.3
 * @Date: 2020-02-05
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -59,6 +59,7 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	int bufval, buf[128], cursorX = 16, cursorY = 28, cursorC = -1, x, y;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色-1为不显示光标
 	char s[30], cmdline[30];
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
+	struct FILEINFO *fileInfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);	// 读取fat16根目录
 	
 	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
 	timer = timerAlloc();
@@ -118,6 +119,26 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 						}
 						sheetRefresh(sheet, 8, 28, 8 + 240, 28 + 128);
 						cursorY = 28;
+					}else if (strcmp(cmdline, "dir") == 0) {	// dir命令
+						for (x = 0; x < 244; x++) {	// 遍历所有文件信息
+							if (fileInfo[x].name[0] == 0x00) {	// 不包含任何文件信息
+								break;
+							}
+							if (fileInfo[x].name[0] != 0xe5) {	// 文件未被删除
+								if ((fileInfo[x].type & 0x18) == 0) {	// 非目录信息
+									sprintf(s, "fileName.ext    %7d", fileInfo[x].size);
+									for (y = 0; y < 8; y++) {	// 文件名
+										s[y] = fileInfo[x].name[y];
+									}
+									for (y = 0; y < 3; y++) {	// 扩展名
+										s[y + 9] = fileInfo[x].ext[y];
+									}
+									putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, s, 30);
+									cursorY = consNewLine(cursorY, sheet);
+								}
+							}
+						}
+						cursorY = consNewLine(cursorY, sheet);
 					} else if (cmdline[0] != 0) {
 						// 不是空行也不是命令
 						putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, "command not found", 17);
