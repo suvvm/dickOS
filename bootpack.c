@@ -105,11 +105,19 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 					putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, " ", 1);	// 用空格消除光标
 					cmdline[cursorX / 8 - 2] = 0;
 					cursorY = consNewLine(cursorY, sheet);
-					if (cmdline[0] == 'm' && cmdline[1] == 'e' && cmdline[2] == 'm') {
+					if (strcmp(cmdline, "mem") == 0) {	// mem命令
 						sprintf(s, "memory %dMB free : %dKB", memsegTotalCnt / (1024 * 1024), memsegTotal(memsegtable) / 1024);
 						putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, s, 30);
 						cursorY = consNewLine(cursorY, sheet);
 						cursorY = consNewLine(cursorY, sheet);
+					} else if (strcmp(cmdline, "cls") == 0) {	// cls命令
+						for (y = 28; y < 28 + 128; y++) {
+							for (x = 8; x < 8 + 240; x++) {
+								sheet->buf[x + y * sheet->width] = COL8_000000;
+							}
+						}
+						sheetRefresh(sheet, 8, 28, 8 + 240, 28 + 128);
+						cursorY = 28;
 					} else if (cmdline[0] != 0) {
 						// 不是空行也不是命令
 						putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, "command not found", 17);
