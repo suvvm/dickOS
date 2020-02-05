@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.5.0
+* @Version: 0.5.2
 * @Date: 2020-02-05
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -15,24 +15,57 @@
 #include "sheet.c"
 #include "timer.c"
 
+/*******************************************************
+*
+* Function name: consNewLine
+* Description: 控制台转入新行
+* Parameter:
+*	@cursorY	光标y轴位置	int
+*	@sheet		图层指针	struct SHEET *
+* Return:
+*	返回光标y轴新的位置
+*
+**********************************************************/
+int consNewLine(int cursorY, struct SHEET *sheet) {
+	int x, y;
+	if (cursorY < 28 + 112) {	// 未触底不需要滚动
+		cursorY += 16;
+	} else {	// 滚动
+		for (y = 28; y < 28 + 112; y ++) {	// 将第二行至最后一行上移
+			for (x = 8; x < 8 + 240; x ++) {	
+				sheet->buf[x + y * sheet->width] = sheet->buf[x + (y + 16) * sheet->width];
+			}
+		}
+		for (y = 28 + 112; y < 28 + 128; y ++) {	// 将最后一行绘制为黑色
+			for (x = 8; x < 8 + 240; x ++) {
+				sheet->buf[x + y * sheet->width] = COL8_000000;
+			}
+		}
+		sheetRefresh(sheet, 8, 28, 8 + 240, 28 + 128);
+	}
+	return cursorY;
+}
+
+
 /********************************************************
 *
 * Function name: consoleMain
 * Description: 控制台进程主函数
 *
 **********************************************************/
-void consoleMain(struct SHEET *sheet) {
+void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	struct TIMER * timer;	// 定时器
 	struct PCB *process = processNow();	// 取得当前占有处理机的进程
 	int bufval, buf[128], cursorX = 16, cursorY = 28, cursorC = -1, x, y;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色-1为不显示光标
-	char s[2];
+	char s[30], cmdline[30];
+	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
 	
 	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
 	timer = timerAlloc();
 	timerInit(timer, &process->queue, 1);
 	timerSetTime(timer, 50);	// 0.5秒超时
-	putFont8AscSheet(sheet, 8, 28, COL8_FFFFFF, COL8_000000, ">", 1);	// 打印提示符
 	
+	putFont8AscSheet(sheet, 8, 28, COL8_FFFFFF, COL8_000000, ">", 1);	// 打印提示符
 	for(;;) {
 		io_cli();
 		if (QueueSize(&process->queue) == 0) {
@@ -70,27 +103,27 @@ void consoleMain(struct SHEET *sheet) {
 					}
 				} else if (bufval == 10 + 256) {	// 回车
 					putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, " ", 1);	// 用空格消除光标
-					if (cursorY < 28 + 112) {	// 未触底不需要滚动
-						cursorY += 16;
-					} else {	// 滚动
-						for (y = 28; y < 28 + 112; y ++) {	// 将第二行至最后一行上移
-							for (x = 8; x < 8 + 240; x ++) {	
-								sheet->buf[x + y * sheet->width] = sheet->buf[x + (y + 16) * sheet->width];
-							}
-						}
-						for (y = 28 + 112; y < 28 + 128; y ++) {	// 将最后一行绘制为黑色
-							for (x = 8; x < 8 + 240; x ++) {
-								sheet->buf[x + y * sheet->width] = COL8_000000;
-							}
-						}
-						sheetRefresh(sheet, 8, 28, 8 + 240, 28 + 128);
+					cmdline[cursorX / 8 - 2] = 0;
+					cursorY = consNewLine(cursorY, sheet);
+					if (cmdline[0] == 'm' && cmdline[1] == 'e' && cmdline[2] == 'm') {
+						sprintf(s, "memory %dMB free : %dKB", memsegTotalCnt / (1024 * 1024), memsegTotal(memsegtable) / 1024);
+						putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, s, 30);
+						cursorY = consNewLine(cursorY, sheet);
+						cursorY = consNewLine(cursorY, sheet);
+					} else if (cmdline[0] != 0) {
+						// 不是空行也不是命令
+						putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, "command not found", 17);
+						cursorY = consNewLine(cursorY, sheet);
+						cursorY = consNewLine(cursorY, sheet);
 					}
+					
 					putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, ">", 1);
 					cursorX = 16;	
 				} else {	// 普通字符
 					if (cursorX < 240) {
 						s[0] = bufval - 256;
 						s[1] = 0;
+						cmdline[cursorX / 8 - 2] = bufval - 256; 
 						putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, s, 1);
 						cursorX += 8;
 					}
@@ -281,9 +314,9 @@ void Main(){
 	makeTextBox(sheetCons, 8, 28, 240, 128, COL8_000000);	// 创建控制台黑色输入框
 	
 	processConsole = processAlloc();	// 分配控制台进程
-	processConsole->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 8;	// 为控制台进程栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
+	processConsole->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 12;	// 为控制台进程栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
 	*((int *) (processConsole->tss.esp + 4)) = (int) sheetCons;	// 将sheetCons地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
-	
+	*((int *) (processConsole->tss.esp + 8)) = memtotal;
 	processConsole->tss.eip = (int) &consoleMain;	// 控制台进程的下一条指令执行consoleMain
 	
 	processConsole->tss.es = 1 * 8;
@@ -324,9 +357,10 @@ void Main(){
 	putFont8AscSheet(sheetBack, 0, 32, COL8_FFFFFF, COL8_008484,  "Welcome to DickOS", 17);	// 将DickOS写入背景层
 	sprintf(s, "(%3d, %3d)", mx, my);	// 将鼠标位置存入s
 	putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484,  s, 10);	// 将s写入背景层
+	/*
 	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
 	putFont8AscSheet(sheetBack, 0, 48, COL8_FFFFFF, COL8_008484,  s, 26);	// 将s写入背景层
-	
+	*/
 	// 为了避免和键盘当前状态冲突，在一开始先进行设置指示灯状态
 	QueuePush(&keyCmd, KEYCMD_LED);	// 0xed
 	QueuePush(&keyCmd, keyLeds);
