@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.4.8
-* @Date: 2020-02-04
+* @Version: 0.4.9
+* @Date: 2020-02-05
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -24,7 +24,7 @@
 void consoleMain(struct SHEET *sheet) {
 	struct TIMER * timer;	// 定时器
 	struct PCB *process = processNow();	// 取得当前占有处理机的进程
-	int bufval, buf[128], cursorX = 16, cursorC = -1;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色-1为不显示光标
+	int bufval, buf[128], cursorX = 16, cursorY = 28, cursorC = -1;	// 缓冲区字符值 缓冲区 光标x轴位置 光标颜色-1为不显示光标
 	char s[2];
 	
 	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
@@ -59,29 +59,36 @@ void consoleMain(struct SHEET *sheet) {
 				cursorC = COL8_FFFFFF;
 			}
 			if (bufval == 3) {	// 由进程A写入的隐藏光标通知
-				boxFill8(sheet->buf,  sheet->width, COL8_000000, cursorX, 28, cursorX + 7, 43);
+				boxFill8(sheet->buf,  sheet->width, COL8_000000, cursorX, cursorY, cursorX + 7, cursorY + 15);
 				cursorC = -1;
 			}
 			if (256 < bufval && bufval <= 511) {	// 键盘数据
 				if (bufval == 8 + 256) {	// 退格
 					if (cursorX > 16) {
-						putFont8AscSheet(sheet, cursorX, 28, COL8_FFFFFF, COL8_000000, " ", 1);
+						putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, " ", 1);
 						cursorX -= 8;
+					}
+				} else if (bufval == 10 + 256) {	// 回车
+					if (cursorY < 28 + 112) {
+						putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, " ", 1);
+						cursorY += 16;
+						putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, ">", 1);
+						cursorX = 16;
 					}
 				} else {	// 普通字符
 					if (cursorX < 240) {
 						s[0] = bufval - 256;
 						s[1] = 0;
-						putFont8AscSheet(sheet, cursorX, 28, COL8_FFFFFF, COL8_000000, s, 1);
+						putFont8AscSheet(sheet, cursorX, cursorY, COL8_FFFFFF, COL8_000000, s, 1);
 						cursorX += 8;
 					}
 				}
 			}
 			// 重新显示光标
 			if (cursorC >= 0) {
-				boxFill8(sheet->buf, sheet->width, cursorC, cursorX, 28, cursorX + 7, 43);	// 重新绘制光标
+				boxFill8(sheet->buf, sheet->width, cursorC, cursorX, cursorY, cursorX + 7, cursorY + 15);	// 重新绘制光标
 			}
-			sheetRefresh(sheet, cursorX, 28, cursorX + 8, 44);
+			sheetRefresh(sheet, cursorX, cursorY, cursorX + 8, cursorY + 16);
 		}
 	}
 }
@@ -420,6 +427,11 @@ void Main(){
 				if (bufval == 256 + 0xfe) {	// 键盘控制电路返回失败数据
 					waitKeyboardControllerReady();	// 等待键盘控制电路就绪
 					io_out8(PORT_KEYDAT, keyCmdWait);	// 重新向键盘控制电路发送8位数据
+				}
+				if (bufval == 256 + 0x1c) {	// 回车
+					if (keyTo != 0) {	// 发送至控制台窗口
+						QueuePush(&processConsole->queue, 10 + 256);
+					}
 				}
 				// 重新显示光标
 				if (cursorC > 0) {
