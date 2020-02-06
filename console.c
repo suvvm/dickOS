@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.0.1
+* @Version: 0.0.2
 * @Date: 2020-02-06
 * @Description: 实现控制台相关函数
 ********************************************************************************/
@@ -55,6 +55,7 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
 	struct FILEINFO *fileInfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);	// 读取fat16根目录
 	int *fat = (int *) memsegAlloc4K(memsegtable, 4 * 2880);	// 在内存中为fat表分配空间
+	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;	// 段描述符表GDT地址为 0x270000~0x27ffff
 	readFat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));	// 在磁盘对应地址解压fat数据至对应内存地址
 	
 	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
@@ -212,6 +213,48 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 						}
 						cursorY = consNewLine(cursorY, sheet);
 						
+					} else if (strcmp(cmdline, "clihlt") == 0) {
+						for (y = 0; y < 11; y++) {
+							s[y] = ' ';
+						}
+						s[0] = 'C', s[1] = 'L', s[2] = 'I';
+						s[3] = 'H', s[4] = 'L', s[5] = 'T';
+						s[8] = 'H', s[9] = 'R', s[10] = 'B';
+						
+						// 寻找文件
+						for (x = 0; x < 244;) {
+							if (fileInfo[x].name[0] == 0x00) {	// 不包含任何文件信息
+								break;
+							}
+							char flag = 0;
+							if ((fileInfo[x].type & 0x18) == 0) { // 不为目录
+								for (y = 0; y < 11; y++) {
+									if (fileInfo[x].name[y] != s[y]) {
+										flag = 1;
+										break;
+									}
+								}
+							}
+							if (flag == 1) {
+								x++;
+								continue;
+							}
+							break;
+						}
+						if (x < 224 && fileInfo[x].name[0] != 0x00) {	// 找到文件
+							p = (char *) memsegAlloc4K(memsegtable, fileInfo[x].size);	// 为文件在内存中分配缓冲区
+							// 将磁盘中的文件读入内存
+							loadFile(fileInfo[x].clusterNum , fileInfo[x].size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));	// 文件在磁盘中的地址 = clusterNum * 512（一个扇区） + 0x003e00
+							// 将读入的文件作为一个进程运行 在全局描述符表中定义这个进程状态段
+							setSegmdesc(gdt + 1003, fileInfo[x].size - 1, (int) p, AR_CODE32_ER);
+							farJmp(0,1003 * 8);	// 跳转至该进程
+							memsegFree4K(memsegtable, (int) p, fileInfo[x].size);	// 释放文件缓冲区内存
+						} else {
+							putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, "file not found", 14);
+							cursorY = consNewLine(cursorY, sheet);
+						}
+						cursorY = consNewLine(cursorY, sheet);
+					
 					} else if (cmdline[0] != 0) {
 						// 不是空行也不是命令
 						putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, "command not found", 17);
