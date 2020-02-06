@@ -1,8 +1,10 @@
+#ifndef MEMORY_C
+#define MEMORY_C
 /********************************************************************************
 * @File name: memory.c
 * @Author: suvvm
-* @Version: 0.0.2
-* @Date: 2020-01-18
+* @Version: 0.0.3
+* @Date: 2020-02-06
 * @Description: 实现内存相关函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -238,3 +240,5 @@ int memsegFree4K(struct MEMSEGTABLE *memsegtable, unsigned int addr, unsigned in
 	ans = memsegFree(memsegtable, addr, size);
 	return ans;
 }
+
+#endif	//MEMORY_C
