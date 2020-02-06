@@ -462,7 +462,7 @@ void timerInit(struct TIMER *timer, struct QUEUE *queue, unsigned char data);
 void timerFree(struct TIMER *timer);
 struct TIMER *timerAlloc();
 
-// multiProcess 函数声明
+// multiProcess.c 函数声明
 void processIdle();
 struct PCB *processNow();
 void processAdd(struct PCB *process);
@@ -473,5 +473,18 @@ struct PCB *processAlloc();
 void processRun(struct PCB *process, int level, int priority);
 void processSwitch();
 void processSleep(struct PCB *process);
+
+// file.c 函数声明
+void readFat(int *fat, unsigned char *img);
+void loadFile(int closterNum, int size, char *buf, int *fat, char *img);
+
+// console.c 函数声明
+int consNewLine(int cursorY, struct SHEET *sheet);
+void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt);
+
+// window.c 函数声明
+void makeTextBox(struct SHEET *sheet, int startX, int startY, int width, int height, int c);
+void makeWindowTitle(unsigned char *buf, int width, char *title, char act);
+void makeWindow(unsigned char *buf, int width, int height, char *title, char act);
 
 #endif // BOOTPACK_H
