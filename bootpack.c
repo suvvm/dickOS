@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.5.5
+* @Version: 0.5.6
 * @Date: 2020-02-05
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -14,6 +14,53 @@
 #include "memory.c"
 #include "sheet.c"
 #include "timer.c"
+
+/*******************************************************
+*
+* Function name: readFat
+* Description: 解压缩读取fat表存入内存
+*	fat时经过压缩的，将两个扇区的信息压缩至了3个字节之中
+* Parameter:
+*	@fat	内存fat表记录指针	int *
+*	@img	硬盘数据指针		unsigned char *
+*
+**********************************************************/
+void readFat(int *fat, unsigned char *img) {
+	int i, j = 0;
+	for (i = 0; i < 2880; i += 2) {
+		fat[i + 0] = (img[j + 0] | img[j + 1] << 8) & 0xfff;
+		fat[i + 1] = (img[j + 1] >> 4 | img[j + 2] << 4) & 0xfff;
+		j += 3;
+	}
+};
+
+/*******************************************************
+*
+* Function name: loadFile
+* Description: 读取文件入内存
+* Parameter:
+*	@closterNum		文件所在扇区号		int
+*	@size			文件大小			int
+*	@buf			文件内存缓冲区指针	char *
+*	@fat			fat表				int *
+*	@img			硬盘数据指针		char *
+*
+**********************************************************/
+void loadFile(int closterNum, int size, char *buf, int *fat, char *img) {
+	int i;
+	for (;;) {
+		for (i = 0; i < size; i++) {	// 读取本扇区文件数据写入内存缓冲区
+			buf[i] = img[closterNum * 512 + i];
+		}
+		if (size <= 512) {	// 文件大小在512字节以下（一个扇区内）	
+			break;
+		}
+		// 文件大小在512字节以上（需要寻找下一个扇区）
+		size -= 512;	// 文件大小减去一个扇区
+		buf += 512;	// 内存缓冲区buf指针后移至刚刚读取的一个扇区数据之后
+		closterNum = fat[closterNum];	// 在fat表记录中找到该文件下一个扇区
+	}
+}
 
 /*******************************************************
 *
@@ -60,6 +107,8 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	char s[30], cmdline[30], *p;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
 	struct FILEINFO *fileInfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);	// 读取fat16根目录
+	int *fat = (int *) memsegAlloc4K(memsegtable, 4 * 2880);	// 在内存中为fat表分配空间
+	readFat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));	// 在磁盘对应地址解压fat数据至对应内存地址
 	
 	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
 	timer = timerAlloc();
@@ -175,12 +224,13 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 							}
 							break;
 						}
-						if (x < 224 && fileInfo[x].name[0] != 0x00) {
-							y = fileInfo[x].size;
-							p = (char *) (fileInfo[x].clusterNum * 512 + 0x003e00 + ADR_DISKIMG);	// 文件在磁盘中的地址 = clusterNum * 512（一个扇区） + 0x003e00
+						if (x < 224 && fileInfo[x].name[0] != 0x00) {	// 找到文件
+							p = (char *) memsegAlloc4K(memsegtable, fileInfo[x].size);	// 为文件在内存中分配缓冲区
+							// 将磁盘中的文件读入内存
+							loadFile(fileInfo[x].clusterNum , fileInfo[x].size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));	// 文件在磁盘中的地址 = clusterNum * 512（一个扇区） + 0x003e00
 							cursorX = 8;
-							for (x = 0; x < y; x++) {	// 逐字打印
-								s[0] = p[x];
+							for (y = 0; y < fileInfo[x].size; y++) {	// 逐字打印
+								s[0] = p[y];
 								s[1] = 0;
 								if (s[0] == 0x09) {	// 制表符
 									for (;;) {
@@ -208,6 +258,7 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 									}
 								}
 							}
+							memsegFree4K(memsegtable, (int) p, fileInfo[x].size);	// 释放文件缓冲区内存
 						} else {
 							putFont8AscSheet(sheet, 8, cursorY, COL8_FFFFFF, COL8_000000, "file not found", 14);
 							cursorY = consNewLine(cursorY, sheet);
