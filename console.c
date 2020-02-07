@@ -82,6 +82,38 @@ void consolePutchar(struct CONSOLE *console, int chr, char move) {
 
 /*******************************************************
 *
+* Function name: consolePutstr0
+* Description: 输出字符串遇0结束
+* Parameter:
+*	@console	控制台信息指针	struct CONSOLE *
+*	@str		欲输出的字符串	char *
+*
+**********************************************************/
+void consolePutstr0(struct CONSOLE *console, char *str) {
+	for (; *str != 0; str++) {	// 遇0截止
+		consolePutchar(console, *str, 1);
+	}
+}
+
+/*******************************************************
+*
+* Function name: consolePutstr1
+* Description: 输出指定长度字符串
+* Parameter:
+*	@console	控制台信息指针	struct CONSOLE *
+*	@str		欲输出的字符串	char *
+*	@len		欲出输的长度	int
+*
+**********************************************************/
+void consolePutstr1(struct CONSOLE *console, char *str, int len) {
+	int i;
+	for (i = 0; i < len; i++) {	// 遇0截止
+		consolePutchar(console, str[i], 1);
+	}
+}
+
+/*******************************************************
+*
 * Function name: cmdMem
 * Description: 检查内存指令
 * Parameter:
@@ -92,10 +124,8 @@ void consolePutchar(struct CONSOLE *console, int chr, char move) {
 void cmdMem(struct CONSOLE *console, unsigned int memsegTotalCnt) {
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	char s[30];
-	sprintf(s, "memory %dMB free : %dKB", memsegTotalCnt / (1024 * 1024), memsegTotal(memsegtable) / 1024);
-	putFont8AscSheet(console->sheet, 8, console->cursorY, COL8_FFFFFF, COL8_000000, s, 30);
-	consoleNewLine(console);
-	consoleNewLine(console);
+	sprintf(s, "memory %dMB free : %dKB\n\n", memsegTotalCnt / (1024 * 1024), memsegTotal(memsegtable) / 1024);
+	consolePutstr0(console, s);
 }
 
 /*******************************************************
@@ -142,8 +172,7 @@ void cmdDir(struct CONSOLE *console) {
 				for (j = 0; j < 3; j++) {	// 扩展名
 					s[j + 9] = fileInfo[i].ext[j];
 				}
-				putFont8AscSheet(console->sheet, 8, console->cursorY, COL8_FFFFFF, COL8_000000, s, 30);
-				consoleNewLine(console);
+				consolePutstr0(console, s);
 			}
 		}
 	}
@@ -168,13 +197,10 @@ void cmdType(struct CONSOLE *console, int *fat, char *cmdline) {
 	if (fileInfo != 0) {	// 文件存在
 		p = (char *) memsegAlloc4K(memsegtable, fileInfo->size);	// 为文件在内存中分配缓冲区
 		loadFile(fileInfo->clusterNum, fileInfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));	// 读取文件内容至内存缓冲区
-		for (i = 0; i < fileInfo->size; i++) {	// 输出文件内容
-			consolePutchar(console, p[i], 1);
-		}
+		consolePutstr1(console, p, fileInfo->size);	// 输出文件内容
 		memsegFree4K(memsegtable, (int) p, fileInfo->size);	// 释放缓冲区
 	} else {	// 文件不存在
-		putFont8AscSheet(console->sheet, 8, console->cursorY, COL8_FFFFFF, COL8_000000, "file not found", 14);
-		consoleNewLine(console);
+		consolePutstr0(console, "file not found\n");
 	}
 	consoleNewLine(console);
 }
@@ -248,9 +274,12 @@ void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned i
 		cmdType(console, fat, cmdline);
 	} else if (cmdline[0] != 0) {	// 不是指令 不是空行
 		if (cmdApp(console, fat, cmdline) == 0) {	// 不是应用程序
+			/*
 			putFont8AscSheet(console->sheet, 8, console->cursorY, COL8_FFFFFF, COL8_000000, "command not found", 17);
 			consoleNewLine(console);
 			consoleNewLine(console);
+			*/
+			consolePutstr0(console, "command not found\n\n");
 		}
 	}
 }
@@ -337,6 +366,32 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 			}
 			sheetRefresh(sheet, console.cursorX, console.cursorY, console.cursorX + 8, console.cursorY + 16);
 		}
+	}
+}
+
+/*******************************************************
+*
+* Function name: dickApi
+* Description: dickOS系统调用api
+* Parameter: 按PUSHAD的顺序接收寄存器的值
+*	@edi	int
+*	@esi	int
+*	@ebp	int
+*	@esp	int
+*	@ebx	int
+*	@edx	int
+*	@ecx	int
+*	@eax	int
+*
+**********************************************************/
+void dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax) {
+	struct CONSOLE *console = (struct CONSOLE *) *((int *) 0x0fec);	// 在指定内存地址获取控制台信息
+	if (edx == 1) {	// 功能号1 显示单个字符
+		consolePutchar(console, eax & 0xff, 1); 	// AL中存放字符ascii码
+	} else if (edx == 2) {	// 功能号2 显示字符串到0为止
+		consolePutstr0(console, (char *) ebx);	// ebx 中存放字符串首地址
+	} else if (edx == 3) {	// 功能号3 显示指定长度字符串
+		consolePutstr1(console, (char *) ebx, ecx);	// ebx 中存放字符串首地址 ecx中存放长度
 	}
 }
 
