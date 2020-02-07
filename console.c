@@ -197,7 +197,7 @@ void cmdHlt(struct CONSOLE *console, int *fat) {
 		p = (char *) memsegAlloc4K(memsegtable, fileInfo->size);	// 为文件在内存中分配缓冲区
 		loadFile(fileInfo->clusterNum, fileInfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));	// 读取文件内容至内存缓冲区
 		setSegmdesc(gdt + 1003, fileInfo->size - 1, (int) p, AR_CODE32_ER);
-		farJmp(0,1003 * 8);	// 跳转至该进程
+		farCall(0, 1003 * 8);	// 调用另一段的函数
 		memsegFree4K(memsegtable, (int) p, fileInfo->size);	// 释放文件缓冲区内存
 	} else {
 		putFont8AscSheet(console->sheet, 8, console->cursorY, COL8_FFFFFF, COL8_000000, "file not found", 14);
