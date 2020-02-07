@@ -418,6 +418,7 @@ void asm_interruptHandler2c();
 unsigned int memtest_sub(unsigned int start, unsigned int end);
 void farJmp(int eip, int cs);
 void asm_consolePutchar();
+void farCall(int eip, int cs);
 
 // graphic.c 函数声明
 void init_palette();
