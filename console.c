@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.0.4
+* @Version: 0.0.5
 * @Date: 2020-02-07
 * @Description: 实现控制台相关函数
 ********************************************************************************/
@@ -181,29 +181,49 @@ void cmdType(struct CONSOLE *console, int *fat, char *cmdline) {
 
 /*******************************************************
 *
-* Function name: cmdHlt
-* Description: 执行应用程序hlt的指令
+* Function name: cmdApp
+* Description: 执行应用程序的指令
 * Parameter:
 *	@console		控制台信息指针		struct CONSOLE *
 *	@fat			内存fat表记录指针	int *
+*	@cmdline		指令信息			char *
+* Return:
+*	成功返回1 失败返回0 
 *
 **********************************************************/
-void cmdHlt(struct CONSOLE *console, int *fat) {
+int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
-	struct FILEINFO *fileInfo = searchFile("HLT.HRB", (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);	// 根据文件名找到对应文件信息
+	struct FILEINFO *fileInfo;
 	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;	// 段描述符表GDT地址为 0x270000~0x27ffff
-	char *p;
+	char name[18], *p;
+	int i;
+	for(i = 0; i < 13; i++) {
+		if (cmdline[i] <= ' ') {
+			break;
+		}
+		name[i] = cmdline[i];
+	}
+	name[i] = 0;
+	fileInfo = searchFile(name , (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);	// 根据文件名找到对应文件信息
+	if (fileInfo == 0 && name[i - 1] != '.') {	// 为文件添加后缀
+		name[i] = '.';
+		name[i + 1] = 'H';
+		name[i + 2] = 'R';
+		name[i + 3] = 'B';
+		name[i + 4] = 0;
+		fileInfo = searchFile(name , (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);	// 根据文件名找到对应文件信息
+	}
+	
 	if (fileInfo != 0) {	// 文件存在
 		p = (char *) memsegAlloc4K(memsegtable, fileInfo->size);	// 为文件在内存中分配缓冲区
 		loadFile(fileInfo->clusterNum, fileInfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));	// 读取文件内容至内存缓冲区
 		setSegmdesc(gdt + 1003, fileInfo->size - 1, (int) p, AR_CODE32_ER);
 		farCall(0, 1003 * 8);	// 调用另一段的函数
 		memsegFree4K(memsegtable, (int) p, fileInfo->size);	// 释放文件缓冲区内存
-	} else {
-		putFont8AscSheet(console->sheet, 8, console->cursorY, COL8_FFFFFF, COL8_000000, "file not found", 14);
 		consoleNewLine(console);
+		return 1;
 	}
-	consoleNewLine(console);
+	return 0;
 }
 
 /*******************************************************
@@ -226,12 +246,12 @@ void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned i
 		cmdDir(console);
 	} else if (strncmp(cmdline, "type ", 5) == 0) {	// type 显示文件内容指令
 		cmdType(console, fat, cmdline);
-	} else if (strcmp(cmdline, "hlt") == 0) {	// hlt 启动hlt应用程序指令
-		cmdHlt(console, fat);
-	} else if (cmdline[0] != 0) {	// 不是指令
-		putFont8AscSheet(console->sheet, 8, console->cursorY, COL8_FFFFFF, COL8_000000, "command not found", 17);
-		consoleNewLine(console);
-		consoleNewLine(console);
+	} else if (cmdline[0] != 0) {	// 不是指令 不是空行
+		if (cmdApp(console, fat, cmdline) == 0) {	// 不是应用程序
+			putFont8AscSheet(console->sheet, 8, console->cursorY, COL8_FFFFFF, COL8_000000, "command not found", 17);
+			consoleNewLine(console);
+			consoleNewLine(console);
+		}
 	}
 }
 
