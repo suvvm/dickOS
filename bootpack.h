@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.3.9
+* @Version: 0.4.0
 * @Date: 2020-02-07
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -503,7 +503,7 @@ void cmdMem(struct CONSOLE *console, unsigned int memsegTotalCnt);
 void cmdCls(struct CONSOLE *console);
 void cmdDir(struct CONSOLE *console);
 void cmdType(struct CONSOLE *console, int *fat, char *cmdline);
-void cmdHlt(struct CONSOLE *console, int *fat);
+int cmdApp(struct CONSOLE *console, int *fat, char *cmdline);
 void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned int memsegTotalCnt);
 void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt);
 
