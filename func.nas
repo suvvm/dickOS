@@ -18,9 +18,9 @@
 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
 		GLOBAL	_memtest_sub
 		GLOBAL	_farJmp, _farCall
-		GLOBAL	_asm_consolePutchar
+		GLOBAL	_asm_dickApi
 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
-		EXTERN	_consolePutchar
+		EXTERN	_dickApi
 ; 实际的函数
 
 [SECTION .text]					; 目标文件中写了这些后再写程序
@@ -176,18 +176,20 @@ _asm_interruptHandler2c:
 		POP		DS
 		POP		ES
 		IRETD
-		
-_asm_consolePutchar:
-		STI								; INT式调用本函数时回视作中断进行处理 CPU会自动关中断 在这里开中断
-		PUSHAD
-		PUSH	1
-		AND		EAX,0xff				; 将AH 和EAX高位置0，将EAX置为已存入字符编码状态
-		PUSH	EAX
-		PUSH	DWORD [0x0fec]			; 读取内存0xfec并push该值（控制台进程保存的控制台信息）
-		CALL	_consolePutchar			; 调用consolePutchar
-		ADD		ESP,12					; 将栈中的数据丢弃
+
+; 在寄存器EDX中存入功能号，可以通过INT调用不同函数
+; 功能号1	显示单个字符(AL = 字符ascii码)
+; 功能号2	显示字符串到0截止(EBX = 字符串地址)
+; 功能号3	显示指定长度字符串(EBX = 字符串地址)、
+
+_asm_dickApi:
+		STI
+		PUSHAD							; 保存寄存器值
+		PUSHAD							; 向dickApi传值
+		CALL	_dickApi
+		ADD		ESP,32
 		POPAD
-		IRETD							; INT中断式调用需要用IRETD返回
+		IRETD
 
 _memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
 		PUSH	EDI
