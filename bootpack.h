@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.3.8
+* @Version: 0.3.9
 * @Date: 2020-02-07
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -417,6 +417,7 @@ void asm_interruptHandler27();
 void asm_interruptHandler2c();
 unsigned int memtest_sub(unsigned int start, unsigned int end);
 void farJmp(int eip, int cs);
+void asm_consolePutchar();
 
 // graphic.c 函数声明
 void init_palette();
