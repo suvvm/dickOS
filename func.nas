@@ -17,7 +17,7 @@
 		GLOBAL	_loadTr
 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
 		GLOBAL	_memtest_sub
-		GLOBAL	_farJmp
+		GLOBAL	_farJmp, _farCall
 		GLOBAL	_asm_consolePutchar
 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
 		EXTERN	_consolePutchar
@@ -223,4 +223,8 @@ mts_fin:
 
 _farJmp:								; void farJmp(int eip, int cs);
 		JMP		FAR [ESP+4]
+		RET
+
+_farCall:								; void farCall(int eip, int cs);
+		CALL	FAR [ESP+4]
 		RET
