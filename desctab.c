@@ -84,5 +84,5 @@ void initGdtit(){
 	setGatedesc(idt + 0x21, (int) asm_interruptHandler21, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler21至IDT
 	setGatedesc(idt + 0x27, (int) asm_interruptHandler27, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler27至IDT
 	setGatedesc(idt + 0x2c, (int) asm_interruptHandler2c, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler2c至IDT
-	setGatedesc(idt + 0x40,	(int) asm_consolePutchar, 2 * 8, AR_INTGATE32);	// 注册系统调用打印字符函数至IDT 0x40号
+	setGatedesc(idt + 0x40,	(int) asm_dickApi, 2 * 8, AR_INTGATE32);	// 注册DICKOS系统调用API至IDT 0x40号
 }
