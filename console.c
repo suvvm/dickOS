@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.0.3
+* @Version: 0.0.4
 * @Date: 2020-02-07
 * @Description: 实现控制台相关函数
 ********************************************************************************/
@@ -190,7 +190,7 @@ void cmdType(struct CONSOLE *console, int *fat, char *cmdline) {
 **********************************************************/
 void cmdHlt(struct CONSOLE *console, int *fat) {
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
-	struct FILEINFO *fileInfo = searchFile("CLIHLT.HRB", (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);	// 根据文件名找到对应文件信息
+	struct FILEINFO *fileInfo = searchFile("HLT.HRB", (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);	// 根据文件名找到对应文件信息
 	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;	// 段描述符表GDT地址为 0x270000~0x27ffff
 	char *p;
 	if (fileInfo != 0) {	// 文件存在
@@ -253,6 +253,7 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	console.cursorY = 28;
 	console.cursorX = 8;
 	console.cursorC = -1;
+	*((int *) 0x0fec) = (int) &console;	// 将console信息存入内存指定位置0x0fec
 	
 	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
 	timer = timerAlloc();
