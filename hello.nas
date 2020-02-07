@@ -1,6 +1,7 @@
 [INSTRSET "i486p"]
 [BITS 32]
 		MOV		ECX,msg
+		MOV		EDX,1		; 功能号1
 putloop:
 		MOV		AL,[CS:ECX]
 		CMP		AL,0
