@@ -178,13 +178,14 @@ _asm_interruptHandler2c:
 		IRETD
 		
 _asm_consolePutchar:
+		STI								; INT式调用本函数时回视作中断进行处理 CPU会自动关中断 在这里开中断
 		PUSH	1
 		AND		EAX,0xff				; 将AH 和EAX高位置0，将EAX置为已存入字符编码状态
 		PUSH	EAX
 		PUSH	DWORD [0x0fec]			; 读取内存0xfec并push该值（控制台进程保存的控制台信息）
 		CALL	_consolePutchar			; 调用consolePutchar
 		ADD		ESP,12					; 将栈中的数据丢弃
-		RETF
+		IRETD							; INT中断式调用需要用IRETD返回
 
 _memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
 		PUSH	EDI
