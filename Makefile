@@ -91,7 +91,7 @@ clean :
 	-$(DEL) bootpack.map
 	-$(DEL) bootpack.bim
 	-$(DEL) bootpack.hrb
-	-$(DEL) clihlt.hrb
+	-$(DEL) hlt.hrb
 	-$(DEL) dickos.sys
 
 src_only :
