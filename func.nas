@@ -18,7 +18,9 @@
 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
 		GLOBAL	_memtest_sub
 		GLOBAL	_farJmp
+		GLOBAL	_asm_consolePutchar
 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
+		EXTERN	_consolePutchar
 ; 实际的函数
 
 [SECTION .text]					; 目标文件中写了这些后再写程序
@@ -174,6 +176,15 @@ _asm_interruptHandler2c:
 		POP		DS
 		POP		ES
 		IRETD
+		
+_asm_consolePutchar:
+		PUSH	1
+		AND		EAX,0xff				; 将AH 和EAX高位置0，将EAX置为已存入字符编码状态
+		PUSH	EAX
+		PUSH	DWORD [0x0fec]			; 读取内存0xfec并push该值（控制台进程保存的控制台信息）
+		CALL	_consolePutchar			; 调用consolePutchar
+		ADD		ESP,12					; 将栈中的数据丢弃
+		RETF
 
 _memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
 		PUSH	EDI
