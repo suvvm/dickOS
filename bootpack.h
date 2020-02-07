@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.3.5
-* @Date: 2020-02-05
+* @Version: 0.3.8
+* @Date: 2020-02-07
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -376,6 +376,21 @@ struct FILEINFO {
 	unsigned int size;
 };
 
+/********************************************************************************
+*
+* console 控制台
+* Parameter:
+*	@sheet		控制台图层指针	struct SHEET *
+*	@cursorX	光标x轴位置		int
+*	@cursorY	光标y轴位置		int
+*	@cursorC	光标颜色		int		
+*
+********************************************************************************/
+struct CONSOLE {
+	struct SHEET *sheet;
+	int cursorX, cursorY, cursorC;
+};
+
 // queue.c 函数声明
 void QueueInit(struct QUEUE *q, int size, int *buf, struct PCB *process);
 int QueuePush(struct QUEUE *fifo, int data);
@@ -477,9 +492,17 @@ void processSleep(struct PCB *process);
 // file.c 函数声明
 void readFat(int *fat, unsigned char *img);
 void loadFile(int closterNum, int size, char *buf, int *fat, char *img);
+struct FILEINFO *searchFile(char *name, struct FILEINFO *fileInfo, int max);
 
 // console.c 函数声明
-int consNewLine(int cursorY, struct SHEET *sheet);
+void consoleNewLine(struct CONSOLE *console);
+void consolePutchar(struct CONSOLE *console, int chr, char move);
+void cmdMem(struct CONSOLE *console, unsigned int memsegTotalCnt);
+void cmdCls(struct CONSOLE *console);
+void cmdDir(struct CONSOLE *console);
+void cmdType(struct CONSOLE *console, int *fat, char *cmdline);
+void cmdHlt(struct CONSOLE *console, int *fat);
+void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned int memsegTotalCnt);
 void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt);
 
 // window.c 函数声明
