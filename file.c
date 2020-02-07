@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: file.c
 * @Author: suvvm
-* @Version: 0.0.1
-* @Date: 2020-02-06
+* @Version: 0.0.2
+* @Date: 2020-02-07
 * @Description: 实现文件读取相关函数
 ********************************************************************************/
 
@@ -55,6 +55,62 @@ void loadFile(int closterNum, int size, char *buf, int *fat, char *img) {
 		buf += 512;	// 内存缓冲区buf指针后移至刚刚读取的一个扇区数据之后
 		closterNum = fat[closterNum];	// 在fat表记录中找到该文件下一个扇区
 	}
+}
+
+/*******************************************************
+*
+* Function name: searchFile
+* Description: 根据文件名在根目录寻找文件
+* Parameter:
+*	@name		文件名			char *
+*	@fileInfo	fat16根目录		struct FILEINFO *
+*	@max		最大查找文件数	int
+*	@Return:
+*	成功返回文件信息指针 失败返回0
+*
+**********************************************************/
+struct FILEINFO *searchFile(char *name, struct FILEINFO *fileInfo, int max) {
+	int i, j;
+	char s[12];
+	for (j = 0; j < 11; j++) {
+		s[j] = ' ';
+	}
+	j = 0;
+	for (i = 0; name[i] != 0; i++) {	// 获取文件名转为与fat16根目录文件名相同格式存入s
+		if (j >= 11) {
+			return 0;	// 没有找到文件
+		}
+		if (name[i] == '.' && j <= 8) {	// 找到文件名中的.
+			j = 8;	// 开始准备获取扩展名
+		} else {
+			s[j] = name[i];
+			if ('a' <= s[j] && s[j] <= 'z') {	// 小写字母转大写
+				s[j] -= 0x20;
+			}
+			j++;
+		}
+	}
+	// 寻找文件
+	for (i = 0; i < max; ) {
+		if (fileInfo[i].name[0] == 0x00) {	// 不包含任何文件信息
+			break;
+		}
+		char flag = 0;
+		if ((fileInfo[i].type & 0x18) == 0) { // 不为目录
+			for (j = 0; j < 11; j++) {
+				if (fileInfo[i].name[j] != s[j]) {
+					flag = 1;
+					break;
+				}
+			}
+		}
+		if (flag == 1) {
+			i++;
+			continue;
+		}
+		return fileInfo + i;
+	}
+	return 0;	// 没有找到文件
 }
 
 #endif	// FILE_C
