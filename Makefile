@@ -53,19 +53,19 @@ bootpack.bim : bootpack.obj func.obj font.obj Makefile
 bootpack.hrb : bootpack.bim Makefile
 	$(BIM2HRB) bootpack.bim bootpack.hrb 0
 
-hlt.hrb : hlt.nas Makefile
-	$(NASK) hlt.nas hlt.hrb hlt.lst
+hello.hrb : hello.nas Makefile
+	$(NASK) hello.nas hello.hrb hello.lst
 
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
-dickos.img : ipl.bin dickos.sys hlt.hrb Makefile
+dickos.img : ipl.bin dickos.sys hello.hrb Makefile
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
 		copy from:dickos.sys to:@: \
 		copy from:ipl.nas to:@: \
 		copy from:make.bat to:@: \
-		copy from:hlt.hrb to:@: \
+		copy from:hello.hrb to:@: \
 		imgout:dickos.img
 
 # 命令
@@ -91,7 +91,7 @@ clean :
 	-$(DEL) bootpack.map
 	-$(DEL) bootpack.bim
 	-$(DEL) bootpack.hrb
-	-$(DEL) hlt.hrb
+	-$(DEL) hello.hrb
 	-$(DEL) dickos.sys
 
 src_only :
