@@ -417,7 +417,7 @@ void asm_interruptHandler27();
 void asm_interruptHandler2c();
 unsigned int memtest_sub(unsigned int start, unsigned int end);
 void farJmp(int eip, int cs);
-void asm_consolePutchar();
+void asm_dickApi();
 void farCall(int eip, int cs);
 
 // graphic.c 函数声明
@@ -499,6 +499,8 @@ struct FILEINFO *searchFile(char *name, struct FILEINFO *fileInfo, int max);
 // console.c 函数声明
 void consoleNewLine(struct CONSOLE *console);
 void consolePutchar(struct CONSOLE *console, int chr, char move);
+void consolePutstr0(struct CONSOLE *console, char *str);
+void consolePutstr1(struct CONSOLE *console, char *str, int len);
 void cmdMem(struct CONSOLE *console, unsigned int memsegTotalCnt);
 void cmdCls(struct CONSOLE *console);
 void cmdDir(struct CONSOLE *console);
@@ -511,5 +513,6 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt);
 void makeTextBox(struct SHEET *sheet, int startX, int startY, int width, int height, int c);
 void makeWindowTitle(unsigned char *buf, int width, char *title, char act);
 void makeWindow(unsigned char *buf, int width, int height, char *title, char act);
+void dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 
 #endif // BOOTPACK_H
