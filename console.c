@@ -221,7 +221,7 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct FILEINFO *fileInfo;
 	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;	// 段描述符表GDT地址为 0x270000~0x27ffff
-	char name[18], *p;
+	char name[18], *p, *q;
 	int i;
 	for(i = 0; i < 13; i++) {
 		if (cmdline[i] <= ' ') {
@@ -242,9 +242,12 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 	
 	if (fileInfo != 0) {	// 文件存在
 		p = (char *) memsegAlloc4K(memsegtable, fileInfo->size);	// 为文件在内存中分配缓冲区
+		q = (char *) memsegAlloc4K(memsegtable, 64 * 1024);	// 为应用程序分配专属内存空间
 		*((int *) 0xfe8) = (int) p;	// 将p的地址存入内存0xfe8的位置以供dickApi使用
 		loadFile(fileInfo->clusterNum, fileInfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));	// 读取文件内容至内存缓冲区
-		setSegmdesc(gdt + 1003, fileInfo->size - 1, (int) p, AR_CODE32_ER);
+		setSegmdesc(gdt + 1003, fileInfo->size - 1, (int) p, AR_CODE32_ER);	// 注册应用程序代码段
+		setSegmdesc(gdt + 1004, 64 * 1024 - 1, (int) q, AR_DATA32_RW);	// 注册应用程序运行段
+		
 		/*
 			将汇编指令
 			[BITS 32]
@@ -260,8 +263,9 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 			p[4] = 0x00;
 			p[5] = 0xcb;
 		}
-		farCall(0, 1003 * 8);	// 调用另一段的函数
+		startApp(0, 1003 * 8, 64 * 1024, 1004 * 8);	// 启动应用程序并设置ESP与DS.SS
 		memsegFree4K(memsegtable, (int) p, fileInfo->size);	// 释放文件缓冲区内存
+		memsegFree4K(memsegtable, (int) q, 64 * 1024);	// 释放应用程序专有内存
 		consoleNewLine(console);
 		return 1;
 	}
