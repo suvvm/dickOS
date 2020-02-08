@@ -221,6 +221,7 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct FILEINFO *fileInfo;
 	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;	// 段描述符表GDT地址为 0x270000~0x27ffff
+	struct PCB *process = processNow();
 	char name[18], *p, *q;
 	int i;
 	for(i = 0; i < 13; i++) {
@@ -245,8 +246,8 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 		q = (char *) memsegAlloc4K(memsegtable, 64 * 1024);	// 为应用程序分配专属内存空间
 		*((int *) 0xfe8) = (int) p;	// 将p的地址存入内存0xfe8的位置以供dickApi使用
 		loadFile(fileInfo->clusterNum, fileInfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));	// 读取文件内容至内存缓冲区
-		setSegmdesc(gdt + 1003, fileInfo->size - 1, (int) p, AR_CODE32_ER);	// 注册应用程序代码段
-		setSegmdesc(gdt + 1004, 64 * 1024 - 1, (int) q, AR_DATA32_RW);	// 注册应用程序运行段
+		setSegmdesc(gdt + 1003, fileInfo->size - 1, (int) p, AR_CODE32_ER + 0x60);	// 注册应用程序代码段 +0x60将段设置为应用程序 应用程序若想写入操作系统的段地址就会发生异常
+		setSegmdesc(gdt + 1004, 64 * 1024 - 1, (int) q, AR_DATA32_RW + 0x60);	// 注册应用程序运行段
 		
 		/*
 			将汇编指令
@@ -263,7 +264,7 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 			p[4] = 0x00;
 			p[5] = 0xcb;
 		}
-		startApp(0, 1003 * 8, 64 * 1024, 1004 * 8);	// 启动应用程序并设置ESP与DS.SS
+		startApp(0, 1003 * 8, 64 * 1024, 1004 * 8, &(process->tss.esp0));	// 启动应用程序并设置ESP与DS.SS
 		memsegFree4K(memsegtable, (int) p, fileInfo->size);	// 释放文件缓冲区内存
 		memsegFree4K(memsegtable, (int) q, 64 * 1024);	// 释放应用程序专有内存
 		consoleNewLine(console);
@@ -399,16 +400,21 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 *	@eax	int
 *
 **********************************************************/
-void dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax) {
+int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax) {
 	int csBase = *((int *) 0xfe8);	// 获取应用程序文件所在内存地址
 	struct CONSOLE *console = (struct CONSOLE *) *((int *) 0x0fec);	// 在指定内存地址获取控制台信息
+	struct PCB *process = processNow();
+	
 	if (edx == 1) {	// 功能号1 显示单个字符
 		consolePutchar(console, eax & 0xff, 1); 	// AL中存放字符ascii码
 	} else if (edx == 2) {	// 功能号2 显示字符串到0为止
 		consolePutstr0(console, (char *) ebx + csBase);	// ebx  + csBase中存放msg字符串首地址
 	} else if (edx == 3) {	// 功能号3 显示指定长度字符串
 		consolePutstr1(console, (char *) ebx + csBase, ecx);	// ebx  + csBase中存放msg字符串首地址 ecx中存放长度
+	} else if (edx == 4) {	// 功能号4 结束应用程序
+		return &(process->tss.esp0);
 	}
+	return 0;
 }
 
 #endif	// CONSOLE_C
