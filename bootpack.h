@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.4.0
-* @Date: 2020-02-07
+* @Version: 0.4.1
+* @Date: 2020-02-08
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -419,6 +419,7 @@ unsigned int memtest_sub(unsigned int start, unsigned int end);
 void farJmp(int eip, int cs);
 void asm_dickApi();
 void farCall(int eip, int cs);
+void startApp(int eip, int cs, int esp, int ds);
 
 // graphic.c 函数声明
 void init_palette();
