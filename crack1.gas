@@ -8,4 +8,5 @@ _Main:
 	movb	$0, 1058304
 	movl	%esp, %ebp
 	popl	%ebp
-	ret
+	jmp	_apiEnd
+	.def	_apiEnd;	.scl	2;	.type	32;	.endef
