@@ -4,6 +4,7 @@
 [FILE "helloCFunc.nas"]			; 源文件名信息
 
 		GLOBAL	_apiPutchar
+		GLOBAL	_apiEnd
 		
 [SECTION .text]
 
@@ -12,3 +13,7 @@ _apiPutchar:					; void apiPutchar(int c)
 		MOV		AL,[ESP+4]		; c
 		INT		0x40
 		RET
+
+_apiEnd:						; void apiEnd()
+		MOV		EDX,4
+		INT		0x40
