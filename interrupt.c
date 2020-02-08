@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: interrupt.c
 * @Author: suvvm
-* @Version: 0.1.0
-* @Date: 2020-01-31
+* @Version: 0.1.1
+* @Date: 2020-02-08
 * @Description: 中断操作
 ********************************************************************************/
 
@@ -14,6 +14,7 @@
 #include "keyboard.c"
 #include "timer.c"
 #include "multiProcess.c"
+#include "console.c"
 
 /*******************************************************
 *
@@ -127,6 +128,20 @@ void interruptHandler20(int *esp) {
 	if (mpflag != 0) {
 		processSwitch();
 	}
+}
+
+/********************************************************
+*
+* Function name:	interruptHandler0d
+* Description: 一般应用程序异常中断处理程序
+* Parameter:
+* 	@esp	接收指针的值	int *esp
+*
+**********************************************************/
+int interruptHandler0d(int *esp) {
+	struct CONSOLE *console = (struct CONSOLE *) *((int *)0x0fec);	// 在内存中获取控制台信息
+	consolePutstr0(console, "\nINT 0D :\n General Protected Exception.\n");
+	return 1;
 }
 
 #endif // INTERRUPT_C
