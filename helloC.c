@@ -18,6 +18,14 @@ void apiPutchar(int c);
 
 /*******************************************************
 *
+* Function name: apiEnd
+* Description: 进行系统调用 调用dickApi结束应用程序 具体定义在 helloCFunc.nas
+*
+**********************************************************/
+void apiEnd();
+
+/*******************************************************
+*
 * Function name: Main
 * Description: helloC应用程序主函数
 *
@@ -28,4 +36,5 @@ void Main() {
 	apiPutchar('l');
 	apiPutchar('l');
 	apiPutchar('o');
+	apiEnd();
 }

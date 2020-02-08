@@ -3,6 +3,7 @@
 		MOV		EDX,2
 		MOV		EBX,msg
 		INT		0x40
-		RETF
+		MOV		EDX,4			; 功能号4 结束应用
+		INT		0x40
 msg:
 		DB	"hello",0
