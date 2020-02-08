@@ -80,6 +80,7 @@ void initGdtit(){
 	loadIdtr(LIMIT_IDT, ADR_IDT);
 	
 	//设置IRQ0 IRQ1 IRQ7 IRQ12 的IDT
+	setGatedesc(idt + 0x0d, (int) asm_interruptHandler0d, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler0d至IDT
 	setGatedesc(idt + 0x20, (int) asm_interruptHandler20, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler20至IDT
 	setGatedesc(idt + 0x21, (int) asm_interruptHandler21, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler21至IDT
 	setGatedesc(idt + 0x27, (int) asm_interruptHandler27, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler27至IDT
