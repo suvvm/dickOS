@@ -16,10 +16,12 @@
 		GLOBAL	_loadCr0, _storeCr0
 		GLOBAL	_loadTr
 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
+		GLOBAL	_asm_interruptHandler0d
 		GLOBAL	_memtest_sub
 		GLOBAL	_farJmp, _farCall
 		GLOBAL	_asm_dickApi, _startApp
 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
+		EXTERN	_interruptHandler0d
 		EXTERN	_dickApi
 ; 实际的函数
 
@@ -276,6 +278,66 @@ _asm_interruptHandler2c:
 		POP		DS
 		POP		ES
 		IRETD
+
+_asm_interruptHandler0d:
+		STI								; 开中断
+		PUSH	ES
+		PUSH	DS
+		PUSHAD
+		MOV		AX,SS
+		CMP		AX,1*8
+		JNE		.fromApp
+		; 操作系统活动时产生中断
+		MOV		EAX,ESP
+		PUSH	SS
+		PUSH	EAX
+		MOV		AX,SS
+		MOV		DS,AX
+		MOV		ES,AX
+		CALL	_interruptHandler0d
+		ADD		ESP,8
+		POPAD
+		POP		DS
+		POP		ES
+		ADD		ESP,4
+		IRETD
+.fromApp:
+		; 应用程序活动时产生中断
+		CLI
+		MOV		EAX,1*8
+		MOV		DS,AX					; DX设为操作系统用
+		MOV		ECX,[0xfe4]				; 读取操作系统ESP
+		ADD		ECX,-8
+		MOV		[ECX+4],SS				; 保存中断时的SS
+		MOV		[ECX],ESP				; 保存中断时的ESP
+		MOV		SS,AX
+		MOV		ES,AX
+		MOV		ESP,ECX
+		STI
+		CALL	_interruptHandler0d
+		CLI
+		CMP		EAX,0
+		JNE		.kill
+		POP		ECX
+		POP		EAX
+		MOV		SS,AX					; SS设回应用程序用
+		MOV		ESP,ECX					; ESP设回应用程序用
+		POPAD
+		POP		DS
+		POP		ES
+		ADD		ESP,4
+		IRETD
+.kill:									; 强制结束应用程序
+		MOV		EAX,1*8					; 操作系统用的DS/SS
+		MOV		ES,AX
+		MOV		SS,AX
+		MOV		DS,AX
+		MOV		FS,AX
+		MOV		GS,AX
+		MOV		ESP,[0xfe4]				; 强制返回startApp时的操作系统ESP
+		STI								; 切换完成开中断
+		POPAD							; 恢复寄存器的值
+		RET
 
 ; 在寄存器EDX中存入功能号，可以通过INT调用不同函数
 ; 功能号1	显示单个字符(AL = 字符ascii码)
