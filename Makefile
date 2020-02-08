@@ -33,6 +33,9 @@ bootpack.gas : bootpack.c Makefile
 	
 helloC.gas : helloC.c Makefile
 	$(CC1) -o helloC.gas helloC.c
+	
+crack1.gas : crack1.c Makefile
+	$(CC1) -o crack1.gas crack1.c
 
 func.obj : func.nas Makefile
 	$(NASK) func.nas func.obj func.lst
@@ -61,12 +64,18 @@ helloC.bim : helloC.obj helloCFunc.obj Makefile
 
 helloC.hrb : helloC.bim Makefile
 	$(BIM2HRB) helloC.bim helloC.hrb 0
+	
+crack1.bim : crack1.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:crack1.bim map:crack1.map crack1.obj
+
+crack1.hrb : crack1.bim Makefile
+	$(BIM2HRB) crack1.bim crack1.hrb 0
 
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
 dickos.img : ipl.bin dickos.sys Makefile \
-		hello.hrb helloStr.hrb helloC.hrb
+		hello.hrb helloStr.hrb helloC.hrb crack1.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
 		copy from:dickos.sys to:@: \
@@ -75,6 +84,7 @@ dickos.img : ipl.bin dickos.sys Makefile \
 		copy from:hello.hrb to:@: \
 		copy from:helloStr.hrb to:@: \
 		copy from:helloC.hrb to:@: \
+		copy from:crack1.hrb to:@: \
 		imgout:dickos.img
 
 # 通用规则
