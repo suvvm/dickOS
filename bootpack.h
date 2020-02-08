@@ -415,11 +415,12 @@ void asm_interruptHandler20();
 void asm_interruptHandler21();
 void asm_interruptHandler27();
 void asm_interruptHandler2c();
+void asm_interruptHandler0d();
 unsigned int memtest_sub(unsigned int start, unsigned int end);
 void farJmp(int eip, int cs);
 void asm_dickApi();
 void farCall(int eip, int cs);
-void startApp(int eip, int cs, int esp, int ds);
+void startApp(int eip, int cs, int esp, int ds, int *tssEsp0);
 
 // graphic.c 函数声明
 void init_palette();
@@ -440,6 +441,7 @@ void setGatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 
 // interrupt.c 函数声明
 void init_pic();
+int *interruptHandler0d(int *esp);
 void interruptHandler20(int *esp);
 void interruptHandler21(int *esp);
 void interruptHandler27(int *esp);
@@ -514,6 +516,6 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt);
 void makeTextBox(struct SHEET *sheet, int startX, int startY, int width, int height, int c);
 void makeWindowTitle(unsigned char *buf, int width, char *title, char act);
 void makeWindow(unsigned char *buf, int width, int height, char *title, char act);
-void dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
+int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 
 #endif // BOOTPACK_H
