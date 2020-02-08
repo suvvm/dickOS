@@ -18,7 +18,7 @@
 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
 		GLOBAL	_memtest_sub
 		GLOBAL	_farJmp, _farCall
-		GLOBAL	_asm_dickApi
+		GLOBAL	_asm_dickApi, _startApp
 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
 		EXTERN	_dickApi
 ; 实际的函数
@@ -117,13 +117,38 @@ _asm_interruptHandler20:
 		PUSH	ES
 		PUSH	DS
 		PUSHAD
+		MOV		AX,SS
+		CMP		AX,1*8
+		JNE		.fromApp
+		; 操作系统活动时产生中断
 		MOV		EAX,ESP
+		PUSH	SS
 		PUSH	EAX
 		MOV		AX,SS
 		MOV		DS,AX
 		MOV		ES,AX
 		CALL	_interruptHandler20
+		ADD		ESP,8
+		POPAD
+		POP		DS
+		POP		ES
+		IRETD
+.fromApp:
+		; 应用程序活动时产生中断
+		MOV		EAX,1*8
+		MOV		DS,AX					; DX设为操作系统用
+		MOV		ECX,[0xfe4]				; 读取操作系统ESP
+		ADD		ECX,-8
+		MOV		[ECX+4],SS				; 保存中断时的SS
+		MOV		[ECX],ESP				; 保存中断时的ESP
+		MOV		SS,AX
+		MOV		ES,AX
+		MOV		ESP,ECX
+		CALL	_interruptHandler20
+		POP		ECX
 		POP		EAX
+		MOV		SS,AX					; SS设回应用程序用
+		MOV		ESP,ECX					; ESP设回应用程序用
 		POPAD
 		POP		DS
 		POP		ES
@@ -133,13 +158,38 @@ _asm_interruptHandler21:
 		PUSH	ES
 		PUSH	DS
 		PUSHAD
+		MOV		AX,SS
+		CMP		AX,1*8
+		JNE		.fromApp
+		; 操作系统活动时产生中断
 		MOV		EAX,ESP
+		PUSH	SS
 		PUSH	EAX
 		MOV		AX,SS
 		MOV		DS,AX
 		MOV		ES,AX
 		CALL	_interruptHandler21
+		ADD		ESP,8
+		POPAD
+		POP		DS
+		POP		ES
+		IRETD
+.fromApp:
+		; 应用程序活动时产生中断
+		MOV		EAX,1*8
+		MOV		DS,AX					; DX设为操作系统用
+		MOV		ECX,[0xfe4]				; 读取操作系统ESP
+		ADD		ECX,-8
+		MOV		[ECX+4],SS				; 保存中断时的SS
+		MOV		[ECX],ESP				; 保存中断时的ESP
+		MOV		SS,AX
+		MOV		ES,AX
+		MOV		ESP,ECX
+		CALL	_interruptHandler21
+		POP		ECX
 		POP		EAX
+		MOV		SS,AX					; SS设回应用程序用
+		MOV		ESP,ECX					; ESP设回应用程序用
 		POPAD
 		POP		DS
 		POP		ES
@@ -149,13 +199,38 @@ _asm_interruptHandler27:
 		PUSH	ES
 		PUSH	DS
 		PUSHAD
+		MOV		AX,SS
+		CMP		AX,1*8
+		JNE		.fromApp
+		; 操作系统活动时产生中断
 		MOV		EAX,ESP
+		PUSH	SS
 		PUSH	EAX
 		MOV		AX,SS
 		MOV		DS,AX
 		MOV		ES,AX
 		CALL	_interruptHandler27
+		ADD		ESP,8
+		POPAD
+		POP		DS
+		POP		ES
+		IRETD
+.fromApp:
+		; 应用程序活动时产生中断
+		MOV		EAX,1*8
+		MOV		DS,AX					; DX设为操作系统用
+		MOV		ECX,[0xfe4]				; 读取操作系统ESP
+		ADD		ECX,-8
+		MOV		[ECX+4],SS				; 保存中断时的SS
+		MOV		[ECX],ESP				; 保存中断时的ESP
+		MOV		SS,AX
+		MOV		ES,AX
+		MOV		ESP,ECX
+		CALL	_interruptHandler27
+		POP		ECX
 		POP		EAX
+		MOV		SS,AX					; SS设回应用程序用
+		MOV		ESP,ECX					; ESP设回应用程序用
 		POPAD
 		POP		DS
 		POP		ES
@@ -165,13 +240,38 @@ _asm_interruptHandler2c:
 		PUSH	ES
 		PUSH	DS
 		PUSHAD
+		MOV		AX,SS
+		CMP		AX,1*8
+		JNE		.fromApp
+		; 操作系统活动时产生中断
 		MOV		EAX,ESP
+		PUSH	SS
 		PUSH	EAX
 		MOV		AX,SS
 		MOV		DS,AX
 		MOV		ES,AX
 		CALL	_interruptHandler2c
+		ADD		ESP,8
+		POPAD
+		POP		DS
+		POP		ES
+		IRETD
+.fromApp:
+		; 应用程序活动时产生中断
+		MOV		EAX,1*8
+		MOV		DS,AX					; DX设为操作系统用
+		MOV		ECX,[0xfe4]				; 读取操作系统ESP
+		ADD		ECX,-8
+		MOV		[ECX+4],SS				; 保存中断时的SS
+		MOV		[ECX],ESP				; 保存中断时的ESP
+		MOV		SS,AX
+		MOV		ES,AX
+		MOV		ESP,ECX
+		CALL	_interruptHandler2c
+		POP		ECX
 		POP		EAX
+		MOV		SS,AX					; SS设回应用程序用
+		MOV		ESP,ECX					; ESP设回应用程序用
 		POPAD
 		POP		DS
 		POP		ES
@@ -183,13 +283,52 @@ _asm_interruptHandler2c:
 ; 功能号3	显示指定长度字符串(EBX = 字符串地址)、
 
 _asm_dickApi:
-		STI
-		PUSHAD							; 保存寄存器值
-		PUSHAD							; 向dickApi传值
+; 默认关中断
+		PUSH	DS
+		PUSH	ES
+		PUSHAD							; 保存寄存器的值
+		MOV		EAX,1*8
+		MOV		DS,AX					; 将DS的值设为操作系统用
+		MOV		ECX,[0xfe4]				; 将操作系统的ESP写入ECS
+		ADD		ECX,-40
+		MOV		[ECX+32],ESP			; 保存应用程序的ESP
+		MOV		[ECX+36],SS				; 保存应用程序的SS
+		
+; 将PUSHAD后的值赋值到系统栈
+
+		MOV		EDX,[ESP]
+		MOV		EBX,[ESP+4]
+		MOV		[ECX],EDX				; 向dickApi传递edi
+		MOV		[ECX+4],EBX				; 向dickApi传递esi
+		MOV		EDX,[ESP+8]
+		MOV		EBX,[ESP+12]
+		MOV		[ECX+8],EDX				; 向dickApi传递ebp
+		MOV		[ECX+12],EBX			; 向dickApi传递esp
+		MOV		EDX,[ESP+16]
+		MOV		EBX,[ESP+20]
+		MOV		[ECX+16],EDX			; 向dickApi传递ebx
+		MOV		[ECX+20],EBX			; 向dickApi传递edx
+		MOV		EDX,[ESP+24]
+		MOV		EBX,[ESP+28]
+		MOV		[ECX+24],EDX			; 向dickApi传递ecx
+		MOV		[ECX+28],EBX			; 向dickApi传递eax
+		
+		MOV		ES,AX					; 将剩余段寄存器也设为操作系统使用
+		MOV		SS,AX
+		MOV		ESP,ECX
+		STI								; 开中断
+		
 		CALL	_dickApi
-		ADD		ESP,32
+		
+		MOV		ECX,[ESP+32]			; 取出应用程序ESP
+		MOV		EAX,[ESP+36]			; 取出应用程序SS
+		CLI								; 关中断
+		MOV		SS,AX
+		MOV		ESP,ECX
 		POPAD
-		IRETD
+		POP		ES
+		POP		DS
+		IRETD							; 自动STI
 
 _memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
 		PUSH	EDI
@@ -232,4 +371,37 @@ _farJmp:								; void farJmp(int eip, int cs);
 
 _farCall:								; void farCall(int eip, int cs);
 		CALL	FAR [ESP+4]
+		RET
+		
+_startApp:								; void startApp(int eip, int cs, int esp, int ds);
+		PUSHAD							; 保存当前32位寄存器的值
+		MOV		EAX,[ESP+36]			; EAX中存放eip
+		MOV		ECX,[ESP+40]			; ECX中存放cs
+		MOV		EDX,[ESP+44]			; EDX中存放esp
+		MOV		EBX,[ESP+48]			; EBX中存放ds
+		MOV		[0xfe4],ESP				; 将操作系统栈ESP保存至内存地址0xfe4
+		CLI								; 关中断切换至应用程序
+		MOV		ES,BX
+		MOV		SS,BX
+		MOV		DS,BX
+		MOV		FS,BX
+		MOV		GS,BX
+		MOV		ESP,EDX
+		STI								; 切换完成开中断
+		PUSH	ECX						; farCall的cs
+		PUSH	EAX						; farCall的eip
+		CALL	FAR [ESP]				; 调用应用程序
+		
+; 应用程序结束后返回此处
+
+		MOV		EAX,1*8					; 将操作系统DS/SS写入EAX
+		CLI								; 关中断切换回操作系统
+		MOV		ES,AX
+		MOV		SS,AX
+		MOV		DS,AX
+		MOV		FS,AX
+		MOV		GS,AX
+		MOV		ESP,[0xfe4]				; 在内存指定地址读取操作系统ESP
+		STI								; 切换完成开中断
+		POPAD							; 恢复之前保存的32位寄存器的值
 		RET
