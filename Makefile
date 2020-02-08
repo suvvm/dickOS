@@ -65,8 +65,8 @@ helloC.bim : helloC.obj helloCFunc.obj Makefile
 helloC.hrb : helloC.bim Makefile
 	$(BIM2HRB) helloC.bim helloC.hrb 0
 	
-crack1.bim : crack1.obj Makefile
-	$(OBJ2BIM) @$(RULEFILE) out:crack1.bim map:crack1.map crack1.obj
+crack1.bim : crack1.obj helloCFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:crack1.bim map:crack1.map crack1.obj helloCFunc.obj
 
 crack1.hrb : crack1.bim Makefile
 	$(BIM2HRB) crack1.bim crack1.hrb 0
