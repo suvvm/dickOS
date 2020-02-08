@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.0.5
-* @Date: 2020-02-07
+* @Version: 0.0.7
+* @Date: 2020-02-08
 * @Description: 实现控制台相关函数
 ********************************************************************************/
 
@@ -165,7 +165,7 @@ void cmdDir(struct CONSOLE *console) {
 		}
 		if (fileInfo[i].name[0] != 0xe5) {	// 文件未被删除
 			if ((fileInfo[i].type & 0x18) == 0) {	// 非目录信息
-				sprintf(s, "fileName.ext    %7d", fileInfo[i].size);
+				sprintf(s, "fileName.ext    %7d\n", fileInfo[i].size);
 				for (j = 0; j < 8; j++) {	// 文件名
 					s[j] = fileInfo[i].name[j];
 				}
@@ -242,8 +242,24 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 	
 	if (fileInfo != 0) {	// 文件存在
 		p = (char *) memsegAlloc4K(memsegtable, fileInfo->size);	// 为文件在内存中分配缓冲区
+		*((int *) 0xfe8) = (int) p;	// 将p的地址存入内存0xfe8的位置以供dickApi使用
 		loadFile(fileInfo->clusterNum, fileInfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));	// 读取文件内容至内存缓冲区
 		setSegmdesc(gdt + 1003, fileInfo->size - 1, (int) p, AR_CODE32_ER);
+		/*
+			将汇编指令
+			[BITS 32]
+					CALL	0x1b
+					RETF
+			编译后的结果 替换文件首6位 （先调用0x1b位置的Main函数 返回后执行far RET 返回控制台）
+		*/
+		if (fileInfo->size >= 8 && strncmp(p + 4, "Hari", 4) == 0) {
+			p[0] = 0xe8;
+			p[1] = 0x16;
+			p[2] = 0x00;
+			p[3] = 0x00;
+			p[4] = 0x00;
+			p[5] = 0xcb;
+		}
 		farCall(0, 1003 * 8);	// 调用另一段的函数
 		memsegFree4K(memsegtable, (int) p, fileInfo->size);	// 释放文件缓冲区内存
 		consoleNewLine(console);
@@ -274,11 +290,6 @@ void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned i
 		cmdType(console, fat, cmdline);
 	} else if (cmdline[0] != 0) {	// 不是指令 不是空行
 		if (cmdApp(console, fat, cmdline) == 0) {	// 不是应用程序
-			/*
-			putFont8AscSheet(console->sheet, 8, console->cursorY, COL8_FFFFFF, COL8_000000, "command not found", 17);
-			consoleNewLine(console);
-			consoleNewLine(console);
-			*/
 			consolePutstr0(console, "command not found\n\n");
 		}
 	}
@@ -385,13 +396,14 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 *
 **********************************************************/
 void dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax) {
+	int csBase = *((int *) 0xfe8);	// 获取应用程序文件所在内存地址
 	struct CONSOLE *console = (struct CONSOLE *) *((int *) 0x0fec);	// 在指定内存地址获取控制台信息
 	if (edx == 1) {	// 功能号1 显示单个字符
 		consolePutchar(console, eax & 0xff, 1); 	// AL中存放字符ascii码
 	} else if (edx == 2) {	// 功能号2 显示字符串到0为止
-		consolePutstr0(console, (char *) ebx);	// ebx 中存放字符串首地址
+		consolePutstr0(console, (char *) ebx + csBase);	// ebx  + csBase中存放msg字符串首地址
 	} else if (edx == 3) {	// 功能号3 显示指定长度字符串
-		consolePutstr1(console, (char *) ebx, ecx);	// ebx 中存放字符串首地址 ecx中存放长度
+		consolePutstr1(console, (char *) ebx + csBase, ecx);	// ebx  + csBase中存放msg字符串首地址 ecx中存放长度
 	}
 }
 
