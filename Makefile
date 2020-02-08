@@ -30,12 +30,9 @@ asmhead.bin : asmhead.nas Makefile
 	
 bootpack.gas : bootpack.c Makefile
 	$(CC1) -o bootpack.gas bootpack.c
-
-bootpack.nas : bootpack.gas Makefile
-	$(GAS2NASK) bootpack.gas bootpack.nas
-
-bootpack.obj : bootpack.nas Makefile
-	$(NASK) bootpack.nas bootpack.obj bootpack.lst
+	
+helloC.gas : helloC.c Makefile
+	$(CC1) -o helloC.gas helloC.c
 
 func.obj : func.nas Makefile
 	$(NASK) func.nas func.obj func.lst
@@ -56,17 +53,36 @@ bootpack.hrb : bootpack.bim Makefile
 hello.hrb : hello.nas Makefile
 	$(NASK) hello.nas hello.hrb hello.lst
 
+helloStr.hrb : helloStr.nas Makefile
+	$(NASK) helloStr.nas helloStr.hrb helloStr.lst
+
+helloC.bim : helloC.obj helloCFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:helloC.bim map:helloC.map helloC.obj helloCFunc.obj
+
+helloC.hrb : helloC.bim Makefile
+	$(BIM2HRB) helloC.bim helloC.hrb 0
+
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
-dickos.img : ipl.bin dickos.sys hello.hrb Makefile
+dickos.img : ipl.bin dickos.sys Makefile \
+		hello.hrb helloStr.hrb helloC.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
 		copy from:dickos.sys to:@: \
 		copy from:ipl.nas to:@: \
 		copy from:make.bat to:@: \
 		copy from:hello.hrb to:@: \
+		copy from:helloStr.hrb to:@: \
+		copy from:helloC.hrb to:@: \
 		imgout:dickos.img
+
+# 通用规则
+%.nas : %.gas Makefile
+	$(GAS2NASK) $*.gas $*.nas
+	
+%.obj : %.nas Makefile
+	$(NASK) $*.nas $*.obj $*.lst
 
 # 命令
 
@@ -87,11 +103,9 @@ clean :
 	-$(DEL) *.lst
 	-$(DEL) *.gas
 	-$(DEL) *.obj
-	-$(DEL) bootpack.nas
-	-$(DEL) bootpack.map
-	-$(DEL) bootpack.bim
-	-$(DEL) bootpack.hrb
-	-$(DEL) hello.hrb
+	-$(DEL) *.map
+	-$(DEL) *.bim
+	-$(DEL) *.hrb
 	-$(DEL) dickos.sys
 
 src_only :
