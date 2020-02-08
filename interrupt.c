@@ -138,10 +138,11 @@ void interruptHandler20(int *esp) {
 * 	@esp	接收指针的值	int *esp
 *
 **********************************************************/
-int interruptHandler0d(int *esp) {
+int *interruptHandler0d(int *esp) {
 	struct CONSOLE *console = (struct CONSOLE *) *((int *)0x0fec);	// 在内存中获取控制台信息
+	struct PCB *process = processNow();
 	consolePutstr0(console, "\nINT 0D :\n General Protected Exception.\n");
-	return 1;
+	return &(process->tss.esp0);	// 让程序强制结束
 }
 
 #endif // INTERRUPT_C
