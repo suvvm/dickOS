@@ -1,0 +1,8 @@
+     1 00000000                                 [INSTRSET "i486p"]
+     2 00000000                                 [BITS 32]
+     3 00000000 BA 00000002                     		MOV		EDX,2
+     4 00000005 BB 0000000D                     		MOV		EBX,msg
+     5 0000000A CD 40                           		INT		0x40
+     6 0000000C CB                              		RETF
+     7 0000000D                                 msg:
+     8 0000000D 68 65 6C 6C 6F 00               		DB	"hello",0
