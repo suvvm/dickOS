@@ -16,220 +16,281 @@
     16 00000000                                 		GLOBAL	_loadCr0, _storeCr0
     17 00000000                                 		GLOBAL	_loadTr
     18 00000000                                 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
-    19 00000000                                 		GLOBAL	_memtest_sub
-    20 00000000                                 		GLOBAL	_farJmp, _farCall
-    21 00000000                                 		GLOBAL	_asm_dickApi
-    22 00000000                                 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
-    23 00000000                                 		EXTERN	_dickApi
-    24 00000000                                 ; 实际的函数
-    25 00000000                                 
-    26                                          [SECTION .text]					; 目标文件中写了这些后再写程序
+    19 00000000                                 		GLOBAL	_asm_interruptHandler0d
+    20 00000000                                 		GLOBAL	_memtest_sub
+    21 00000000                                 		GLOBAL	_farJmp, _farCall
+    22 00000000                                 		GLOBAL	_asm_dickApi, _startApp
+    23 00000000                                 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
+    24 00000000                                 		EXTERN	_interruptHandler0d
+    25 00000000                                 		EXTERN	_dickApi
+    26 00000000                                 ; 实际的函数
     27 00000000                                 
-    28 00000000                                 _io_hlt:						; void io_hlt();
-    29 00000000 F4                              		HLT
-    30 00000001 C3                              		RET
-    31 00000002                                 
-    32 00000002                                 _io_cli:						; void io_cli();
-    33 00000002 FA                              		CLI
-    34 00000003 C3                              		RET
-    35 00000004                                 
-    36 00000004                                 _io_sti:						; void io_sti();
-    37 00000004 FB                              		STI
-    38 00000005 C3                              		RET
-    39 00000006                                 		
-    40 00000006                                 _io_stihlt:						; void io_stihlt();
-    41 00000006 FB                              		STI
-    42 00000007 F4                              		HLT
-    43 00000008 C3                              		RET
-    44 00000009                                 		
-    45 00000009                                 _io_in8:						; void io_in8(int port);
-    46 00000009 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
-    47 0000000D B8 00000000                     		MOV		EAX,0
-    48 00000012 EC                              		IN		AL,DX			; 从DX端口读取一字节数据到AL
-    49 00000013 C3                              		RET
-    50 00000014                                 		
-    51 00000014                                 _io_in16:						; void io_in16(int port);
-    52 00000014 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
-    53 00000018 B8 00000000                     		MOV		EAX,0
-    54 0000001D 66 ED                           		IN		AX,DX			; 从DX端口读取一字节数据到AX
-    55 0000001F C3                              		RET
-    56 00000020                                 		
-    57 00000020                                 _io_in32:						; void io_in8(int port);
-    58 00000020 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
-    59 00000024 ED                              		IN		EAX,DX			; 从DX端口读取一字节数据到EAX
-    60 00000025 C3                              		RET
-    61 00000026                                 
-    62 00000026                                 _io_out8:						; void io_out8(int port, int data);
-    63 00000026 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口port
-    64 0000002A 8A 44 24 08                     		MOV		AL,[ESP+8]		; 数据data
-    65 0000002E EE                              		OUT		DX,AL			; 将AL值写入端口
-    66 0000002F C3                              		RET
-    67 00000030                                 		
-    68 00000030                                 _io_out16:						; void io_out16(int port, int data);
-    69 00000030 8B 54 24 04                     		MOV 	EDX,[ESP+4]		; 端口port
-    70 00000034 8B 44 24 08                     		MOV		EAX,[ESP+8]		; 数据data
-    71 00000038 66 EF                           		OUT		DX,AX			; 将AL值写入端口
-    72 0000003A C3                              		RET
-    73 0000003B                                 		
-    74 0000003B                                 _io_out32:						; void io_out32(int port, int data);
-    75 0000003B 8B 54 24 04                     		MOV 	EDX,[ESP+4]		; 端口port
-    76 0000003F 8B 44 24 08                     		MOV		EAX,[ESP+8]		; 数据data
-    77 00000043 EF                              		OUT		DX,EAX			; 将AL值写入端口
-    78 00000044 C3                              		RET
-    79 00000045                                 		
-    80 00000045                                 _io_load_eflags:				; int io_load_eflags(void); 读取eflags
-    81 00000045 9C                              		PUSHFD					; PUSH EFLAGS
-    82 00000046 58                              		POP		EAX
-    83 00000047 C3                              		RET
-    84 00000048                                 
-    85 00000048                                 _io_store_eflags:				; void io_store_eflags(int eflags); 写入eflags
-    86 00000048 8B 44 24 04                     		MOV		EAX,[ESP+4]
-    87 0000004C 50                              		PUSH		EAX
-    88 0000004D 9D                              		POPFD					; POP EFLAGS
-    89 0000004E C3                              		RET
-    90 0000004F                                 		
-    91 0000004F                                 _loadGdtr:						; void loadGdtr(int limit, int addr); 将指定段的上限和地址赋值给寄存器GDTR
-    92 0000004F 66 8B 44 24 04                  		MOV		AX,[ESP+4]
-    93 00000054 66 89 44 24 06                  		MOV		[ESP+6],AX
-    94 00000059 0F 01 54 24 06                  		LGDT	[ESP+6]
-    95 0000005E C3                              		RET
-    96 0000005F                                 		
-    97 0000005F                                 _loadIdtr:						; void loadIdtr(int limit, int  addr);
-    98 0000005F 66 8B 44 24 04                  		MOV		AX,[ESP+4]
-    99 00000064 66 89 44 24 06                  		MOV		[ESP+6],AX
-   100 00000069 0F 01 5C 24 06                  		LIDT	[ESP+6]
-   101 0000006E C3                              		RET
-   102 0000006F                                 		
-   103 0000006F                                 _loadCr0:						; int loadCr0; 读取cr0寄存器
-   104 0000006F 0F 20 C0                        		MOV		EAX,CR0
-   105 00000072 C3                              		RET
-   106 00000073                                 		
-   107 00000073                                 _storeCr0:						; void storeCr0(int cr0) 写入cr0寄存器
-   108 00000073 8B 44 24 04                     		MOV		EAX,[ESP+4]
-   109 00000077 0F 22 C0                        		MOV		CR0,EAX
-   110 0000007A C3                              		RET
-   111 0000007B                                 
-   112 0000007B                                 _loadTr:						; void loadTr(int tr) 为TR寄存器赋值
-   113 0000007B 0F 00 5C 24 04                  		LTR		[ESP+4]
-   114 00000080 C3                              		RET
-   115 00000081                                 		
-   116 00000081                                 _asm_interruptHandler20:
-   117 00000081 06                              		PUSH	ES
-   118 00000082 1E                              		PUSH	DS
-   119 00000083 60                              		PUSHAD
-   120 00000084 89 E0                           		MOV		EAX,ESP
-   121 00000086 50                              		PUSH	EAX
-   122 00000087 66 8C D0                        		MOV		AX,SS
-   123 0000008A 8E D8                           		MOV		DS,AX
-   124 0000008C 8E C0                           		MOV		ES,AX
-   125 0000008E E8 [00000000]                   		CALL	_interruptHandler20
-   126 00000093 58                              		POP		EAX
-   127 00000094 61                              		POPAD
-   128 00000095 1F                              		POP		DS
-   129 00000096 07                              		POP		ES
-   130 00000097 CF                              		IRETD
-   131 00000098                                 		
-   132 00000098                                 _asm_interruptHandler21:
-   133 00000098 06                              		PUSH	ES
-   134 00000099 1E                              		PUSH	DS
-   135 0000009A 60                              		PUSHAD
-   136 0000009B 89 E0                           		MOV		EAX,ESP
-   137 0000009D 50                              		PUSH	EAX
-   138 0000009E 66 8C D0                        		MOV		AX,SS
-   139 000000A1 8E D8                           		MOV		DS,AX
-   140 000000A3 8E C0                           		MOV		ES,AX
-   141 000000A5 E8 [00000000]                   		CALL	_interruptHandler21
-   142 000000AA 58                              		POP		EAX
-   143 000000AB 61                              		POPAD
-   144 000000AC 1F                              		POP		DS
-   145 000000AD 07                              		POP		ES
-   146 000000AE CF                              		IRETD
-   147 000000AF                                 
-   148 000000AF                                 _asm_interruptHandler27:
-   149 000000AF 06                              		PUSH	ES
-   150 000000B0 1E                              		PUSH	DS
-   151 000000B1 60                              		PUSHAD
-   152 000000B2 89 E0                           		MOV		EAX,ESP
-   153 000000B4 50                              		PUSH	EAX
-   154 000000B5 66 8C D0                        		MOV		AX,SS
-   155 000000B8 8E D8                           		MOV		DS,AX
-   156 000000BA 8E C0                           		MOV		ES,AX
-   157 000000BC E8 [00000000]                   		CALL	_interruptHandler27
-   158 000000C1 58                              		POP		EAX
-   159 000000C2 61                              		POPAD
-   160 000000C3 1F                              		POP		DS
-   161 000000C4 07                              		POP		ES
-   162 000000C5 CF                              		IRETD
-   163 000000C6                                 
-   164 000000C6                                 _asm_interruptHandler2c:
-   165 000000C6 06                              		PUSH	ES
-   166 000000C7 1E                              		PUSH	DS
-   167 000000C8 60                              		PUSHAD
-   168 000000C9 89 E0                           		MOV		EAX,ESP
-   169 000000CB 50                              		PUSH	EAX
-   170 000000CC 66 8C D0                        		MOV		AX,SS
-   171 000000CF 8E D8                           		MOV		DS,AX
-   172 000000D1 8E C0                           		MOV		ES,AX
-   173 000000D3 E8 [00000000]                   		CALL	_interruptHandler2c
-   174 000000D8 58                              		POP		EAX
-   175 000000D9 61                              		POPAD
-   176 000000DA 1F                              		POP		DS
-   177 000000DB 07                              		POP		ES
-   178 000000DC CF                              		IRETD
-   179 000000DD                                 
-   180 000000DD                                 ; 在寄存器EDX中存入功能号，可以通过INT调用不同函数
-   181 000000DD                                 ; 功能号1	显示单个字符(AL = 字符ascii码)
-   182 000000DD                                 ; 功能号2	显示字符串到0截止(EBX = 字符串地址)
-   183 000000DD                                 ; 功能号3	显示指定长度字符串(EBX = 字符串地址)、
-   184 000000DD                                 
-   185 000000DD                                 _asm_dickApi:
-   186 000000DD FB                              		STI
-   187 000000DE 60                              		PUSHAD							; 保存寄存器值
-   188 000000DF 60                              		PUSHAD							; 向dickApi传值
-   189 000000E0 E8 [00000000]                   		CALL	_dickApi
-   190 000000E5 83 C4 20                        		ADD		ESP,32
-   191 000000E8 61                              		POPAD
-   192 000000E9 CF                              		IRETD
-   193 000000EA                                 
-   194 000000EA                                 _memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
-   195 000000EA 57                              		PUSH	EDI
-   196 000000EB 56                              		PUSH	ESI
-   197 000000EC 53                              		PUSH	EBX						; 由于要使用这些寄存器，保存以上三个寄存器的值
-   198 000000ED BE AA55AA55                     		MOV		ESI,0xaa55aa55			; pat0 = 0xaa55aa55;
-   199 000000F2 BF 55AA55AA                     		MOV		EDI,0x55aa55aa			; pat1 = 0x55aa55aa;
-   200 000000F7 8B 44 24 10                     		MOV		EAX,[ESP+12+4]			; i = start; 由于EAX是通用寄存器，不需要保存（EBX是32位基址寄存器，需要保存）当然保存也没问题
-   201 000000FB                                 		
-   202 000000FB                                 mts_loop:
-   203 000000FB 89 C3                           		MOV		EBX,EAX
-   204 000000FD 81 C3 00000FFC                  		ADD		EBX,0xffc				; p = i + 0xffc;
-   205 00000103 8B 13                           		MOV		EDX,[EBX]				; old = *p;
-   206 00000105 89 33                           		MOV		[EBX],ESI				; *p = pat0;
-   207 00000107 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
-   208 0000010A 3B 3B                           		CMP		EDI,[EBX]				; if(pat1 != *p) 
-   209 0000010C 75 18                           		JNE		mts_fin					; goto mts_fin;
-   210 0000010E 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
-   211 00000111 3B 33                           		CMP		ESI,[EBX]				; if(pat0 != *p)
-   212 00000113 75 11                           		JNE		mts_fin					; goto mts_fin;
-   213 00000115 89 13                           		MOV		[EBX],EDX				; *p = old;
-   214 00000117 05 00001000                     		ADD 	EAX,0x1000				; i += 0x1000;
-   215 0000011C 3B 44 24 14                     		CMP		EAX,[ESP+12+8]			; if(i <= end)
-   216 00000120 76 D9                           		JBE		mts_loop				; goto mts_loop;
-   217 00000122 5B                              		POP		EBX
-   218 00000123 5E                              		POP		ESI
-   219 00000124 5F                              		POP		EDI
-   220 00000125 C3                              		RET
-   221 00000126                                 		
-   222 00000126                                 mts_fin:
-   223 00000126 89 13                           		MOV		[EBX],EDX				; *p = old;
-   224 00000128 5B                              		POP		EBX
-   225 00000129 5E                              		POP		ESI
-   226 0000012A 5F                              		POP		EDI
-   227 0000012B C3                              		RET
-   228 0000012C                                 
-   229 0000012C                                 _farJmp:								; void farJmp(int eip, int cs);
-   230 0000012C FF 6C 24 04                     		JMP		FAR [ESP+4]
-   231 00000130 C3                              		RET
-   232 00000131                                 
-   233 00000131                                 _farCall:								; void farCall(int eip, int cs);
-   234 00000131 FF 5C 24 04                     		CALL	FAR [ESP+4]
-   235 00000135 C3                              		RET
+    28                                          [SECTION .text]					; 目标文件中写了这些后再写程序
+    29 00000000                                 
+    30 00000000                                 _io_hlt:						; void io_hlt();
+    31 00000000 F4                              		HLT
+    32 00000001 C3                              		RET
+    33 00000002                                 
+    34 00000002                                 _io_cli:						; void io_cli();
+    35 00000002 FA                              		CLI
+    36 00000003 C3                              		RET
+    37 00000004                                 
+    38 00000004                                 _io_sti:						; void io_sti();
+    39 00000004 FB                              		STI
+    40 00000005 C3                              		RET
+    41 00000006                                 		
+    42 00000006                                 _io_stihlt:						; void io_stihlt();
+    43 00000006 FB                              		STI
+    44 00000007 F4                              		HLT
+    45 00000008 C3                              		RET
+    46 00000009                                 		
+    47 00000009                                 _io_in8:						; void io_in8(int port);
+    48 00000009 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
+    49 0000000D B8 00000000                     		MOV		EAX,0
+    50 00000012 EC                              		IN		AL,DX			; 从DX端口读取一字节数据到AL
+    51 00000013 C3                              		RET
+    52 00000014                                 		
+    53 00000014                                 _io_in16:						; void io_in16(int port);
+    54 00000014 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
+    55 00000018 B8 00000000                     		MOV		EAX,0
+    56 0000001D 66 ED                           		IN		AX,DX			; 从DX端口读取一字节数据到AX
+    57 0000001F C3                              		RET
+    58 00000020                                 		
+    59 00000020                                 _io_in32:						; void io_in8(int port);
+    60 00000020 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口
+    61 00000024 ED                              		IN		EAX,DX			; 从DX端口读取一字节数据到EAX
+    62 00000025 C3                              		RET
+    63 00000026                                 
+    64 00000026                                 _io_out8:						; void io_out8(int port, int data);
+    65 00000026 8B 54 24 04                     		MOV		EDX,[ESP+4]		; 端口port
+    66 0000002A 8A 44 24 08                     		MOV		AL,[ESP+8]		; 数据data
+    67 0000002E EE                              		OUT		DX,AL			; 将AL值写入端口
+    68 0000002F C3                              		RET
+    69 00000030                                 		
+    70 00000030                                 _io_out16:						; void io_out16(int port, int data);
+    71 00000030 8B 54 24 04                     		MOV 	EDX,[ESP+4]		; 端口port
+    72 00000034 8B 44 24 08                     		MOV		EAX,[ESP+8]		; 数据data
+    73 00000038 66 EF                           		OUT		DX,AX			; 将AL值写入端口
+    74 0000003A C3                              		RET
+    75 0000003B                                 		
+    76 0000003B                                 _io_out32:						; void io_out32(int port, int data);
+    77 0000003B 8B 54 24 04                     		MOV 	EDX,[ESP+4]		; 端口port
+    78 0000003F 8B 44 24 08                     		MOV		EAX,[ESP+8]		; 数据data
+    79 00000043 EF                              		OUT		DX,EAX			; 将AL值写入端口
+    80 00000044 C3                              		RET
+    81 00000045                                 		
+    82 00000045                                 _io_load_eflags:				; int io_load_eflags(void); 读取eflags
+    83 00000045 9C                              		PUSHFD					; PUSH EFLAGS
+    84 00000046 58                              		POP		EAX
+    85 00000047 C3                              		RET
+    86 00000048                                 
+    87 00000048                                 _io_store_eflags:				; void io_store_eflags(int eflags); 写入eflags
+    88 00000048 8B 44 24 04                     		MOV		EAX,[ESP+4]
+    89 0000004C 50                              		PUSH		EAX
+    90 0000004D 9D                              		POPFD					; POP EFLAGS
+    91 0000004E C3                              		RET
+    92 0000004F                                 		
+    93 0000004F                                 _loadGdtr:						; void loadGdtr(int limit, int addr); 将指定段的上限和地址赋值给寄存器GDTR
+    94 0000004F 66 8B 44 24 04                  		MOV		AX,[ESP+4]
+    95 00000054 66 89 44 24 06                  		MOV		[ESP+6],AX
+    96 00000059 0F 01 54 24 06                  		LGDT	[ESP+6]
+    97 0000005E C3                              		RET
+    98 0000005F                                 		
+    99 0000005F                                 _loadIdtr:						; void loadIdtr(int limit, int  addr);
+   100 0000005F 66 8B 44 24 04                  		MOV		AX,[ESP+4]
+   101 00000064 66 89 44 24 06                  		MOV		[ESP+6],AX
+   102 00000069 0F 01 5C 24 06                  		LIDT	[ESP+6]
+   103 0000006E C3                              		RET
+   104 0000006F                                 		
+   105 0000006F                                 _loadCr0:						; int loadCr0; 读取cr0寄存器
+   106 0000006F 0F 20 C0                        		MOV		EAX,CR0
+   107 00000072 C3                              		RET
+   108 00000073                                 		
+   109 00000073                                 _storeCr0:						; void storeCr0(int cr0) 写入cr0寄存器
+   110 00000073 8B 44 24 04                     		MOV		EAX,[ESP+4]
+   111 00000077 0F 22 C0                        		MOV		CR0,EAX
+   112 0000007A C3                              		RET
+   113 0000007B                                 
+   114 0000007B                                 _loadTr:						; void loadTr(int tr) 为TR寄存器赋值
+   115 0000007B 0F 00 5C 24 04                  		LTR		[ESP+4]
+   116 00000080 C3                              		RET
+   117 00000081                                 		
+   118 00000081                                 _asm_interruptHandler20:
+   119 00000081 06                              		PUSH	ES
+   120 00000082 1E                              		PUSH	DS
+   121 00000083 60                              		PUSHAD
+   122 00000084 89 E0                           		MOV		EAX,ESP
+   123 00000086 50                              		PUSH	EAX
+   124 00000087 66 8C D0                        		MOV		AX,SS
+   125 0000008A 8E D8                           		MOV		DS,AX
+   126 0000008C 8E C0                           		MOV		ES,AX
+   127 0000008E E8 [00000000]                   		CALL	_interruptHandler20
+   128 00000093 58                              		POP		EAX
+   129 00000094 61                              		POPAD
+   130 00000095 1F                              		POP		DS
+   131 00000096 07                              		POP		ES
+   132 00000097 CF                              		IRETD
+   133 00000098                                 		
+   134 00000098                                 _asm_interruptHandler21:
+   135 00000098 06                              		PUSH	ES
+   136 00000099 1E                              		PUSH	DS
+   137 0000009A 60                              		PUSHAD
+   138 0000009B 89 E0                           		MOV		EAX,ESP
+   139 0000009D 50                              		PUSH	EAX
+   140 0000009E 66 8C D0                        		MOV		AX,SS
+   141 000000A1 8E D8                           		MOV		DS,AX
+   142 000000A3 8E C0                           		MOV		ES,AX
+   143 000000A5 E8 [00000000]                   		CALL	_interruptHandler21
+   144 000000AA 58                              		POP		EAX
+   145 000000AB 61                              		POPAD
+   146 000000AC 1F                              		POP		DS
+   147 000000AD 07                              		POP		ES
+   148 000000AE CF                              		IRETD
+   149 000000AF                                 
+   150 000000AF                                 _asm_interruptHandler27:
+   151 000000AF 06                              		PUSH	ES
+   152 000000B0 1E                              		PUSH	DS
+   153 000000B1 60                              		PUSHAD
+   154 000000B2 89 E0                           		MOV		EAX,ESP
+   155 000000B4 50                              		PUSH	EAX
+   156 000000B5 66 8C D0                        		MOV		AX,SS
+   157 000000B8 8E D8                           		MOV		DS,AX
+   158 000000BA 8E C0                           		MOV		ES,AX
+   159 000000BC E8 [00000000]                   		CALL	_interruptHandler27
+   160 000000C1 58                              		POP		EAX
+   161 000000C2 61                              		POPAD
+   162 000000C3 1F                              		POP		DS
+   163 000000C4 07                              		POP		ES
+   164 000000C5 CF                              		IRETD
+   165 000000C6                                 
+   166 000000C6                                 _asm_interruptHandler2c:
+   167 000000C6 06                              		PUSH	ES
+   168 000000C7 1E                              		PUSH	DS
+   169 000000C8 60                              		PUSHAD
+   170 000000C9 89 E0                           		MOV		EAX,ESP
+   171 000000CB 50                              		PUSH	EAX
+   172 000000CC 66 8C D0                        		MOV		AX,SS
+   173 000000CF 8E D8                           		MOV		DS,AX
+   174 000000D1 8E C0                           		MOV		ES,AX
+   175 000000D3 E8 [00000000]                   		CALL	_interruptHandler2c
+   176 000000D8 58                              		POP		EAX
+   177 000000D9 61                              		POPAD
+   178 000000DA 1F                              		POP		DS
+   179 000000DB 07                              		POP		ES
+   180 000000DC CF                              		IRETD
+   181 000000DD                                 
+   182 000000DD                                 _asm_interruptHandler0d:
+   183 000000DD FB                              		STI								; 开中断
+   184 000000DE 06                              		PUSH	ES
+   185 000000DF 1E                              		PUSH	DS
+   186 000000E0 60                              		PUSHAD
+   187 000000E1 89 E0                           		MOV		EAX,ESP
+   188 000000E3 50                              		PUSH	EAX
+   189 000000E4 66 8C D0                        		MOV		AX,SS
+   190 000000E7 8E D8                           		MOV		DS,AX
+   191 000000E9 8E C0                           		MOV		ES,AX
+   192 000000EB E8 [00000000]                   		CALL	_interruptHandler0d
+   193 000000F0 83 F8 00                        		CMP		EAX,0
+   194 000000F3 75 25                           		JNE		endApp
+   195 000000F5 58                              		POP		EAX
+   196 000000F6 61                              		POPAD
+   197 000000F7 1F                              		POP		DS
+   198 000000F8 07                              		POP		ES
+   199 000000F9 83 C4 04                        		ADD		ESP,4
+   200 000000FC CF                              		IRETD
+   201 000000FD                                 
+   202 000000FD                                 ; 在寄存器EDX中存入功能号，可以通过INT调用不同函数
+   203 000000FD                                 ; 功能号1	显示单个字符(AL = 字符ascii码)
+   204 000000FD                                 ; 功能号2	显示字符串到0截止(EBX = 字符串地址)
+   205 000000FD                                 ; 功能号3	显示指定长度字符串(EBX = 字符串地址)
+   206 000000FD                                 ; 功能号4	结束应用程序
+   207 000000FD                                 ; dickApi返回0时继续运行应用程序，返回非0时当做TSS.esp0的地址处理，强制结束应用程序
+   208 000000FD                                 
+   209 000000FD                                 _asm_dickApi:
+   210 000000FD FB                              		STI
+   211 000000FE 1E                              		PUSH	DS
+   212 000000FF 06                              		PUSH	ES
+   213 00000100 60                              		PUSHAD							; 保存寄存器的值
+   214 00000101 60                              		PUSHAD							; 向dickApi传值
+   215 00000102 66 8C D0                        		MOV		AX,SS
+   216 00000105 8E D8                           		MOV		DS,AX					; 将操作系统用段地址存入DS和ES
+   217 00000107 8E C0                           		MOV		ES,AX
+   218 00000109 E8 [00000000]                   		CALL	_dickApi
+   219 0000010E 83 F8 00                        		CMP		EAX,0					; EAX不为0时程序结束
+   220 00000111 75 07                           		JNE		endApp
+   221 00000113 83 C4 20                        		ADD		ESP,32
+   222 00000116 61                              		POPAD
+   223 00000117 07                              		POP		ES
+   224 00000118 1F                              		POP		DS
+   225 00000119 CF                              		IRETD							; 自动STI
+   226 0000011A                                 endApp:
+   227 0000011A                                 ; EAX为TSS.esp0的地址
+   228 0000011A 8B 20                           		MOV		ESP,[EAX]
+   229 0000011C 61                              		POPAD
+   230 0000011D C3                              		RET								; 返回cmdApp
+   231 0000011E                                 
+   232 0000011E                                 _memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
+   233 0000011E 57                              		PUSH	EDI
+   234 0000011F 56                              		PUSH	ESI
+   235 00000120 53                              		PUSH	EBX						; 由于要使用这些寄存器，保存以上三个寄存器的值
+   236 00000121 BE AA55AA55                     		MOV		ESI,0xaa55aa55			; pat0 = 0xaa55aa55;
+   237 00000126 BF 55AA55AA                     		MOV		EDI,0x55aa55aa			; pat1 = 0x55aa55aa;
+   238 0000012B 8B 44 24 10                     		MOV		EAX,[ESP+12+4]			; i = start; 由于EAX是通用寄存器，不需要保存（EBX是32位基址寄存器，需要保存）当然保存也没问题
+   239 0000012F                                 		
+   240 0000012F                                 mts_loop:
+   241 0000012F 89 C3                           		MOV		EBX,EAX
+   242 00000131 81 C3 00000FFC                  		ADD		EBX,0xffc				; p = i + 0xffc;
+   243 00000137 8B 13                           		MOV		EDX,[EBX]				; old = *p;
+   244 00000139 89 33                           		MOV		[EBX],ESI				; *p = pat0;
+   245 0000013B 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
+   246 0000013E 3B 3B                           		CMP		EDI,[EBX]				; if(pat1 != *p) 
+   247 00000140 75 18                           		JNE		mts_fin					; goto mts_fin;
+   248 00000142 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
+   249 00000145 3B 33                           		CMP		ESI,[EBX]				; if(pat0 != *p)
+   250 00000147 75 11                           		JNE		mts_fin					; goto mts_fin;
+   251 00000149 89 13                           		MOV		[EBX],EDX				; *p = old;
+   252 0000014B 05 00001000                     		ADD 	EAX,0x1000				; i += 0x1000;
+   253 00000150 3B 44 24 14                     		CMP		EAX,[ESP+12+8]			; if(i <= end)
+   254 00000154 76 D9                           		JBE		mts_loop				; goto mts_loop;
+   255 00000156 5B                              		POP		EBX
+   256 00000157 5E                              		POP		ESI
+   257 00000158 5F                              		POP		EDI
+   258 00000159 C3                              		RET
+   259 0000015A                                 		
+   260 0000015A                                 mts_fin:
+   261 0000015A 89 13                           		MOV		[EBX],EDX				; *p = old;
+   262 0000015C 5B                              		POP		EBX
+   263 0000015D 5E                              		POP		ESI
+   264 0000015E 5F                              		POP		EDI
+   265 0000015F C3                              		RET
+   266 00000160                                 
+   267 00000160                                 _farJmp:								; void farJmp(int eip, int cs);
+   268 00000160 FF 6C 24 04                     		JMP		FAR [ESP+4]
+   269 00000164 C3                              		RET
+   270 00000165                                 
+   271 00000165                                 _farCall:								; void farCall(int eip, int cs);
+   272 00000165 FF 5C 24 04                     		CALL	FAR [ESP+4]
+   273 00000169 C3                              		RET
+   274 0000016A                                 		
+   275 0000016A                                 _startApp:								; void startApp(int eip, int cs, int esp, int ds, int *tssEsp0);
+   276 0000016A 60                              		PUSHAD							; 保存当前32位寄存器的值
+   277 0000016B 8B 44 24 24                     		MOV		EAX,[ESP+36]			; EAX中存放eip
+   278 0000016F 8B 4C 24 28                     		MOV		ECX,[ESP+40]			; ECX中存放cs
+   279 00000173 8B 54 24 2C                     		MOV		EDX,[ESP+44]			; EDX中存放esp
+   280 00000177 8B 5C 24 30                     		MOV		EBX,[ESP+48]			; EBX中存放ds
+   281 0000017B 8B 6C 24 34                     		MOV		EBP,[ESP+52]			; TSS.esp0的地址
+   282 0000017F 89 65 00                        		MOV		[EBP],ESP				; 保存操作系统ESP
+   283 00000182 8C 55 04                        		MOV		[EBP+4],SS				; 保存操作系统SS
+   284 00000185 8E C3                           		MOV		ES,BX
+   285 00000187 8E DB                           		MOV		DS,BX
+   286 00000189 8E E3                           		MOV		FS,BX
+   287 0000018B 8E EB                           		MOV		GS,BX
+   288 0000018D                                 ; 调整栈，以免RETF跳转至应用程序
+   289 0000018D 83 C9 03                        		OR		ECX,3					; 将应用程序用的段号和3进行OR运算
+   290 00000190 83 CB 03                        		OR		EBX,3					; 将应用程序用的段号和3进行OR运算
+   291 00000193 53                              		PUSH	EBX						; 应用程序ss
+   292 00000194 52                              		PUSH	EDX						; 应用程序esp
+   293 00000195 51                              		PUSH	ECX						; 应用程序cs
+   294 00000196 50                              		PUSH	EAX						; 应用程序eip
+   295 00000197 CB                              		RETF
+   296 00000198                                 ; 应用程序结束后不会回到这里
