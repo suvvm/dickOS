@@ -4,21 +4,23 @@
      4 00000000                                 [OPTION 1]
      5 00000000                                 [BITS 32]
      6 00000000                                 	EXTERN	_apiPutchar
-     7 00000000                                 [FILE "helloC.c"]
-     8                                          [SECTION .text]
-     9 00000000                                 	GLOBAL	_Main
-    10 00000000                                 _Main:
-    11 00000000 55                              	PUSH	EBP
-    12 00000001 89 E5                           	MOV	EBP,ESP
-    13 00000003 6A 68                           	PUSH	104
-    14 00000005 E8 [00000000]                   	CALL	_apiPutchar
-    15 0000000A 6A 65                           	PUSH	101
-    16 0000000C E8 [00000000]                   	CALL	_apiPutchar
-    17 00000011 6A 6C                           	PUSH	108
-    18 00000013 E8 [00000000]                   	CALL	_apiPutchar
-    19 00000018 6A 6C                           	PUSH	108
-    20 0000001A E8 [00000000]                   	CALL	_apiPutchar
-    21 0000001F 6A 6F                           	PUSH	111
-    22 00000021 E8 [00000000]                   	CALL	_apiPutchar
-    23 00000026 C9                              	LEAVE
-    24 00000027 C3                              	RET
+     7 00000000                                 	EXTERN	_apiEnd
+     8 00000000                                 [FILE "helloC.c"]
+     9                                          [SECTION .text]
+    10 00000000                                 	GLOBAL	_Main
+    11 00000000                                 _Main:
+    12 00000000 55                              	PUSH	EBP
+    13 00000001 89 E5                           	MOV	EBP,ESP
+    14 00000003 6A 68                           	PUSH	104
+    15 00000005 E8 [00000000]                   	CALL	_apiPutchar
+    16 0000000A 6A 65                           	PUSH	101
+    17 0000000C E8 [00000000]                   	CALL	_apiPutchar
+    18 00000011 6A 6C                           	PUSH	108
+    19 00000013 E8 [00000000]                   	CALL	_apiPutchar
+    20 00000018 6A 6C                           	PUSH	108
+    21 0000001A E8 [00000000]                   	CALL	_apiPutchar
+    22 0000001F 6A 6F                           	PUSH	111
+    23 00000021 E8 [00000000]                   	CALL	_apiPutchar
+    24 00000026 83 C4 14                        	ADD	ESP,20
+    25 00000029 C9                              	LEAVE
+    26 0000002A E9 [00000000]                   	JMP	_apiEnd
