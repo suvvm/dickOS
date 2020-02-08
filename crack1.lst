@@ -1,0 +1,14 @@
+     1 00000000                                 [FORMAT "WCOFF"]
+     2 00000000                                 [INSTRSET "i486p"]
+     3 00000000                                 [OPTIMIZE 1]
+     4 00000000                                 [OPTION 1]
+     5 00000000                                 [BITS 32]
+     6 00000000                                 [FILE "crack1.c"]
+     7                                          [SECTION .text]
+     8 00000000                                 	GLOBAL	_Main
+     9 00000000                                 _Main:
+    10 00000000 55                              	PUSH	EBP
+    11 00000001 C6 05 00102600 00               	MOV	BYTE [1058304],0
+    12 00000008 89 E5                           	MOV	EBP,ESP
+    13 0000000A 5D                              	POP	EBP
+    14 0000000B C3                              	RET
