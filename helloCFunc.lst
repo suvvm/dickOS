@@ -3,7 +3,7 @@
      3 00000000                                 [BITS 32]						; 生成32为模式机器语言
      4 00000000                                 [FILE "helloCFunc.nas"]			; 源文件名信息
      5 00000000                                 
-     6 00000000                                 		GLOBAL	_apiPutchar
+     6 00000000                                 		GLOBAL	_apiPutchar, _apiPutstr0
      7 00000000                                 		GLOBAL	_apiEnd
      8 00000000                                 		
      9                                          [SECTION .text]
@@ -13,7 +13,15 @@
     13 00000005 8A 44 24 04                     		MOV		AL,[ESP+4]		; c
     14 00000009 CD 40                           		INT		0x40
     15 0000000B C3                              		RET
-    16 0000000C                                 
-    17 0000000C                                 _apiEnd:						; void apiEnd()
-    18 0000000C BA 00000004                     		MOV		EDX,4
-    19 00000011 CD 40                           		INT		0x40
+    16 0000000C                                 		
+    17 0000000C                                 _apiPutstr0:					; void apiPutstr0(char *s)
+    18 0000000C 53                              		PUSH	EBX
+    19 0000000D BA 00000002                     		MOV		EDX,2
+    20 00000012 8B 5C 24 08                     		MOV		EBX,[ESP+8]		; s
+    21 00000016 CD 40                           		INT		0x40
+    22 00000018 5B                              		POP		EBX
+    23 00000019 C3                              		RET
+    24 0000001A                                 
+    25 0000001A                                 _apiEnd:						; void apiEnd()
+    26 0000001A BA 00000004                     		MOV		EDX,4
+    27 0000001F CD 40                           		INT		0x40
