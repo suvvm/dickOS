@@ -1,0 +1,23 @@
+	.file	"bug1.c"
+	.text
+	.balign 2
+.globl _Main
+	.def	_Main;	.scl	2;	.type	32;	.endef
+_Main:
+	pushl	%ebp
+	movl	%esp, %ebp
+	subl	$112, %esp
+	pushl	$65
+	movb	$65, -102(%ebp)
+	call	_apiPutchar
+	pushl	$66
+	movb	$66, -10(%ebp)
+	call	_apiPutchar
+	pushl	$67
+	movb	$67, 11(%ebp)
+	call	_apiPutchar
+	call	_apiEnd
+	leave
+	ret
+	.def	_apiEnd;	.scl	2;	.type	32;	.endef
+	.def	_apiPutchar;	.scl	2;	.type	32;	.endef
