@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.4.1
-* @Date: 2020-02-08
+* @Version: 0.4.3
+* @Date: 2020-02-09
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -416,11 +416,13 @@ void asm_interruptHandler21();
 void asm_interruptHandler27();
 void asm_interruptHandler2c();
 void asm_interruptHandler0d();
+void asm_interruptHandler0c();
 unsigned int memtest_sub(unsigned int start, unsigned int end);
 void farJmp(int eip, int cs);
 void asm_dickApi();
 void farCall(int eip, int cs);
 void startApp(int eip, int cs, int esp, int ds, int *tssEsp0);
+void asm_endApp();
 
 // graphic.c 函数声明
 void init_palette();
@@ -441,6 +443,7 @@ void setGatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 
 // interrupt.c 函数声明
 void init_pic();
+int *interruptHandler0c(int *esp);
 int *interruptHandler0d(int *esp);
 void interruptHandler20(int *esp);
 void interruptHandler21(int *esp);
