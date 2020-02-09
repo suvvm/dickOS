@@ -1,0 +1,26 @@
+     1 00000000                                 [FORMAT "WCOFF"]
+     2 00000000                                 [INSTRSET "i486p"]
+     3 00000000                                 [OPTIMIZE 1]
+     4 00000000                                 [OPTION 1]
+     5 00000000                                 [BITS 32]
+     6 00000000                                 	EXTERN	_apiPutchar
+     7 00000000                                 	EXTERN	_apiEnd
+     8 00000000                                 [FILE "bug1.c"]
+     9                                          [SECTION .text]
+    10 00000000                                 	GLOBAL	_Main
+    11 00000000                                 _Main:
+    12 00000000 55                              	PUSH	EBP
+    13 00000001 89 E5                           	MOV	EBP,ESP
+    14 00000003 83 EC 70                        	SUB	ESP,112
+    15 00000006 6A 41                           	PUSH	65
+    16 00000008 C6 45 9A 41                     	MOV	BYTE [-102+EBP],65
+    17 0000000C E8 [00000000]                   	CALL	_apiPutchar
+    18 00000011 6A 42                           	PUSH	66
+    19 00000013 C6 45 F6 42                     	MOV	BYTE [-10+EBP],66
+    20 00000017 E8 [00000000]                   	CALL	_apiPutchar
+    21 0000001C 6A 43                           	PUSH	67
+    22 0000001E C6 45 0B 43                     	MOV	BYTE [11+EBP],67
+    23 00000022 E8 [00000000]                   	CALL	_apiPutchar
+    24 00000027 E8 [00000000]                   	CALL	_apiEnd
+    25 0000002C C9                              	LEAVE
+    26 0000002D C3                              	RET
