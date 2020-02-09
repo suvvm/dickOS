@@ -16,12 +16,12 @@
 		GLOBAL	_loadCr0, _storeCr0
 		GLOBAL	_loadTr
 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
-		GLOBAL	_asm_interruptHandler0d
+		GLOBAL	_asm_interruptHandler0d, _asm_interruptHandler0c
 		GLOBAL	_memtest_sub
 		GLOBAL	_farJmp, _farCall
-		GLOBAL	_asm_dickApi, _startApp
+		GLOBAL	_asm_dickApi, _startApp, _asm_endApp
 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
-		EXTERN	_interruptHandler0d
+		EXTERN	_interruptHandler0d, _interruptHandler0c
 		EXTERN	_dickApi
 ; 实际的函数
 
@@ -179,7 +179,7 @@ _asm_interruptHandler2c:
 		POP		ES
 		IRETD
 
-_asm_interruptHandler0d:
+_asm_interruptHandler0d:				; 一般异常处理
 		STI								; 开中断
 		PUSH	ES
 		PUSH	DS
@@ -191,13 +191,34 @@ _asm_interruptHandler0d:
 		MOV		ES,AX
 		CALL	_interruptHandler0d
 		CMP		EAX,0
-		JNE		endApp
+		JNE		_asm_endApp
 		POP		EAX
 		POPAD
 		POP		DS
 		POP		ES
 		ADD		ESP,4
 		IRETD
+		
+_asm_interruptHandler0c:				; 处理栈异常
+		STI								; 开中断
+		PUSH	ES
+		PUSH	DS
+		PUSHAD
+		MOV		EAX,ESP
+		PUSH	EAX
+		MOV		AX,SS
+		MOV		DS,AX
+		MOV		ES,AX
+		CALL	_interruptHandler0c
+		CMP		EAX,0
+		JNE		_asm_endApp
+		POP		EAX
+		POPAD
+		POP		DS
+		POP		ES
+		ADD		ESP,4
+		IRETD
+
 
 ; 在寄存器EDX中存入功能号，可以通过INT调用不同函数
 ; 功能号1	显示单个字符(AL = 字符ascii码)
@@ -217,15 +238,17 @@ _asm_dickApi:
 		MOV		ES,AX
 		CALL	_dickApi
 		CMP		EAX,0					; EAX不为0时程序结束
-		JNE		endApp
+		JNE		_asm_endApp
 		ADD		ESP,32
 		POPAD
 		POP		ES
 		POP		DS
 		IRETD							; 自动STI
-endApp:
+		
+_asm_endApp:
 ; EAX为TSS.esp0的地址
 		MOV		ESP,[EAX]
+		MOV		DWORD [EAX+4],0
 		POPAD
 		RET								; 返回cmdApp
 
