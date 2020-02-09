@@ -34,6 +34,15 @@ bootpack.gas : bootpack.c Makefile
 helloC.gas : helloC.c Makefile
 	$(CC1) -o helloC.gas helloC.c
 	
+bug1.gas : bug1.c Makefile
+	$(CC1) -o bug1.gas bug1.c
+
+bug2.gas : bug2.c Makefile
+	$(CC1) -o bug2.gas bug2.c
+
+bug3.gas : bug3.c Makefile
+	$(CC1) -o bug3.gas bug3.c
+		
 crack1.gas : crack1.c Makefile
 	$(CC1) -o crack1.gas crack1.c
 
@@ -82,13 +91,31 @@ crack4.hrb : crack4.nas Makefile
 
 crack5.hrb : crack5.nas Makefile
 	$(NASK) crack5.nas crack5.hrb crack5.lst
+	
+bug1.bim : bug1.obj helloCFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:bug1.bim map:bug1.map bug1.obj helloCFunc.obj
 
+bug1.hrb : bug1.bim Makefile
+	$(BIM2HRB) bug1.bim bug1.hrb 0
+
+bug2.bim : bug2.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:bug2.bim map:bug2.map bug2.obj
+
+bug2.hrb : bug2.bim Makefile
+	$(BIM2HRB) bug2.bim bug2.hrb 0
+
+bug3.bim : bug3.obj helloCFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:bug3.bim map:bug3.map bug3.obj helloCFunc.obj
+
+bug3.hrb : bug3.bim Makefile
+	$(BIM2HRB) bug3.bim bug3.hrb 0
+	
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
 dickos.img : ipl.bin dickos.sys Makefile \
 		hello.hrb helloStr.hrb helloC.hrb crack1.hrb crack2.hrb \
-		crack3.hrb crack4.hrb crack5.hrb
+		crack3.hrb crack4.hrb crack5.hrb bug1.hrb bug2.hrb bug3.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
 		copy from:dickos.sys to:@: \
@@ -102,6 +129,9 @@ dickos.img : ipl.bin dickos.sys Makefile \
 		copy from:crack3.hrb to:@: \
 		copy from:crack4.hrb to:@: \
 		copy from:crack5.hrb to:@: \
+		copy from:bug1.hrb to:@: \
+		copy from:bug2.hrb to:@: \
+		copy from:bug3.hrb to:@: \
 		imgout:dickos.img
 
 # 通用规则
