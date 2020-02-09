@@ -1,0 +1,16 @@
+     1 00000000                                 [INSTRSET "i486p"]
+     2 00000000                                 [BITS 32]
+     3 00000000 B0 34                           		MOV 	AL,0x34
+     4 00000002 E6 43                           		OUT		0x43,AL
+     5 00000004 B0 FF                           		MOV		AL,0xff
+     6 00000006 E6 40                           		OUT		0x40,AL
+     7 00000008 B0 FF                           		MOV		AL,0xff
+     8 0000000A E6 40                           		OUT		0x40,AL
+     9 0000000C                                 
+    10 0000000C                                 ;	上述代码与下方代码功能相同 以应用程序（权限+0x60）模式运行时 IN指令和OUT指令都会产生异常
+    11 0000000C                                 ;	io_out8(PIT_CTRL,0x34)
+    12 0000000C                                 ;	io_out8(PIT_CNT0,0xff)
+    13 0000000C                                 ;	io_out8(PIT_CNT0,0xff)
+    14 0000000C                                 
+    15 0000000C BA 00000004                     		MOV		EDX,4
+    16 00000011 CD 40                           		INT		0x40
