@@ -42,9 +42,9 @@ bug2.gas : bug2.c Makefile
 
 bug3.gas : bug3.c Makefile
 	$(CC1) -o bug3.gas bug3.c
-		
-crack1.gas : crack1.c Makefile
-	$(CC1) -o crack1.gas crack1.c
+	
+helloCS.gas : helloCS.c Makefile
+	$(CC1) -o helloCS.gas helloCS.c
 
 func.obj : func.nas Makefile
 	$(NASK) func.nas func.obj func.lst
@@ -74,24 +74,6 @@ helloC.bim : helloC.obj helloCFunc.obj Makefile
 helloC.hrb : helloC.bim Makefile
 	$(BIM2HRB) helloC.bim helloC.hrb 0
 	
-crack1.bim : crack1.obj helloCFunc.obj Makefile
-	$(OBJ2BIM) @$(RULEFILE) out:crack1.bim map:crack1.map crack1.obj helloCFunc.obj
-
-crack1.hrb : crack1.bim Makefile
-	$(BIM2HRB) crack1.bim crack1.hrb 0
-
-crack2.hrb : crack2.nas Makefile
-	$(NASK) crack2.nas crack2.hrb crack2.lst
-	
-crack3.hrb : crack3.nas Makefile
-	$(NASK) crack3.nas crack3.hrb crack3.lst
-
-crack4.hrb : crack4.nas Makefile
-	$(NASK) crack4.nas crack4.hrb crack4.lst
-
-crack5.hrb : crack5.nas Makefile
-	$(NASK) crack5.nas crack5.hrb crack5.lst
-	
 bug1.bim : bug1.obj helloCFunc.obj Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:bug1.bim map:bug1.map bug1.obj helloCFunc.obj
 
@@ -110,12 +92,20 @@ bug3.bim : bug3.obj helloCFunc.obj Makefile
 bug3.hrb : bug3.bim Makefile
 	$(BIM2HRB) bug3.bim bug3.hrb 0
 	
+helloCS.bim : helloCS.obj helloCFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:helloCS.bim stack:1k map:helloCS.map \
+		helloCS.obj helloCFunc.obj
+	
+helloCS.hrb : helloCS.bim Makefile
+	$(BIM2HRB) helloCS.bim helloCS.hrb 0
+
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
 dickos.img : ipl.bin dickos.sys Makefile \
-		hello.hrb helloStr.hrb helloC.hrb crack1.hrb crack2.hrb \
-		crack3.hrb crack4.hrb crack5.hrb bug1.hrb bug2.hrb bug3.hrb
+		hello.hrb helloStr.hrb helloC.hrb \
+		bug1.hrb bug2.hrb bug3.hrb \
+		helloCS.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
 		copy from:dickos.sys to:@: \
@@ -124,14 +114,10 @@ dickos.img : ipl.bin dickos.sys Makefile \
 		copy from:hello.hrb to:@: \
 		copy from:helloStr.hrb to:@: \
 		copy from:helloC.hrb to:@: \
-		copy from:crack1.hrb to:@: \
-		copy from:crack2.hrb to:@: \
-		copy from:crack3.hrb to:@: \
-		copy from:crack4.hrb to:@: \
-		copy from:crack5.hrb to:@: \
 		copy from:bug1.hrb to:@: \
 		copy from:bug2.hrb to:@: \
 		copy from:bug3.hrb to:@: \
+		copy from:helloCS.hrb to:@: \
 		imgout:dickos.img
 
 # 通用规则
