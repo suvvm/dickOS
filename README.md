@@ -16,19 +16,45 @@
 
 在桌面打印DICKOS并显示鼠标坐标
 
-内存分配采取分段式分配方式，分配失败时使用鸵鸟算法处理 :laughing:
+内存分配采取分段式分配方式，以4KB为单位，分配失败时使用鸵鸟算法处理 :laughing:
 
 在桌面打印内存大小与可用内存大小
 
-初始化键盘控制电路并激活鼠标
-
-在鼠标与键盘产生中断时打印相应数据
-
-鼠标移动实现
+初始化键盘控制电路并激活鼠标，在鼠标与键盘产生中断时打印相应数据，完成部分键盘中断码识别，当前可用输入英文大小写字母、数字、英文符号，并完成CapsLock NumLock SrollLock与对应键盘led灯状态的改变与识别。
 
 使用图层处理重叠问题
 
-空闲时进入HALT状态
+鼠标移动实现，鼠标点击时将改变processA窗口的位置。
+
+实现多进程，采用时间片轮转+多级反馈进行进程调度，初始由主进程完成各功能与设备的初始化，并创建控制台进程，主进程处理键盘鼠标与测试输入窗口processA的中断，按下tab可将当前活动窗口转变为控制台窗口，此时普通字符的中断数据将由主进程发送给控制台进程以实现在控制台窗口的输入活动，再次按下tab可将活动窗口由控制台窗口换回processA测试输入窗口。
+
+完成对fat16文件系统的解析。
+
+控制台指令采用windows风格，当前以实现指令如下
+
+```
+mem						检查内存容量与当前内存可用空间
+cls						清屏
+dir						显示当前目录所有文件信息
+type filename			显示指定文件名的文件内容（完成换行符制表表的显示）
+applicationName			可用直接使用应用程序名来启动应用程序（自动检测是否为应用程序，开辟应用程序专有内存并创建新的进程以运行应用程序运行结束返回控制台）
+```
+
+可以按下shift + F1以强行终止应用程序的运行
+
+当前可运行应用程序如下
+
+```
+helloC					使用C语言编写，在逐个控制台打印hello，用于测试系统调用API中打印单个字符
+bug1					使用C语言编写在越界的内存处写入ABC，以测试栈异常处理，QEMU有bug如想观察正常结果请真机运行
+bug2					使用C语言编写执行死循环以测试shift+f1强制关闭应用程序
+bug3					使用C语言编写执行死循环并在控制台打印a以更好的测试shift+f1强制关闭应用程序
+helloCS					使用C语言编写，在控制台输出字符串hello,world用于测试系统调用API中打印字符串
+winHelo					使用C语言编写，创建新的hello窗口，以测试测试系统调用API绘制窗口功能
+winHelo2				使用C语言编写，创建新的hello窗口并在窗口中绘制黄色矩形并显示hello world，以测试测试系统调用API在图层中绘制矩形和在图层中显示字符功能
+```
+
+完成一般异常中断处理与栈异常中断处理以阻止尝试恶意破坏dickOS的应用程序，防御测试已完成，测试使用应用程序源码[crack1.c](https://github.com/suvvm/dickOS/blob/master/crack1.c)、[crack2.nas](https://github.com/suvvm/dickOS/blob/master/crack2.nas)、[crack3.nas](https://github.com/suvvm/dickOS/blob/master/crack3.nas)、[crack4.nas](https://github.com/suvvm/dickOS/blob/master/crack4.nas)、[crack5.nas](https://github.com/suvvm/dickOS/blob/master/crack5.nas)依然存在，但其生成的应用程序已经在操作系统中移除，若想测试请手动修改Makefile中的文件生成规则，将其编译为应用程序后复制到fat16文件系统根目录便可使用控制台运行（注：Qemu有bug若想测试防御功能需要真机运行）
 
 # Build
 
@@ -67,193 +93,6 @@ make src_only	# 删除中间文件并删除dickos.img映像
 - RWFD
 - 平木敬太郎
 - Kiyoto
-
-# LOGS
-
-编写启动设置asmhead.nas
-
-新建汇编函数文件func.nas添加函数io_hlt
-
-新建笔记文件note.txt
-
-新建README.md
-
-新建bootpack.c添加主函数HariMain
-
-bootpack.c -添加存储启动信息的结构体BOOTINFO并在主函数中获取启动信息
-
-func.nas -添加中断操作_io_cli, _io_sti, _stihlt, _io_load_eflags, _io_store_eflags等函数
-
-func.nas -添加指定端口读写函数_io_in8, _io_in16, _io_in32， _io_out8, _io_out16, _io_out32
-
-bootpack.c -定义颜色码，添加16色调色板设置函数set-palette 调色板初始化函数init-palette
-
-bootpack.c -添加矩形绘制函数(指针操作显存)boxFill8 在主函数中调用boxFill8绘制3个矩形
-
-bootpack.c -添加GUI绘制函数init_GUI 主函数删除3个矩形的绘制并调用GUI初始化函数绘制GUI
-
-新建font.txt -添加字体文件
-
-bootpack.c -添加打印单个字符函数putFont8与打印字符串函数putFont8_asc
-
-bootpack.c -[主函数调用putFont8_asc在屏幕中打印字符串"DICKOS"]
-
-bootpack.c -[添加鼠标图像信息初始化函数initMouseCursor8与显示图像的函数putblock8_8]
-
-bootpack.c -[主函数调用initMouseCursor8与putblock8_8打印鼠标指针](https://github.com/suvvm/dickOS/commit/4e7ee5b8cb235812928e4019be30c3c1d9bf8115)
-
-func.nas -[添加寄存器赋值函数loadGdtr, _loadIdtr](https://github.com/suvvm/dickOS/commit/e6346fedea2f607c8e1f4f1f9c02e66b90e616db)
-
-bootpack.c -[添加 段描述符GDT结构体SEGMENT_DESCRIPTOR 门描述符结构体GATE_DESCRIPTOR])(https://github.com/suvvm/dickOS/commit/70f7a714bf259abc90f012fd14a41265b125c9af)
-
-bootpack.c -[函数段描述符设置函数setSegmdesc 中断描述符设置函数setGatedesc 内存分段初始化函数initGdtit](https://github.com/suvvm/dickOS/commit/70f7a714bf259abc90f012fd14a41265b125c9af)
-
-新建graphic.c -[将bootpack.c中关于绘制图像的所有函数提取至graphic.c](https://github.com/suvvm/dickOS/commit/abffb82e79d4c1f08d8b728d57cb13b49dabae6f)
-
-新建desctab .c -[将bootpack.c中关于描述符表的操作提取至desctab.c](https://github.com/suvvm/dickOS/commit/abffb82e79d4c1f08d8b728d57cb13b49dabae6f)
-
-新建bootpack.h -[将函数与结构体声明提取至bootpack.h](https://github.com/suvvm/dickOS/commit/b94ce79028d2b250ec2fa310bb6e07942e4f392b)
-
-note.txt -[添加对段描述符属性的介绍](https://github.com/suvvm/dickOS/commit/aa2cbe8cc0c2cee2e1321eacf879cb380e1fd41f)
-
-bootpack.h -[完善对结构体SEGMENT_DESCRIPTOR的注释](https://github.com/suvvm/dickOS/commit/ccf0c68d014a0d2e7481a540411e00bc8a754e5c)
-
-desctab .c -修正函数setSegmdesc中不正确的描述
-出现未知bug正在尝试修正
-
-bug已发现，为结构体内存对齐问题，正在修正
-
-bootpack.h -[修正结构体SEGMENT_DESCRIPTOR属性顺序保障内存对齐正确](https://github.com/suvvm/dickOS/commit/6eecd80836e4792602bb820352820b75ccadc848)
-
-tools/com_mak.txt -[修正内部文件路径配置](https://github.com/suvvm/dickOS/commit/faaabd52fed411fe9e7e796c69737b22e57c12c2)
-
-tools/edimgopt.txt -[修正内部文件路径配置](https://github.com/suvvm/dickOS/commit/faaabd52fed411fe9e7e796c69737b22e57c12c2)
-
-tools/guigui00/guigui00.rul -[修正内部文件路径配置](https://github.com/suvvm/dickOS/commit/faaabd52fed411fe9e7e796c69737b22e57c12c2)
-
-tools/include/haribote.rul -[修正内部文件路径配置](https://github.com/suvvm/dickOS/commit/faaabd52fed411fe9e7e796c69737b22e57c12c2)
-
-[bootpack.h](https://github.com/suvvm/dickOS/commit/61759c5fa0ee6740f44d30c24f03125436e20758)&[graphic.c](https://github.com/suvvm/dickOS/commit/16a8121a85b36279bba4533504703671e72a748b) -将色号信息的宏定义转至bootpack.h
-
-[bootpack.h](https://github.com/suvvm/dickOS/commit/61759c5fa0ee6740f44d30c24f03125436e20758)&desctab.c -将要初始描述符信息宏定义
-
-bootpack.h -[宏定义PIC端口信息](https://github.com/suvvm/dickOS/commit/61759c5fa0ee6740f44d30c24f03125436e20758)
-
-新建interrupt.c -[定义初始化可编程中断编译器信息](https://github.com/suvvm/dickOS/commit/2aa01d048739a47087f3fe323dd05fe284a90711)
-
-bootpack.c -[调用interrupt.c的init_pic()初始化可编程中断编译器](https://github.com/suvvm/dickOS/commit/2e5d77cef384efbb4265d0937bfb27bfd277405c)
-
-bootpack.h -[为SEGMENT_DESCRIPTOR添加内存对齐设置](https://github.com/suvvm/dickOS/commit/d3fd9595cba8af2d65d36862ea916ff438441b99)
-
-interrupt.c -[添加中断处理函数interruptHandler21 interruptHandler2c interruptHandler21](https://github.com/suvvm/dickOS/commit/855249dcb46720d68d9d76dd235ccf67a58cb679)
-
-func.nas -[添加函数asm_interruptHandler21 _asm_interruptHandler27 _asm_interruptHandler2c 执行IRETD](https://github.com/suvvm/dickOS/commit/4873750961109c36fa26f3bb8a8852a805ffaeab)
-
-desctab.c -[initGdtit中添加对IRQ1 IRQ7 IRQ12 的IDT设置](https://github.com/suvvm/dickOS/commit/74c62829af333212bffd684927b1d3787e569d47)
-
-bootpack.c -[io_sti()](https://github.com/suvvm/dickOS/commit/b78ab7ef6429e130e92d335b6763ed3c6581e4f7)
-
-func.nas - [修正了_io_stihlt函数名不正确的bug](https://github.com/suvvm/dickOS/commit/5629d1f75e91c2999df93d949cd7e0240e0db84e) 
-
-bootpack.h -[添加部分func.nas函数声明 添加结构体KEYBUF声明全局变量keybuf作为键盘输入缓冲区](https://github.com/suvvm/dickOS/commit/de9a1b44bf18f0b3aae143bab3e41f0739374eab) 
-
-interrupt.c -[修改键盘中断处理函数interruptHandler21由直接处理改为将键盘码存入缓冲区](https://github.com/suvvm/dickOS/commit/63372c8085814a753f2ff70a4193963a5d9f7b10)
-
-bootpack.c -[添加对缓冲区数据显示的处理](https://github.com/suvvm/dickOS/commit/cd739e36d7921c8f14097de8600efb82213ebdc6)
-
-bootpack.h -[ 修改结构体KEYBUF，将缓冲区data设为长度32的数组，并用next记录data中下一个空闲位置](https://github.com/suvvm/dickOS/commit/812bdc064f938bab842500224ec4b6e8694c4eda)
-
-interrupt.c -[ 修改键盘中断处理函数interruptHandler21](https://github.com/suvvm/dickOS/commit/4f434b57bb4eb132d51f3a437ac5b55f8910e5a0)
-
-bootpack.c - [修改键盘缓冲区处理操作](https://github.com/suvvm/dickOS/commit/e98fb67cb073b17f437db9fc91c602b868bf04e1)
-
-bootpack.h - [通过循环使用数组优化键盘缓冲区结构体KEYBUF](https://github.com/suvvm/dickOS/commit/bf1593b1cc62b78e3fd55ca37584f83eb5341bb5) 
-
-interrupt.c -[ 修改键盘中断处理函数interruptHandler21](https://github.com/suvvm/dickOS/commit/4b6a3932cc0a7ab614a16c9d6953c238bfb6a0ea)
-
-bootpack.c -[ 修改键盘缓冲区处理操作](https://github.com/suvvm/dickOS/commit/d1ac64801d47e1898e23542c2739993082994088)
-
-make.exe出现重大问题正在寻找错误根源
-
-问题已解决 -重新安装了MinGw与msys
-
-bootpack.h -[ 添加结构体QUEUE模拟队列，添加队列函数声明](https://github.com/suvvm/dickOS/commit/182583217b521efd566711949354405051efe67a)
-
-新建文件queue.h -[保存队列函数定义](https://github.com/suvvm/dickOS/commit/eacc560978c84c0d2553f7de864d94a1e4930290)
-
-interrupt.c -[ 改用队列作为键盘缓冲区](https://github.com/suvvm/dickOS/commit/66bca37b8aaf02e8f6392e16559a4ac6fac8ac29)
-
-bootpack.c - [初始化键盘缓冲区队列，修改键盘缓冲区处理操作](https://github.com/suvvm/dickOS/commit/5a73656723ece0100b4bcb30547debbcdcfcec86) 
-
-[tools](https://github.com/suvvm/dickOS/tree/master/tools)/[include](https://github.com/suvvm/dickOS/tree/master/tools/include)/haribote.rul - [修改入口为Main](https://github.com/suvvm/dickOS/commit/89e6db42bf25880885d8537c8b78e34e5e5de452)
-
-bootpack.c - [修改主函数名为Main](https://github.com/suvvm/dickOS/commit/87ba4b179b51903aacaf7b9cfc2c5a3a27a8dd69)
-
-bootpack.h - [添加键盘控制电路与鼠标相关函数声明与宏定义](https://github.com/suvvm/dickOS/commit/7b09a16e57ac316961f9da950c36f3a4f65622d2#diff-fac193a65494545d15781ecfd834143e) 
-
-新建keyboard.c -[ 设置键盘控制电路](https://github.com/suvvm/dickOS/commit/e2bef556e1f25632f3a614f3c0f55a1e145b0935)
-
-新建mouse.c - [设置鼠标相关](https://github.com/suvvm/dickOS/commit/2e24491459e0ea1b7cd25565d4cbecf2c2e81fbe)
-
-note.txt -[ 队列函数定义](https://github.com/suvvm/dickOS/commit/eacc560978c84c0d2553f7de864d94a1e4930290)
-
-bootpack.h -[声明QUEUE类型变量mousebuf作为鼠标缓冲区](https://github.com/suvvm/dickOS/commit/7717e27e66a42960303225da7c1ff452bff1fa36) 
-
-interrupt.c -[ 修改鼠标中断处理函数interruptHandler2c将鼠标中断产生的数据存入缓冲区](https://github.com/suvvm/dickOS/commit/a44e0949ce8fd15f89be303289cabb136cda0372)
-
-bootpack.c -[ 初始化鼠标缓冲区mousebuf并添加对其的处理](https://github.com/suvvm/dickOS/commit/d707e714be19f7e2952411d9cc7e9690b0d825c9)
-
-mouse.c - [添加文件结束符](https://github.com/suvvm/dickOS/commit/ac636a0e0d414d951ea9f3972c81c4e6895f7953) 
-
-bootpack.c -[ 添加对鼠标传输的信息处理](https://github.com/suvvm/dickOS/commit/eff4fe86dfae485493119b9545813417a616f11e)
-
-bootpack.h -[ 添加结构体MouseDec用来存储鼠标信息](https://github.com/suvvm/dickOS/commit/80b36c468fabd1748cecc1966a05ee8882eff4ff)
-
-mouse.c -[ 函数enableMouse接收保存鼠标信息的结构体并将其设为等待鼠标激活回复状态，添加函数mouseDecode接收鼠标数据并对鼠标信息进行设置 ]( https://github.com/suvvm/dickOS/commit/05df1a37b8a8c5f7de2e491169a3245d30f6e9d7 )
-
-bootpack.c -[ 修改鼠标信息处理步骤](https://github.com/suvvm/dickOS/commit/5c0f3a404242b212cd09dbddc89586ffda81964a)
-
-bootpack.c - [添加鼠标移动相关操作](https://github.com/suvvm/dickOS/commit/681e182f73285212aa73ed71e0b993eef187f050) 
-
-mouse.c -[ 添加文件结束符](https://github.com/suvvm/dickOS/commit/fa2f0a5acc1c8eb564f7e517d12ccb7ec79ff31c)
-
-queue.h - [添加文件结束符](https://github.com/suvvm/dickOS/commit/fa2f0a5acc1c8eb564f7e517d12ccb7ec79ff31c) 
-
-asmhead.nas -[ 添加针对部分方法的详细注释](https://github.com/suvvm/dickOS/commit/c3fa9e05780cf28b7a58e840c31059585147970b)
-
-note.txt -[ 添加指令JZ IMUL SUB的介绍](https://github.com/suvvm/dickOS/commit/c8af1eb1c5887dc91a2d369ff95b30ab70e0b560)
-
-README.md -[ 添加内存分布描述](https://github.com/suvvm/dickOS/commit/9372a8bcd8c564cf21b492b8a4479942f0ae3ca6)
-
-README.md -[ 添加命令行指令描述](https://github.com/suvvm/dickOS/commit/a618b407eab4b8cb3ccffef3d089fb6e7b1f1a81)
-
-func.nas - [添加针对寄存器cr0的读写函数](https://github.com/suvvm/dickOS/commit/8d1aa75f0fe5fbc858f540e428e687edca6da68c) 
-
-bootpack.h -[ 添加func.nas的函数声明，添加关于eflagAC位与cr0中启用或禁止缓存的宏定义](https://github.com/suvvm/dickOS/commit/bb42c2c1934a87fa8f2a1354489ea2147b7ef4ce)
-
-bootpack.c - [添加判断内存大小相关函数](https://github.com/suvvm/dickOS/commit/81e0428810334e312e81b70863e4beacb103f08e) 
-
-bootpack.c -[添加内存分段相关函数](https://github.com/suvvm/dickOS/commit/89ccf8210543277703c187de953db8c80c167c10)
-
-新建 memory.c 
-
-memory.c -[将bootpack.c中内存分配相关函数转移至memory.c](https://github.com/suvvm/dickOS/commit/d35acc87d6350244963ede93c7bf6c4fbdfc7dfd)
-
-bootpack.h -[添加memory.c相关函数声明](https://github.com/suvvm/dickOS/commit/8b40e616bc0470685d89842d748ff023a55f5cd5)
-
-memory.c -[添加以4KB为单位分配与回收内存的函数](https://github.com/suvvm/dickOS/commit/84f53ff3f991e9a4c40c63578e0d6ff7816b0c0a)
-
-bootpack.h -[添加以4KB为单位分配与回收内存的函数声明](https://github.com/suvvm/dickOS/commit/0e3a831132d7532b9b851330ebe2b0d0fb8a17cf)
-
-新建 sheet.c
-
-sheet.c -[用于定义图层相关函数](https://github.com/suvvm/dickOS/commit/299795edca7b5ea58c5d88fac5430f9bf6b5dc44)
-
-bootpack.h -[添加图层相关宏定义结构体，声明sheet.c中的函数](https://github.com/suvvm/dickOS/commit/8cf67ccda90bd17c7024911cb2195350c2dbff78)
-
-bootpcak.c -[修改显示背景与显示鼠标为图层操作](https://github.com/suvvm/dickOS/commit/b7f5d1cac57b7c73e4adf89fae50ad050ba5d2a2)
-
-
 
 # 许可协议原文
 
