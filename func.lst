@@ -16,12 +16,12 @@
     16 00000000                                 		GLOBAL	_loadCr0, _storeCr0
     17 00000000                                 		GLOBAL	_loadTr
     18 00000000                                 		GLOBAL	_asm_interruptHandler20, _asm_interruptHandler21, _asm_interruptHandler27, _asm_interruptHandler2c
-    19 00000000                                 		GLOBAL	_asm_interruptHandler0d
+    19 00000000                                 		GLOBAL	_asm_interruptHandler0d, _asm_interruptHandler0c
     20 00000000                                 		GLOBAL	_memtest_sub
     21 00000000                                 		GLOBAL	_farJmp, _farCall
-    22 00000000                                 		GLOBAL	_asm_dickApi, _startApp
+    22 00000000                                 		GLOBAL	_asm_dickApi, _startApp, _asm_endApp
     23 00000000                                 		EXTERN	_interruptHandler20, _interruptHandler21, _interruptHandler27, _interruptHandler2c
-    24 00000000                                 		EXTERN	_interruptHandler0d
+    24 00000000                                 		EXTERN	_interruptHandler0d, _interruptHandler0c
     25 00000000                                 		EXTERN	_dickApi
     26 00000000                                 ; 实际的函数
     27 00000000                                 
@@ -179,7 +179,7 @@
    179 000000DB 07                              		POP		ES
    180 000000DC CF                              		IRETD
    181 000000DD                                 
-   182 000000DD                                 _asm_interruptHandler0d:
+   182 000000DD                                 _asm_interruptHandler0d:				; 一般异常处理
    183 000000DD FB                              		STI								; 开中断
    184 000000DE 06                              		PUSH	ES
    185 000000DF 1E                              		PUSH	DS
@@ -191,106 +191,129 @@
    191 000000E9 8E C0                           		MOV		ES,AX
    192 000000EB E8 [00000000]                   		CALL	_interruptHandler0d
    193 000000F0 83 F8 00                        		CMP		EAX,0
-   194 000000F3 75 25                           		JNE		endApp
+   194 000000F3 75 45                           		JNE		_asm_endApp
    195 000000F5 58                              		POP		EAX
    196 000000F6 61                              		POPAD
    197 000000F7 1F                              		POP		DS
    198 000000F8 07                              		POP		ES
    199 000000F9 83 C4 04                        		ADD		ESP,4
    200 000000FC CF                              		IRETD
-   201 000000FD                                 
-   202 000000FD                                 ; 在寄存器EDX中存入功能号，可以通过INT调用不同函数
-   203 000000FD                                 ; 功能号1	显示单个字符(AL = 字符ascii码)
-   204 000000FD                                 ; 功能号2	显示字符串到0截止(EBX = 字符串地址)
-   205 000000FD                                 ; 功能号3	显示指定长度字符串(EBX = 字符串地址)
-   206 000000FD                                 ; 功能号4	结束应用程序
-   207 000000FD                                 ; dickApi返回0时继续运行应用程序，返回非0时当做TSS.esp0的地址处理，强制结束应用程序
-   208 000000FD                                 
-   209 000000FD                                 _asm_dickApi:
-   210 000000FD FB                              		STI
-   211 000000FE 1E                              		PUSH	DS
-   212 000000FF 06                              		PUSH	ES
-   213 00000100 60                              		PUSHAD							; 保存寄存器的值
-   214 00000101 60                              		PUSHAD							; 向dickApi传值
-   215 00000102 66 8C D0                        		MOV		AX,SS
-   216 00000105 8E D8                           		MOV		DS,AX					; 将操作系统用段地址存入DS和ES
-   217 00000107 8E C0                           		MOV		ES,AX
-   218 00000109 E8 [00000000]                   		CALL	_dickApi
-   219 0000010E 83 F8 00                        		CMP		EAX,0					; EAX不为0时程序结束
-   220 00000111 75 07                           		JNE		endApp
-   221 00000113 83 C4 20                        		ADD		ESP,32
-   222 00000116 61                              		POPAD
-   223 00000117 07                              		POP		ES
-   224 00000118 1F                              		POP		DS
-   225 00000119 CF                              		IRETD							; 自动STI
-   226 0000011A                                 endApp:
-   227 0000011A                                 ; EAX为TSS.esp0的地址
-   228 0000011A 8B 20                           		MOV		ESP,[EAX]
-   229 0000011C 61                              		POPAD
-   230 0000011D C3                              		RET								; 返回cmdApp
-   231 0000011E                                 
-   232 0000011E                                 _memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
-   233 0000011E 57                              		PUSH	EDI
-   234 0000011F 56                              		PUSH	ESI
-   235 00000120 53                              		PUSH	EBX						; 由于要使用这些寄存器，保存以上三个寄存器的值
-   236 00000121 BE AA55AA55                     		MOV		ESI,0xaa55aa55			; pat0 = 0xaa55aa55;
-   237 00000126 BF 55AA55AA                     		MOV		EDI,0x55aa55aa			; pat1 = 0x55aa55aa;
-   238 0000012B 8B 44 24 10                     		MOV		EAX,[ESP+12+4]			; i = start; 由于EAX是通用寄存器，不需要保存（EBX是32位基址寄存器，需要保存）当然保存也没问题
-   239 0000012F                                 		
-   240 0000012F                                 mts_loop:
-   241 0000012F 89 C3                           		MOV		EBX,EAX
-   242 00000131 81 C3 00000FFC                  		ADD		EBX,0xffc				; p = i + 0xffc;
-   243 00000137 8B 13                           		MOV		EDX,[EBX]				; old = *p;
-   244 00000139 89 33                           		MOV		[EBX],ESI				; *p = pat0;
-   245 0000013B 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
-   246 0000013E 3B 3B                           		CMP		EDI,[EBX]				; if(pat1 != *p) 
-   247 00000140 75 18                           		JNE		mts_fin					; goto mts_fin;
-   248 00000142 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
-   249 00000145 3B 33                           		CMP		ESI,[EBX]				; if(pat0 != *p)
-   250 00000147 75 11                           		JNE		mts_fin					; goto mts_fin;
-   251 00000149 89 13                           		MOV		[EBX],EDX				; *p = old;
-   252 0000014B 05 00001000                     		ADD 	EAX,0x1000				; i += 0x1000;
-   253 00000150 3B 44 24 14                     		CMP		EAX,[ESP+12+8]			; if(i <= end)
-   254 00000154 76 D9                           		JBE		mts_loop				; goto mts_loop;
-   255 00000156 5B                              		POP		EBX
-   256 00000157 5E                              		POP		ESI
-   257 00000158 5F                              		POP		EDI
-   258 00000159 C3                              		RET
-   259 0000015A                                 		
-   260 0000015A                                 mts_fin:
-   261 0000015A 89 13                           		MOV		[EBX],EDX				; *p = old;
-   262 0000015C 5B                              		POP		EBX
-   263 0000015D 5E                              		POP		ESI
-   264 0000015E 5F                              		POP		EDI
-   265 0000015F C3                              		RET
-   266 00000160                                 
-   267 00000160                                 _farJmp:								; void farJmp(int eip, int cs);
-   268 00000160 FF 6C 24 04                     		JMP		FAR [ESP+4]
-   269 00000164 C3                              		RET
-   270 00000165                                 
-   271 00000165                                 _farCall:								; void farCall(int eip, int cs);
-   272 00000165 FF 5C 24 04                     		CALL	FAR [ESP+4]
-   273 00000169 C3                              		RET
-   274 0000016A                                 		
-   275 0000016A                                 _startApp:								; void startApp(int eip, int cs, int esp, int ds, int *tssEsp0);
-   276 0000016A 60                              		PUSHAD							; 保存当前32位寄存器的值
-   277 0000016B 8B 44 24 24                     		MOV		EAX,[ESP+36]			; EAX中存放eip
-   278 0000016F 8B 4C 24 28                     		MOV		ECX,[ESP+40]			; ECX中存放cs
-   279 00000173 8B 54 24 2C                     		MOV		EDX,[ESP+44]			; EDX中存放esp
-   280 00000177 8B 5C 24 30                     		MOV		EBX,[ESP+48]			; EBX中存放ds
-   281 0000017B 8B 6C 24 34                     		MOV		EBP,[ESP+52]			; TSS.esp0的地址
-   282 0000017F 89 65 00                        		MOV		[EBP],ESP				; 保存操作系统ESP
-   283 00000182 8C 55 04                        		MOV		[EBP+4],SS				; 保存操作系统SS
-   284 00000185 8E C3                           		MOV		ES,BX
-   285 00000187 8E DB                           		MOV		DS,BX
-   286 00000189 8E E3                           		MOV		FS,BX
-   287 0000018B 8E EB                           		MOV		GS,BX
-   288 0000018D                                 ; 调整栈，以免RETF跳转至应用程序
-   289 0000018D 83 C9 03                        		OR		ECX,3					; 将应用程序用的段号和3进行OR运算
-   290 00000190 83 CB 03                        		OR		EBX,3					; 将应用程序用的段号和3进行OR运算
-   291 00000193 53                              		PUSH	EBX						; 应用程序ss
-   292 00000194 52                              		PUSH	EDX						; 应用程序esp
-   293 00000195 51                              		PUSH	ECX						; 应用程序cs
-   294 00000196 50                              		PUSH	EAX						; 应用程序eip
-   295 00000197 CB                              		RETF
-   296 00000198                                 ; 应用程序结束后不会回到这里
+   201 000000FD                                 		
+   202 000000FD                                 _asm_interruptHandler0c:				; 处理栈异常
+   203 000000FD FB                              		STI								; 开中断
+   204 000000FE 06                              		PUSH	ES
+   205 000000FF 1E                              		PUSH	DS
+   206 00000100 60                              		PUSHAD
+   207 00000101 89 E0                           		MOV		EAX,ESP
+   208 00000103 50                              		PUSH	EAX
+   209 00000104 66 8C D0                        		MOV		AX,SS
+   210 00000107 8E D8                           		MOV		DS,AX
+   211 00000109 8E C0                           		MOV		ES,AX
+   212 0000010B E8 [00000000]                   		CALL	_interruptHandler0c
+   213 00000110 83 F8 00                        		CMP		EAX,0
+   214 00000113 75 25                           		JNE		_asm_endApp
+   215 00000115 58                              		POP		EAX
+   216 00000116 61                              		POPAD
+   217 00000117 1F                              		POP		DS
+   218 00000118 07                              		POP		ES
+   219 00000119 83 C4 04                        		ADD		ESP,4
+   220 0000011C CF                              		IRETD
+   221 0000011D                                 
+   222 0000011D                                 
+   223 0000011D                                 ; 在寄存器EDX中存入功能号，可以通过INT调用不同函数
+   224 0000011D                                 ; 功能号1	显示单个字符(AL = 字符ascii码)
+   225 0000011D                                 ; 功能号2	显示字符串到0截止(EBX = 字符串地址)
+   226 0000011D                                 ; 功能号3	显示指定长度字符串(EBX = 字符串地址)
+   227 0000011D                                 ; 功能号4	结束应用程序
+   228 0000011D                                 ; dickApi返回0时继续运行应用程序，返回非0时当做TSS.esp0的地址处理，强制结束应用程序
+   229 0000011D                                 
+   230 0000011D                                 _asm_dickApi:
+   231 0000011D FB                              		STI
+   232 0000011E 1E                              		PUSH	DS
+   233 0000011F 06                              		PUSH	ES
+   234 00000120 60                              		PUSHAD							; 保存寄存器的值
+   235 00000121 60                              		PUSHAD							; 向dickApi传值
+   236 00000122 66 8C D0                        		MOV		AX,SS
+   237 00000125 8E D8                           		MOV		DS,AX					; 将操作系统用段地址存入DS和ES
+   238 00000127 8E C0                           		MOV		ES,AX
+   239 00000129 E8 [00000000]                   		CALL	_dickApi
+   240 0000012E 83 F8 00                        		CMP		EAX,0					; EAX不为0时程序结束
+   241 00000131 75 07                           		JNE		_asm_endApp
+   242 00000133 83 C4 20                        		ADD		ESP,32
+   243 00000136 61                              		POPAD
+   244 00000137 07                              		POP		ES
+   245 00000138 1F                              		POP		DS
+   246 00000139 CF                              		IRETD							; 自动STI
+   247 0000013A                                 		
+   248 0000013A                                 _asm_endApp:
+   249 0000013A                                 ; EAX为TSS.esp0的地址
+   250 0000013A 8B 20                           		MOV		ESP,[EAX]
+   251 0000013C C7 40 04 00000000               		MOV		DWORD [EAX+4],0
+   252 00000143 61                              		POPAD
+   253 00000144 C3                              		RET								; 返回cmdApp
+   254 00000145                                 
+   255 00000145                                 _memtest_sub:							; unsigned int memtest(unsigned int start, unsigned int end)
+   256 00000145 57                              		PUSH	EDI
+   257 00000146 56                              		PUSH	ESI
+   258 00000147 53                              		PUSH	EBX						; 由于要使用这些寄存器，保存以上三个寄存器的值
+   259 00000148 BE AA55AA55                     		MOV		ESI,0xaa55aa55			; pat0 = 0xaa55aa55;
+   260 0000014D BF 55AA55AA                     		MOV		EDI,0x55aa55aa			; pat1 = 0x55aa55aa;
+   261 00000152 8B 44 24 10                     		MOV		EAX,[ESP+12+4]			; i = start; 由于EAX是通用寄存器，不需要保存（EBX是32位基址寄存器，需要保存）当然保存也没问题
+   262 00000156                                 		
+   263 00000156                                 mts_loop:
+   264 00000156 89 C3                           		MOV		EBX,EAX
+   265 00000158 81 C3 00000FFC                  		ADD		EBX,0xffc				; p = i + 0xffc;
+   266 0000015E 8B 13                           		MOV		EDX,[EBX]				; old = *p;
+   267 00000160 89 33                           		MOV		[EBX],ESI				; *p = pat0;
+   268 00000162 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
+   269 00000165 3B 3B                           		CMP		EDI,[EBX]				; if(pat1 != *p) 
+   270 00000167 75 18                           		JNE		mts_fin					; goto mts_fin;
+   271 00000169 83 33 FF                        		XOR		DWORD [EBX],0xffffffff	; *p ^= 0xffffffff;
+   272 0000016C 3B 33                           		CMP		ESI,[EBX]				; if(pat0 != *p)
+   273 0000016E 75 11                           		JNE		mts_fin					; goto mts_fin;
+   274 00000170 89 13                           		MOV		[EBX],EDX				; *p = old;
+   275 00000172 05 00001000                     		ADD 	EAX,0x1000				; i += 0x1000;
+   276 00000177 3B 44 24 14                     		CMP		EAX,[ESP+12+8]			; if(i <= end)
+   277 0000017B 76 D9                           		JBE		mts_loop				; goto mts_loop;
+   278 0000017D 5B                              		POP		EBX
+   279 0000017E 5E                              		POP		ESI
+   280 0000017F 5F                              		POP		EDI
+   281 00000180 C3                              		RET
+   282 00000181                                 		
+   283 00000181                                 mts_fin:
+   284 00000181 89 13                           		MOV		[EBX],EDX				; *p = old;
+   285 00000183 5B                              		POP		EBX
+   286 00000184 5E                              		POP		ESI
+   287 00000185 5F                              		POP		EDI
+   288 00000186 C3                              		RET
+   289 00000187                                 
+   290 00000187                                 _farJmp:								; void farJmp(int eip, int cs);
+   291 00000187 FF 6C 24 04                     		JMP		FAR [ESP+4]
+   292 0000018B C3                              		RET
+   293 0000018C                                 
+   294 0000018C                                 _farCall:								; void farCall(int eip, int cs);
+   295 0000018C FF 5C 24 04                     		CALL	FAR [ESP+4]
+   296 00000190 C3                              		RET
+   297 00000191                                 		
+   298 00000191                                 _startApp:								; void startApp(int eip, int cs, int esp, int ds, int *tssEsp0);
+   299 00000191 60                              		PUSHAD							; 保存当前32位寄存器的值
+   300 00000192 8B 44 24 24                     		MOV		EAX,[ESP+36]			; EAX中存放eip
+   301 00000196 8B 4C 24 28                     		MOV		ECX,[ESP+40]			; ECX中存放cs
+   302 0000019A 8B 54 24 2C                     		MOV		EDX,[ESP+44]			; EDX中存放esp
+   303 0000019E 8B 5C 24 30                     		MOV		EBX,[ESP+48]			; EBX中存放ds
+   304 000001A2 8B 6C 24 34                     		MOV		EBP,[ESP+52]			; TSS.esp0的地址
+   305 000001A6 89 65 00                        		MOV		[EBP],ESP				; 保存操作系统ESP
+   306 000001A9 8C 55 04                        		MOV		[EBP+4],SS				; 保存操作系统SS
+   307 000001AC 8E C3                           		MOV		ES,BX
+   308 000001AE 8E DB                           		MOV		DS,BX
+   309 000001B0 8E E3                           		MOV		FS,BX
+   310 000001B2 8E EB                           		MOV		GS,BX
+   311 000001B4                                 ; 调整栈，以免RETF跳转至应用程序
+   312 000001B4 83 C9 03                        		OR		ECX,3					; 将应用程序用的段号和3进行OR运算
+   313 000001B7 83 CB 03                        		OR		EBX,3					; 将应用程序用的段号和3进行OR运算
+   314 000001BA 53                              		PUSH	EBX						; 应用程序ss
+   315 000001BB 52                              		PUSH	EDX						; 应用程序esp
+   316 000001BC 51                              		PUSH	ECX						; 应用程序cs
+   317 000001BD 50                              		PUSH	EAX						; 应用程序eip
+   318 000001BE CB                              		RETF
+   319 000001BF                                 ; 应用程序结束后不会回到这里
