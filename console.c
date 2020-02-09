@@ -3,12 +3,13 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.0.8
+* @Version: 0.0.9
 * @Date: 2020-02-09
 * @Description: 实现控制台相关函数
 ********************************************************************************/
 
 #include "bootpack.h"
+#include "window.c"
 #include "multiProcess.c"
 
 /*******************************************************
@@ -399,6 +400,10 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 	int csBase = *((int *) 0xfe8);	// 获取应用程序文件所在内存地址
 	struct CONSOLE *console = (struct CONSOLE *) *((int *) 0x0fec);	// 在指定内存地址获取控制台信息
 	struct PCB *process = processNow();
+	struct SHTCTL *shtctl = (struct SHTCTL *)  *((int *)0x0fe4);	// 在指定内存读取图层控制信息
+	struct SHEET *sheet;
+	int *reg = &eax + 1; // 两次pushad 找到第一次pushad就可以修改先前保存的寄存器的值
+	
 	
 	if (edx == 1) {	// 功能号1 显示单个字符
 		consolePutchar(console, eax & 0xff, 1); 	// AL中存放字符ascii码
@@ -408,6 +413,13 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		consolePutstr1(console, (char *) ebx + csBase, ecx);	// ebx  + csBase中存放msg字符串首地址 ecx中存放长度
 	} else if (edx == 4) {	// 功能号4 结束应用程序
 		return &(process->tss.esp0);
+	} else if (edx == 5) {	// 功能号5 显示窗口
+		sheet = sheetAlloc(shtctl);
+		sheetSetbuf(sheet, (char *) ebx + csBase, esi, edi, eax); // 缓冲区地址为ebx + csBase 宽度esi 高度edi 透明色号 eax
+		makeWindow((char *) ebx + csBase, esi, edi, (char *)ecx + csBase, 0);	// 缓冲区ebx + csBase 宽度esi 高度edi 窗口标题首位地址 ecx+csBase 非活动窗口
+		sheetSlide(sheet, 100, 50);
+		sheetUpdown(sheet, 3);
+		reg[7] = (int) sheet;	// 将先前保存的EAX寄存器的值更换为sheet
 	}
 	return 0;
 }
