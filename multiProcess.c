@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: multiProcess.c
 * @Author: suvvm
-* @Version: 0.0.6
-* @Date: 2020-02-04
+* @Version: 0.0.7
+* @Date: 2020-02-09
 * @Description: 定义启动多进程操作相关变量与函数
 ********************************************************************************/
 
@@ -183,6 +183,7 @@ struct PCB *processAlloc() {
 			
 			process->tss.ldtr = 0;
 			process->tss.iomap = 0x40000000;
+			process->tss.ss0 = 0;
 			return process;
 		}
 	}
