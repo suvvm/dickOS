@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.5.8
+* @Version: 0.5.9
 * @Date: 2020-02-09
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -72,6 +72,8 @@ void Main(){
 	processA = processInit(memsegtable);	// 多进程初始化
 	queue.process = processA;
 	processRun(processA, 1, 0);	// 进程A处于第1级
+	
+	*((int *) 0x0fe4) = (int) shtctl;
 	
 	sheetBack = sheetAlloc(shtctl);
 	bufBack = (unsigned char *) memsegAlloc4K(memsegtable, binfo->scrnx * binfo->scrny);	// 以4KB为单位为背景分配内存
