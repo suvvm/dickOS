@@ -1,0 +1,10 @@
+	.file	"bug2.c"
+	.text
+	.balign 2
+.globl _Main
+	.def	_Main;	.scl	2;	.type	32;	.endef
+_Main:
+	pushl	%ebp
+	movl	%esp, %ebp
+L2:
+	jmp	L2
