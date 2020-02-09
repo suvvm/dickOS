@@ -3,7 +3,7 @@
 [BITS 32]						; 生成32为模式机器语言
 [FILE "helloCFunc.nas"]			; 源文件名信息
 
-		GLOBAL	_apiPutchar, _apiPutstr0, _apiOpenWindow
+		GLOBAL	_apiPutchar, _apiPutstr0, _apiOpenWindow, _apiPutStrWin, _apiBoxFillWin
 		GLOBAL	_apiEnd
 		
 [SECTION .text]
@@ -34,6 +34,44 @@ _apiOpenWindow:					; int apiOpenWindow(char *buf, int width, int height, int co
 		MOV		ECX,[ESP+32]	; title
 		INT		0x40
 		POP		EBX
+		POP		ESI
+		POP		EDI
+		RET
+		
+_apiPutStrWin:					; void apiPutStrWin(int win, int x, int y, int col, int len, char *str);
+		PUSH	EDI
+		PUSH	ESI
+		PUSH	EBP
+		PUSH	EBX
+		MOV		EDX,6			; 功能号6
+		MOV		EBX,[ESP+20]	; win
+		MOV		ESI,[ESP+24]	; x
+		MOV		EDI,[ESP+28]	; y
+		MOV		EAX,[ESP+32]	; col
+		MOV		ECX,[ESP+36]	; len
+		MOV		EBP,[ESP+40]	; str
+		INT		0x40
+		POP		EBX
+		POP		EBP
+		POP		ESI
+		POP		EDI
+		RET
+		
+_apiBoxFillWin:					; void apiBoxFillWin(int win, int startX, int startY, int endX, int endY, int col);
+		PUSH	EDI
+		PUSH	ESI
+		PUSH	EBP
+		PUSH	EBX
+		MOV		EDX,7			; 功能号7
+		MOV		EBX,[ESP+20]	; win
+		MOV		EAX,[ESP+24]	; startX
+		MOV		ECX,[ESP+28]	; startY
+		MOV		ESI,[ESP+32]	; endX
+		MOV		EDI,[ESP+36]	; endY
+		MOV		EBP,[ESP+40]	; col
+		INT		0x40
+		POP		EBX
+		POP		EBP
 		POP		ESI
 		POP		EDI
 		RET
