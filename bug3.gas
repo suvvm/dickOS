@@ -1,0 +1,14 @@
+	.file	"bug3.c"
+	.text
+	.balign 2
+.globl _Main
+	.def	_Main;	.scl	2;	.type	32;	.endef
+_Main:
+	pushl	%ebp
+	movl	%esp, %ebp
+L2:
+	pushl	$97
+	call	_apiPutchar
+	popl	%eax
+	jmp	L2
+	.def	_apiPutchar;	.scl	2;	.type	32;	.endef
