@@ -45,6 +45,12 @@ bug3.gas : bug3.c Makefile
 	
 helloCS.gas : helloCS.c Makefile
 	$(CC1) -o helloCS.gas helloCS.c
+	
+winHelo.gas : winHelo.c Makefile
+	$(CC1) -o winHelo.gas winHelo.c
+
+winHelo2.gas : winHelo2.c Makefile
+	$(CC1) -o winHelo2.gas winHelo2.c
 
 func.obj : func.nas Makefile
 	$(NASK) func.nas func.obj func.lst
@@ -98,13 +104,27 @@ helloCS.bim : helloCS.obj helloCFunc.obj Makefile
 	
 helloCS.hrb : helloCS.bim Makefile
 	$(BIM2HRB) helloCS.bim helloCS.hrb 0
+	
+winHelo.bim : winHelo.obj helloCFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:winHelo.bim stack:1k map:winHelo.map \
+		winHelo.obj helloCFunc.obj
+
+winHelo.hrb : winHelo.bim Makefile
+	$(BIM2HRB) winHelo.bim winHelo.hrb 0
+
+winHelo2.bim : winHelo2.obj helloCFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:winHelo2.bim stack:1k map:winHelo2.map \
+		winHelo2.obj helloCFunc.obj
+
+winHelo2.hrb : winHelo2.bim Makefile
+	$(BIM2HRB) winHelo2.bim winHelo2.hrb 0
 
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
 dickos.img : ipl.bin dickos.sys Makefile \
-		hello.hrb helloStr.hrb helloC.hrb \
-		bug1.hrb bug2.hrb bug3.hrb \
+		hello.hrb helloStr.hrb helloC.hrb winHelo.hrb\
+		bug1.hrb bug2.hrb bug3.hrb winHelo2.hrb\
 		helloCS.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
@@ -118,6 +138,8 @@ dickos.img : ipl.bin dickos.sys Makefile \
 		copy from:bug2.hrb to:@: \
 		copy from:bug3.hrb to:@: \
 		copy from:helloCS.hrb to:@: \
+		copy from:winHelo.hrb to:@: \
+		copy from:winHelo2.hrb to:@: \
 		imgout:dickos.img
 
 # 通用规则
