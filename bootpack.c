@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.5.7
-* @Date: 2020-02-05
+* @Version: 0.5.8
+* @Date: 2020-02-09
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -39,6 +39,7 @@ void Main(){
 	struct QUEUE queue, keyCmd;	// 总缓冲区 存储欲向键盘控制电路发送的数据的缓冲区
 	struct TIMER *timer;	// 四个定时器指针
 	struct PCB *processA, *processConsole;
+	struct CONSOLE *console;
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
 	keyLeds = (binfo->leds >> 4) & 7;	// 获取键盘各锁定键状态 binfo->leds的4~6位
 	initGdtit();	// 初始化GDT IDT
@@ -236,6 +237,14 @@ void Main(){
 					QueuePush(&keyCmd, KEYCMD_LED);
 					QueuePush(&keyCmd, keyLeds);
 					// 将0xed keyLeds存入缓冲区等待向键盘控制电路发送
+				}
+				if (bufval == 256 + 0x3b && keyShift != 0 && processConsole->tss.ss0 != 0) {	// shift + F1
+					console = (struct CONSOLE *) *((int *) 0x0fec);
+					consolePutstr0(console, "\nBreak(key) :\n");
+					io_cli();	// 关中断 不能在改变寄存器值的时候切换其他进程
+					processConsole->tss.eax = (int) &(processConsole->tss.esp0);
+					processConsole->tss.eip = (int) asm_endApp;
+					io_sti();	// 开中断
 				}
 				if (bufval == 256 + 0xfa) {	// 键盘控制电路返回成功数据
 					keyCmdWait = -1; // 等待进行下一次发送
