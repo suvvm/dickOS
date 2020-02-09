@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.0.7
-* @Date: 2020-02-08
+* @Version: 0.0.8
+* @Date: 2020-02-09
 * @Description: 实现控制台相关函数
 ********************************************************************************/
 
@@ -223,7 +223,7 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;	// 段描述符表GDT地址为 0x270000~0x27ffff
 	struct PCB *process = processNow();
 	char name[18], *p, *q;
-	int i;
+	int i, segsiz, datasiz, esp, dathrb;
 	for(i = 0; i < 13; i++) {
 		if (cmdline[i] <= ' ') {
 			break;
@@ -243,30 +243,25 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 	
 	if (fileInfo != 0) {	// 文件存在
 		p = (char *) memsegAlloc4K(memsegtable, fileInfo->size);	// 为文件在内存中分配缓冲区
-		q = (char *) memsegAlloc4K(memsegtable, 64 * 1024);	// 为应用程序分配专属内存空间
-		*((int *) 0xfe8) = (int) p;	// 将p的地址存入内存0xfe8的位置以供dickApi使用
 		loadFile(fileInfo->clusterNum, fileInfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));	// 读取文件内容至内存缓冲区
-		setSegmdesc(gdt + 1003, fileInfo->size - 1, (int) p, AR_CODE32_ER + 0x60);	// 注册应用程序代码段 +0x60将段设置为应用程序 应用程序若想写入操作系统的段地址就会发生异常
-		setSegmdesc(gdt + 1004, 64 * 1024 - 1, (int) q, AR_DATA32_RW + 0x60);	// 注册应用程序运行段
-		
-		/*
-			将汇编指令
-			[BITS 32]
-					CALL	0x1b
-					RETF
-			编译后的结果 替换文件首6位 （先调用0x1b位置的Main函数 返回后执行far RET 返回控制台）
-		*/
-		if (fileInfo->size >= 8 && strncmp(p + 4, "Hari", 4) == 0) {
-			p[0] = 0xe8;
-			p[1] = 0x16;
-			p[2] = 0x00;
-			p[3] = 0x00;
-			p[4] = 0x00;
-			p[5] = 0xcb;
+		if (fileInfo->size >= 36 && strncmp(p + 4, "Hari", 4) == 0 && *p == 0x00) {	// 该文件为应用程序
+			segsiz	= *((int *) (p + 0x0000));	// 获取操作系统应为应用程序准备的数据段的大小
+			esp 	= *((int *) (p + 0x000c));	// 获取ESP初始值和应用程序数据部分要传送的目的地址
+			datasiz	= *((int *) (p + 0x0010));	// 获取hrb文件内数据部分的大小
+			dathrb	= *((int *) (p + 0x0014));	// 获取hrb文件数据部分开始的位置
+			q = (char *) memsegAlloc4K(memsegtable, segsiz);	// 为应用程序分配专属内存空间
+			*((int *) 0xfe8) = (int) q;	// 将q的地址存入内存0xfe8的位置以供dickApi使用
+			setSegmdesc(gdt + 1003, fileInfo->size - 1, (int) p, AR_CODE32_ER + 0x60);	// 注册应用程序代码段 +0x60将段设置为应用程序 应用程序若想写入操作系统的段地址就会发生异常
+			setSegmdesc(gdt + 1004, segsiz - 1, (int) q, AR_DATA32_RW + 0x60);	// 注册应用程序运行段
+			for (i = 0; i < datasiz; i++) {	// 将数据部分送至目的地址
+				q[esp + i] = p[dathrb + i];
+			}
+			startApp(0x1b, 1003 * 8, esp, 1004 * 8, &(process->tss.esp0));	// 启动应用程序并设置ESP与DS.SS
+			memsegFree4K(memsegtable, (int) q, segsiz);	// 释放应用程序专有内存
+		} else {
+			consolePutstr0(console, ".hrb file format error\n");
 		}
-		startApp(0, 1003 * 8, 64 * 1024, 1004 * 8, &(process->tss.esp0));	// 启动应用程序并设置ESP与DS.SS
 		memsegFree4K(memsegtable, (int) p, fileInfo->size);	// 释放文件缓冲区内存
-		memsegFree4K(memsegtable, (int) q, 64 * 1024);	// 释放应用程序专有内存
 		consoleNewLine(console);
 		return 1;
 	}
