@@ -73,12 +73,22 @@ crack1.hrb : crack1.bim Makefile
 
 crack2.hrb : crack2.nas Makefile
 	$(NASK) crack2.nas crack2.hrb crack2.lst
+	
+crack3.hrb : crack3.nas Makefile
+	$(NASK) crack3.nas crack3.hrb crack3.lst
+
+crack4.hrb : crack4.nas Makefile
+	$(NASK) crack4.nas crack4.hrb crack4.lst
+
+crack5.hrb : crack5.nas Makefile
+	$(NASK) crack5.nas crack5.hrb crack5.lst
 
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
 dickos.img : ipl.bin dickos.sys Makefile \
-		hello.hrb helloStr.hrb helloC.hrb crack1.hrb crack2.hrb
+		hello.hrb helloStr.hrb helloC.hrb crack1.hrb crack2.hrb \
+		crack3.hrb crack4.hrb crack5.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
 		copy from:dickos.sys to:@: \
@@ -89,6 +99,9 @@ dickos.img : ipl.bin dickos.sys Makefile \
 		copy from:helloC.hrb to:@: \
 		copy from:crack1.hrb to:@: \
 		copy from:crack2.hrb to:@: \
+		copy from:crack3.hrb to:@: \
+		copy from:crack4.hrb to:@: \
+		copy from:crack5.hrb to:@: \
 		imgout:dickos.img
 
 # 通用规则
