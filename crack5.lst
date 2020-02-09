@@ -1,5 +1,0 @@
-     1 00000000                                 [INSTRSET "i486p"]
-     2 00000000                                 [BITS 32]
-     3 00000000 9A 00002FFE 0010                		CALL	2*8:0x2ffe	; farCALL bootpack.map中记录的io_cli地址
-     4 00000007 BA 00000004                     		MOV		EDX,4
-     5 0000000C CD 40                           		INT		0x40
