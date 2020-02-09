@@ -1,4 +1,4 @@
-text size :     79(0x0004F)
+text size :    193(0x000C1)
 data size :      0(0x00000)
 bss  size :      0(0x00000)
 
@@ -7,7 +7,10 @@ bss  size :      0(0x00000)
 0x00000052 : _apiPutchar
 0x00000052 : (.text)
 0x0000005E : _apiPutstr0
-0x0000006C : _apiEnd
+0x0000006C : _apiOpenWindow
+0x0000008E : _apiPutStrWin
+0x000000B6 : _apiBoxFillWin
+0x000000DE : _apiEnd
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000000 : (.bss)

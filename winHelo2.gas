@@ -1,0 +1,49 @@
+	.file	"winHelo2.c"
+	.data
+LC0:
+	.ascii "hello\0"
+LC1:
+	.ascii "hello, world\0"
+	.text
+	.balign 2
+.globl _Main
+	.def	_Main;	.scl	2;	.type	32;	.endef
+_Main:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%ebx
+	pushl	$LC0
+	pushl	$-1
+	pushl	$50
+	pushl	$150
+	pushl	$_buf
+	call	_apiOpenWindow
+	pushl	$3
+	pushl	$43
+	movl	%eax, %ebx
+	pushl	$141
+	pushl	$36
+	pushl	$8
+	pushl	%eax
+	call	_apiBoxFillWin
+	addl	$44, %esp
+	pushl	$LC1
+	pushl	$12
+	pushl	$0
+	pushl	$28
+	pushl	$28
+	pushl	%ebx
+	call	_apiPutStrWin
+	movl	-4(%ebp), %ebx
+	addl	$24, %esp
+	leave
+	jmp	_apiEnd
+.globl _buf
+	.data
+	.balign 16
+_buf:
+	.space 7500
+	.def	_apiEnd;	.scl	2;	.type	32;	.endef
+	.def	_apiPutStrWin;	.scl	2;	.type	32;	.endef
+	.def	_apiBoxFillWin;	.scl	2;	.type	32;	.endef
+	.def	_apiOpenWindow;	.scl	2;	.type	32;	.endef
