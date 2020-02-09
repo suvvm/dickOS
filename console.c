@@ -420,6 +420,14 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		sheetSlide(sheet, 100, 50);
 		sheetUpdown(sheet, 3);
 		reg[7] = (int) sheet;	// 将先前保存的EAX寄存器的值更换为sheet
+	} else if (edx == 6) {	// 功能号6 在图层中显示字符
+		sheet = (struct SHEET *) ebx;
+		putFont8_asc(sheet->buf, sheet->width, esi, edi, eax, (char *)ebp + csBase);	// 缓冲区sheet->buf 宽度sheet->width x轴起始位置esi y轴起始位置edi 颜色eax 字符串首地址ebp + csBase
+		sheetRefresh(sheet, esi, edi, esi + ecx * 8, edi + 16);	// 图层sheet x轴起始位置esi y轴起始位置edi 字数ecx 高度16
+	} else if (edx == 7) {	// 功能号7 在图层中绘制矩形
+		sheet = (struct SHEET *) ebx;
+		boxFill8(sheet->buf, sheet->width, ebp, eax, ecx, esi, edi);	// 颜色ebp x轴起始位置eax y轴起始位置ecx x轴截止位置esi y轴截止位置edi
+		sheetRefresh(sheet, eax, ecx, esi + 1, edi + 1);
 	}
 	return 0;
 }
