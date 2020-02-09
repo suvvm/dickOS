@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: desctab.c
 * @Author: suvvm
-* @Version: 0.0.6
-* @Date: 2020-02-07
+* @Version: 0.0.7
+* @Date: 2020-02-09
 * @Description: 包含对GDT，IDT等描述符表的处理
 ********************************************************************************/
 #include "bootpack.h"
@@ -79,7 +79,8 @@ void initGdtit(){
 	/*调用汇编函数向idtr赋值（将信息加载给寄存器）*/
 	loadIdtr(LIMIT_IDT, ADR_IDT);
 	
-	//设置IRQ0 IRQ1 IRQ7 IRQ12 的IDT
+	//设置各中断处理函数的IDT
+	setGatedesc(idt + 0x0c, (int) asm_interruptHandler0c, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler0c至IDT
 	setGatedesc(idt + 0x0d, (int) asm_interruptHandler0d, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler0d至IDT
 	setGatedesc(idt + 0x20, (int) asm_interruptHandler20, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler20至IDT
 	setGatedesc(idt + 0x21, (int) asm_interruptHandler21, 2 * 8, AR_INTGATE32);	// 注册中断处理函数asm_interruptHandler21至IDT
