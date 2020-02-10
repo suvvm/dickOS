@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.1.3
+* @Version: 0.1.4
 * @Date: 2020-02-10
 * @Description: 实现控制台相关函数
 ********************************************************************************/
@@ -223,6 +223,8 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 	struct FILEINFO *fileInfo;
 	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;	// 段描述符表GDT地址为 0x270000~0x27ffff
 	struct PCB *process = processNow();
+	struct SHTCTL *shtctl;
+	struct SHEET *sheet;
 	char name[18], *p, *q;
 	int i, segsiz, datasiz, esp, dathrb;
 	for(i = 0; i < 13; i++) {
@@ -258,6 +260,14 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 				q[esp + i] = p[dathrb + i];
 			}
 			startApp(0x1b, 1003 * 8, esp, 1004 * 8, &(process->tss.esp0));	// 启动应用程序并设置ESP与DS.SS
+			// 应用程序结束后
+			shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
+			for (i = 0; i < MAX_SHEETS; i++) {	// 遍历所有图层找到属于该应用程序进程的图层并关闭
+				sheet = &(shtctl->sheets[i]);
+				if (sheet->status != 0 && sheet->process == process) {
+					sheetFree(sheet);
+				}
+			}
 			memsegFree4K(memsegtable, (int) q, segsiz);	// 释放应用程序专有内存
 		} else {
 			consolePutstr0(console, ".hrb file format error\n");
@@ -414,6 +424,7 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		return &(process->tss.esp0);
 	} else if (edx == 5) {	// 功能号5 显示窗口
 		sheet = sheetAlloc(shtctl);
+		sheet->process = process;
 		sheetSetbuf(sheet, (char *) ebx + csBase, esi, edi, eax); // 缓冲区地址为ebx + csBase 宽度esi 高度edi 透明色号 eax
 		makeWindow((char *) ebx + csBase, esi, edi, (char *)ecx + csBase, 0);	// 缓冲区ebx + csBase 宽度esi 高度edi 窗口标题首位地址 ecx+csBase 非活动窗口
 		sheetSlide(sheet, 100, 50);
