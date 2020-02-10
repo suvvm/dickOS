@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.1.1
+* @Version: 0.1.2
 * @Date: 2020-02-10
 * @Description: 实现控制台相关函数
 ********************************************************************************/
@@ -451,8 +451,71 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 	} else if (edx == 12) {	// 功能号12 刷新图层
 		sheet = (struct SHEET *) ebx;
 		sheetRefresh(sheet, eax, ecx, esi, edi);	// x轴起始位置eax y轴起始位置ecx x轴截止位置esi y轴截止位置edi	
+	} else if (edx == 13) {	// 功能号13 绘制直线
+		sheet = (struct SHEET *) (ebx & 0xfffffffe);
+		dickApiLineWin(sheet, eax, ecx, esi, edi, ebp);	// 绘制直线 x轴起始位置eax y轴起始位置ecx x轴截止位置esi y轴截止位置edi 色号ebp
+		if ((ebx & 1) == 0) {
+			sheetRefresh(sheet, eax, ecx, esi + 1, edi + 1);
+		}
 	}
 	return 0;
+}
+
+/*******************************************************
+*
+* Function name: dickApiLineWin
+* Description: 在图层中绘制直线
+* Parameter: 
+*	@sheet	图层指针	struct SHEET *
+*	@startX	x轴起始位置	int
+*	@startY	y轴起始位置 int
+*	@endX	x轴截止位置	int
+*	@endY	y轴截止位置	int
+*	@col	色号		int
+*
+**********************************************************/
+void dickApiLineWin(struct SHEET * sheet, int startX, int startY, int endX, int endY, int col) {
+	int i, x, y, len, dx, dy;
+	dx = endX - startX;	// x偏移量
+	dy = endY - startY;	// y偏移量
+	x = startX << 10;	// startX * 1024
+	y = startY << 10;	// startY * 1024
+	if (dx < 0) {
+		dx = -dx;
+	}
+	if (dy < 0) {
+		dy = -dy;
+	}
+	if (dx >= dy) {
+		len = dx + 1;
+		if (startX > endX) {
+			dx = -1024;
+		} else {
+			dx = 1024;
+		}
+		if (startY <= endY) {
+			dy = ((endY - startY + 1) << 10) / len;
+		} else {
+			dy = ((endY - startY - 1) << 10) / len;
+		}
+	} else {
+		len = dy + 1;
+		if (startY > endY) {
+			dy = -1024;
+		} else {
+			dy = 1024;
+		}
+		if (startX <= endX) {
+			dx = ((endX - startX + 1) << 10) / len;
+		} else {
+			dx = ((endX - startX - 1) << 10) / len;
+		}
+	}
+	for (i = 0; i < len; i++) {
+		sheet->buf[(y >> 10) * sheet->width + (x >> 10)] = col;
+		x += dx;
+		y += dy;
+	}
 }
 
 #endif	// CONSOLE_C
