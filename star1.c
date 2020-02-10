@@ -94,6 +94,27 @@ void apiPoint(int sheet, int x, int y, int col);
 
 /*******************************************************
 *
+* Function name: apiCloseWin
+* Description: 关闭窗口
+* Parameter:
+*	@sheet	图层句柄	int
+*
+**********************************************************/
+void apiCloseWin(int sheet);
+
+/*******************************************************
+*
+* Function name: apiGetKey
+* Description: 获取键盘输入
+* Parameter:
+*	@mode	模式0没有键盘输入时返回-1不休眠	int
+*			模式1休眠直到发生键盘中断
+*
+**********************************************************/
+int apiGetKey(int mode);
+
+/*******************************************************
+*
 * Function name: apiEnd
 * Description: 进行系统调用 调用dickApi结束应用程序 具体定义在 helloCFunc.nas
 *
@@ -108,5 +129,11 @@ void Main() {
 	win = apiOpenWindow(buf, 150, 100, -1, "star1");
 	apiBoxFillWin(win, 6, 26, 143, 93, 0);	// 黑色
 	apiPoint(win, 75, 59, 3);	// 黄色
+	for (;;) {
+		if (apiGetKey(1) == 0x0a) {	// 按下回车结束
+			break;
+		}
+	}
+	apiCloseWin(win);
 	apiEnd();
 }
