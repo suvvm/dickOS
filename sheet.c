@@ -61,6 +61,7 @@ struct SHEET *sheetAlloc(struct SHTCTL *shtctl) {
 			sheet = &shtctl->sheets[i];
 			sheet->status = SHEET_USE;	// 标记为正在使用
 			sheet->index = -1;	// 隐藏（表示该图层并未设置索引，需要设置）
+			sheet->process = 0;	// 不设置所属进程
 			return sheet;
 		}
 	}
