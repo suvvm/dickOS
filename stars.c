@@ -107,7 +107,7 @@ void Main() {
 	int win, i, x, y;
 	apiInitMalloc();
 	buf = apiMalloc(150 * 100);
-	win = apiOpenWindow(buf, 150, 100, -1, "star1");
+	win = apiOpenWindow(buf, 150, 100, -1, "stars");
 	apiBoxFillWin(win, 6, 26, 143, 93, 0);	// 黑色
 	for (i = 0; i < 50; i++) {
 		x = (rand() % 137) + 6;
