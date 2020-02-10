@@ -3,8 +3,8 @@
 [BITS 32]						; 生成32为模式机器语言
 [FILE "helloCFunc.nas"]			; 源文件名信息
 
-		GLOBAL	_apiPutchar, _apiPutstr0, _apiOpenWindow, _apiPutStrWin, _apiBoxFillWin
-		GLOBAL	_apiEnd
+		GLOBAL	_apiPutchar, _apiPutstr0, _apiOpenWindow, _apiPutStrWin, _apiBoxFillWin, _apiInitMalloc, _apiMalloc, _apiFree
+		GLOBAL	_apiPoint, _apiEnd
 		
 [SECTION .text]
 
@@ -44,7 +44,7 @@ _apiPutStrWin:					; void apiPutStrWin(int win, int x, int y, int col, int len, 
 		PUSH	EBP
 		PUSH	EBX
 		MOV		EDX,6			; 功能号6
-		MOV		EBX,[ESP+20]	; win
+		MOV		EBX,[ESP+20]	; win 图层句柄
 		MOV		ESI,[ESP+24]	; x
 		MOV		EDI,[ESP+28]	; y
 		MOV		EAX,[ESP+32]	; col
@@ -63,7 +63,7 @@ _apiBoxFillWin:					; void apiBoxFillWin(int win, int startX, int startY, int en
 		PUSH	EBP
 		PUSH	EBX
 		MOV		EDX,7			; 功能号7
-		MOV		EBX,[ESP+20]	; win
+		MOV		EBX,[ESP+20]	; win 图层句柄
 		MOV		EAX,[ESP+24]	; startX
 		MOV		ECX,[ESP+28]	; startY
 		MOV		ESI,[ESP+32]	; endX
@@ -76,6 +76,52 @@ _apiBoxFillWin:					; void apiBoxFillWin(int win, int startX, int startY, int en
 		POP		EDI
 		RET
 		
+_apiInitMalloc:					; void apiInitMalloc();
+		PUSH	EBX
+		MOV		EDX,8			; 功能号8
+		MOV		EBX,[CS:0x0020]	; 在应用程序文件中读取0x0020位置记录的当前malloc可分配内存空间起始地址（memsegtable管理空间起始地址）
+		MOV		EAX,EBX
+		ADD		EAX,32*1024		; 加上32KB
+		MOV		ECX,[CS:0x0000]	; 在应用程序文件中读取0x0000位置读取数据段的大小（memsegtable管理的字节数）
+		SUB		ECX,EAX
+		INT		0x40
+		POP		EBX
+		RET
+
+_apiMalloc:						; char *apiMalloc(int size);
+		PUSH	EBX
+		MOV		EDX,9			; 功能号9
+		MOV		EBX,[CS:0x0020]
+		MOV		ECX,[ESP+8]		; size
+		INT		0x40
+		POP		EBX
+		RET
+		
+_apiFree:						; void apiFree(char *addr, int size);
+		PUSH	EBX
+		MOV		EDX,10			; 功能号10
+		MOV		EBX,[CS:0x0020]
+		MOV		EAX,[ESP+8]		; addr
+		MOV		ECX,[ESP+12]	; size
+		INT		0x40
+		POP		EBX
+		RET
+		
+_apiPoint:						; void apiPoint(int sheet, int x, int y, int col);
+		PUSH	EDI
+		PUSH	ESI
+		PUSH	EBX
+		MOV		EDX,11			; 功能号11
+		MOV		EBX,[ESP+16]	; sheet图层句柄
+		MOV		ESI,[ESP+20]	; x
+		MOV		EDI,[ESP+24]	; y
+		MOV		EAX,[ESP+28]	; col
+		INT		0x40
+		POP		EBX
+		POP		ESI
+		POP		EDI
+		RET
+
 _apiEnd:						; void apiEnd()
 		MOV		EDX,4
 		INT		0x40
