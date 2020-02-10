@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.1.2
+* @Version: 0.1.3
 * @Date: 2020-02-10
 * @Description: 实现控制台相关函数
 ********************************************************************************/
@@ -303,7 +303,6 @@ void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned i
 *
 **********************************************************/
 void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
-	struct TIMER * timer;	// 定时器
 	struct PCB *process = processNow();	// 取得当前占有处理机的进程
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
 	int bufval, buf[128], *fat = (int *) memsegAlloc4K(memsegtable, 4 * 2880);
@@ -317,9 +316,9 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	*((int *) 0x0fec) = (int) &console;	// 将console信息存入内存指定位置0x0fec
 	
 	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
-	timer = timerAlloc();
-	timerInit(timer, &process->queue, 1);
-	timerSetTime(timer, 50);	// 0.5秒超时
+	console.timer = timerAlloc();
+	timerInit(console.timer, &process->queue, 1);
+	timerSetTime(console.timer, 50);	// 0.5秒超时
 	readFat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));	// 在磁盘对应地址解压fat数据至对应内存地址
 	
 	consolePutchar(&console, '>', 1); // 打印提示符
@@ -333,17 +332,17 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 			io_sti();	// 开中断
 			if (bufval <= 1) {	// 光标定时器超时
 				if (bufval != 0) {
-					timerInit(timer, &process->queue, 0);
+					timerInit(console.timer, &process->queue, 0);
 					if (console.cursorC >= 0) {	// 光标处于显示状态
 						console.cursorC = COL8_FFFFFF;	// 光标白色
 					}
 				} else {
-					timerInit(timer, &process->queue, 1);
+					timerInit(console.timer, &process->queue, 1);
 					if (console.cursorC >= 0) {	// 光标处于显示状态
 						console.cursorC = COL8_000000;	// 光标黑色
 					}
 				}
-				timerSetTime(timer, 50);	
+				timerSetTime(console.timer, 50);	
 			}
 			if (bufval == 2) {	// 由进程A写入的显示光标通知
 				console.cursorC = COL8_FFFFFF;
@@ -403,7 +402,7 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 	struct SHTCTL *shtctl = (struct SHTCTL *)  *((int *)0x0fe4);	// 在指定内存读取图层控制信息
 	struct SHEET *sheet;
 	int *reg = &eax + 1; // 两次pushad 找到第一次pushad就可以修改先前保存的寄存器的值
-	
+	int bufval;
 	
 	if (edx == 1) {	// 功能号1 显示单个字符
 		consolePutchar(console, eax & 0xff, 1); 	// AL中存放字符ascii码
@@ -456,6 +455,37 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		dickApiLineWin(sheet, eax, ecx, esi, edi, ebp);	// 绘制直线 x轴起始位置eax y轴起始位置ecx x轴截止位置esi y轴截止位置edi 色号ebp
 		if ((ebx & 1) == 0) {
 			sheetRefresh(sheet, eax, ecx, esi + 1, edi + 1);
+		}
+	} else if (edx == 14) {	// 功能号14 关闭窗口
+		sheetFree((struct SHEET *) ebx);
+	} else if (edx == 15) {	// 功能号15 接收键盘输入
+		for (;;) {
+			io_cli();	// 关中断
+			if (QueueSize(&process->queue) == 0) {
+				if (eax != 0) {
+					processSleep(process);	// 缓冲区为空休眠等待
+				} else {
+					io_sti();
+					reg[7] = -1;	// 修改先前保存的eax为-1
+					return 0;
+				}
+			}
+			bufval = QueuePop(&process->queue);
+			io_sti();	// 开中断
+			if (bufval <= 1) {	// 光标定时器中断数据
+				timerInit(console->timer, &process->queue, 1);	// 应用程序运行时不需要显示光标 总是置1
+				timerSetTime(console->timer, 50);
+			}
+			if (bufval == 2) {	// 显示光标通知
+				console->cursorC = COL8_FFFFFF;
+			}
+			if (bufval == 3) {	// 隐藏光标通知
+				console->cursorC = -1;
+			}
+			if (256 <= bufval && bufval <= 511) {	// 键盘数据（由进程A发生）
+				reg[7] = bufval - 256;	// 将键盘数据信息存入先前保存的EAX中
+				return 0;
+			}
 		}
 	}
 	return 0;
