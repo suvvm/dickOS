@@ -4,7 +4,7 @@
 [FILE "helloCFunc.nas"]			; 源文件名信息
 
 		GLOBAL	_apiPutchar, _apiPutstr0, _apiOpenWindow, _apiPutStrWin, _apiBoxFillWin, _apiInitMalloc, _apiMalloc, _apiFree
-		GLOBAL	_apiPoint, _apiEnd
+		GLOBAL	_apiPoint, _apiEnd, _apiRefreshWin
 		
 [SECTION .text]
 
@@ -116,6 +116,22 @@ _apiPoint:						; void apiPoint(int sheet, int x, int y, int col);
 		MOV		ESI,[ESP+20]	; x
 		MOV		EDI,[ESP+24]	; y
 		MOV		EAX,[ESP+28]	; col
+		INT		0x40
+		POP		EBX
+		POP		ESI
+		POP		EDI
+		RET
+
+_apiRefreshWin:					; void apiRefreshWin(int sheet, int startX, int startY, int endX, int endY);
+		PUSH	EDI
+		PUSH	ESI
+		PUSH	EBX
+		MOV		EDX,12			; 功能号12
+		MOV		EBX,[ESP+16]	; sheet 图层句柄
+		MOV		EAX,[ESP+20]	; startX
+		MOV		ECX,[ESP+24]	; startY
+		MOV		ESI,[ESP+28]	; endX
+		MOV		EDI,[ESP+32]	; endY
 		INT		0x40
 		POP		EBX
 		POP		ESI
