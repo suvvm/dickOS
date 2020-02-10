@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.1.0
+* @Version: 0.1.1
 * @Date: 2020-02-10
 * @Description: 实现控制台相关函数
 ********************************************************************************/
@@ -421,13 +421,17 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		sheetUpdown(sheet, 3);
 		reg[7] = (int) sheet;	// 将先前保存的EAX寄存器的值更换为sheet
 	} else if (edx == 6) {	// 功能号6 在图层中显示字符
-		sheet = (struct SHEET *) ebx;	// 图层句柄
+		sheet = (struct SHEET *) (ebx & 0xfffffffe);	// 图层句柄
 		putFont8_asc(sheet->buf, sheet->width, esi, edi, eax, (char *)ebp + csBase);	// 缓冲区sheet->buf 宽度sheet->width x轴起始位置esi y轴起始位置edi 颜色eax 字符串首地址ebp + csBase
-		sheetRefresh(sheet, esi, edi, esi + ecx * 8, edi + 16);	// 图层sheet x轴起始位置esi y轴起始位置edi 字数ecx 高度16
+		if ((ebx & 1) == 0) {	// 奇数不刷新
+			sheetRefresh(sheet, esi, edi, esi + ecx * 8, edi + 16);	// 图层sheet x轴起始位置esi y轴起始位置edi 字数ecx 高度16
+		}
 	} else if (edx == 7) {	// 功能号7 在图层中绘制矩形
-		sheet = (struct SHEET *) ebx;	// 图层句柄
+		sheet = (struct SHEET *) (ebx & 0xfffffffe);	// 图层句柄
 		boxFill8(sheet->buf, sheet->width, ebp, eax, ecx, esi, edi);	// 颜色ebp x轴起始位置eax y轴起始位置ecx x轴截止位置esi y轴截止位置edi
-		sheetRefresh(sheet, eax, ecx, esi + 1, edi + 1);
+		if ((ebx & 1) == 0) {	// 奇数不刷新
+			sheetRefresh(sheet, eax, ecx, esi + 1, edi + 1);
+		}
 	} else if (edx == 8) {	// 功能号8 memseg初始化
 		memsegInit((struct MEMSEGTABLE *) (ebx + csBase));	// 内存段表 ebx + csBase
 		ecx &= 0xfffffff0; // 以16字节为单位
@@ -439,9 +443,14 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		ecx = (ecx + 0x0f) & 0xfffffff0;	// 以16字节为单位
 		memsegFree((struct MEMSEGTABLE *) (ebx + csBase), eax, ecx);	// 释放首地址eax 偏移量ecx
 	} else if (edx == 11) {	// 功能号11 绘制1 * 1小矩形实现绘制像素点功能
-		sheet = (struct SHEET *) ebx;	// 图层句柄
+		sheet = (struct SHEET *) (ebx & 0xfffffffe);	// 图层句柄
 		sheet->buf[sheet->width * edi + esi] = eax;	// x轴起始位置esi y轴起始位置edi 颜色eax
-		sheetRefresh(sheet, esi, edi, esi + 1, edi + 1); 	// 刷新目标像素
+		if ((ebx & 1) == 0) { // 奇数不刷新
+			sheetRefresh(sheet, esi, edi, esi + 1, edi + 1); 	// 刷新目标像素
+		}
+	} else if (edx == 12) {	// 功能号12 刷新图层
+		sheet = (struct SHEET *) ebx;
+		sheetRefresh(sheet, eax, ecx, esi, edi);	// x轴起始位置eax y轴起始位置ecx x轴截止位置esi y轴截止位置edi	
 	}
 	return 0;
 }
