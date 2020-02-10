@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.4.3
-* @Date: 2020-02-09
+* @Version: 0.4.5
+* @Date: 2020-02-10
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -290,12 +290,14 @@ struct MEMSEGTABLE {
 *	@index		图层索引编号							int
 *	@status		图层状态								int
 *	@shtctl		图层控制块指针							struct SHTCTL *
+*	@process	图层所属进程							struct PCB *
 *
 ********************************************************************************/
 struct SHEET {
 	unsigned char *buf;
 	int width, height, locationX, locationY, colInvNum, index, status;
 	struct SHTCTL *shtctl;
+	struct PCB *process;
 };
 
 /********************************************************************************
@@ -389,6 +391,7 @@ struct FILEINFO {
 struct CONSOLE {
 	struct SHEET *sheet;
 	int cursorX, cursorY, cursorC;
+	struct TIMER *timer;
 };
 
 // queue.c 函数声明
@@ -514,6 +517,7 @@ void cmdType(struct CONSOLE *console, int *fat, char *cmdline);
 int cmdApp(struct CONSOLE *console, int *fat, char *cmdline);
 void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned int memsegTotalCnt);
 void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt);
+void dickApiLineWin(struct SHEET * sheet, int startX, int startY, int endX, int endY, int col);
 
 // window.c 函数声明
 void makeTextBox(struct SHEET *sheet, int startX, int startY, int width, int height, int c);
