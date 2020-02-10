@@ -1,4 +1,4 @@
-text size :    183(0x000B7)
+text size :    392(0x00188)
 data size :   7516(0x01D5C)
 bss  size :      0(0x00000)
 
@@ -10,7 +10,15 @@ bss  size :      0(0x00000)
 0x00000062 : _apiOpenWindow
 0x00000084 : _apiPutStrWin
 0x000000AC : _apiBoxFillWin
-0x000000D4 : _apiEnd
+0x000000D4 : _apiInitMalloc
+0x000000F5 : _apiMalloc
+0x0000010A : _apiFree
+0x00000123 : _apiPoint
+0x00000141 : _apiRefreshWin
+0x00000163 : _apiLineWin
+0x0000018B : _apiCloseWin
+0x00000199 : _apiGetKey
+0x000001A5 : _apiEnd
 0x00000000 : (.data)
 0x00000400 : (.data)
 0x00000410 : _buf

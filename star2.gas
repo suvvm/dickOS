@@ -1,0 +1,77 @@
+	.file	"star2.c"
+	.data
+LC0:
+	.ascii "star2\0"
+	.text
+	.balign 2
+.globl _Main
+	.def	_Main;	.scl	2;	.type	32;	.endef
+_Main:
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%edi
+	pushl	%esi
+	movl	$49, %edi
+	pushl	%ebx
+	call	_apiInitMalloc
+	pushl	$15000
+	call	_apiMalloc
+	pushl	$LC0
+	pushl	$-1
+	pushl	$100
+	pushl	$150
+	pushl	%eax
+	call	_apiOpenWindow
+	pushl	$0
+	pushl	$93
+	movl	%eax, %ebx
+	pushl	$143
+	leal	1(%eax), %eax
+	pushl	$26
+	pushl	$6
+	pushl	%eax
+	call	_apiBoxFillWin
+	addl	$48, %esp
+L6:
+	call	_rand
+	movl	$137, %edx
+	movl	%edx, %ecx
+	cltd
+	idivl	%ecx
+	leal	6(%edx), %esi
+	call	_rand
+	movl	$67, %edx
+	pushl	$3
+	movl	%edx, %ecx
+	cltd
+	idivl	%ecx
+	addl	$26, %edx
+	leal	1(%ebx), %eax
+	pushl	%edx
+	pushl	%esi
+	pushl	%eax
+	call	_apiPoint
+	addl	$16, %esp
+	decl	%edi
+	jns	L6
+	pushl	$94
+	pushl	$144
+	pushl	$26
+	pushl	$6
+	pushl	%ebx
+	call	_apiRefreshWin
+	addl	$20, %esp
+	leal	-12(%ebp), %esp
+	popl	%ebx
+	popl	%esi
+	popl	%edi
+	popl	%ebp
+	jmp	_apiEnd
+	.def	_apiEnd;	.scl	2;	.type	32;	.endef
+	.def	_apiRefreshWin;	.scl	2;	.type	32;	.endef
+	.def	_apiPoint;	.scl	2;	.type	32;	.endef
+	.def	_rand;	.scl	2;	.type	32;	.endef
+	.def	_apiBoxFillWin;	.scl	2;	.type	32;	.endef
+	.def	_apiOpenWindow;	.scl	2;	.type	32;	.endef
+	.def	_apiMalloc;	.scl	2;	.type	32;	.endef
+	.def	_apiInitMalloc;	.scl	2;	.type	32;	.endef
