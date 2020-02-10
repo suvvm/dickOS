@@ -66,6 +66,9 @@ stars.gas : stars.c Makefile
 
 line.gas : line.c Makefile
 	$(CC1) -o line.gas line.c
+	
+walk.gas : walk.c Makefile
+	$(CC1) -o walk.gas walk.c
 
 func.obj : func.nas Makefile
 	$(NASK) func.nas func.obj func.lst
@@ -169,12 +172,19 @@ line.bim : line.obj apiFunc.obj Makefile
 line.hrb : line.bim Makefile
 	$(BIM2HRB) line.bim line.hrb 48k
 
+walk.bim : walk.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:walk.bim stack:1k map:walk.map \
+		walk.obj apiFunc.obj
+
+walk.hrb : walk.bim Makefile
+	$(BIM2HRB) walk.bim walk.hrb 48k
+
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
 dickos.img : ipl.bin dickos.sys Makefile \
-		hello.hrb helloStr.hrb helloC.hrb winHelo.hrb line.hrb\
-		bug1.hrb bug2.hrb bug3.hrb winHelo2.hrb star2.hrb\
+		hello.hrb helloStr.hrb helloC.hrb winHelo.hrb line.hrb \
+		bug1.hrb bug2.hrb bug3.hrb winHelo2.hrb star2.hrb walk.hrb \
 		helloCS.hrb winHelo3.hrb star1.hrb stars.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
@@ -195,6 +205,7 @@ dickos.img : ipl.bin dickos.sys Makefile \
 		copy from:stars.hrb to:@: \
 		copy from:star2.hrb to:@: \
 		copy from:line.hrb to:@: \
+		copy from:walk.hrb to:@: \
 		imgout:dickos.img
 
 # 通用规则
