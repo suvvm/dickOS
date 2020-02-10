@@ -51,6 +51,21 @@ winHelo.gas : winHelo.c Makefile
 
 winHelo2.gas : winHelo2.c Makefile
 	$(CC1) -o winHelo2.gas winHelo2.c
+	
+winHelo3.gas : winHelo3.c Makefile
+	$(CC1) -o winHelo3.gas winHelo3.c
+
+star1.gas : star1.c Makefile
+	$(CC1) -o star1.gas star1.c
+	
+star2.gas : star2.c Makefile
+	$(CC1) -o star2.gas star2.c
+
+stars.gas : stars.c Makefile
+	$(CC1) -o stars.gas stars.c
+
+line.gas : line.c Makefile
+	$(CC1) -o line.gas line.c
 
 func.obj : func.nas Makefile
 	$(NASK) func.nas func.obj func.lst
@@ -74,14 +89,14 @@ hello.hrb : hello.nas Makefile
 helloStr.hrb : helloStr.nas Makefile
 	$(NASK) helloStr.nas helloStr.hrb helloStr.lst
 
-helloC.bim : helloC.obj helloCFunc.obj Makefile
-	$(OBJ2BIM) @$(RULEFILE) out:helloC.bim map:helloC.map helloC.obj helloCFunc.obj
+helloC.bim : helloC.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:helloC.bim map:helloC.map helloC.obj apiFunc.obj
 
 helloC.hrb : helloC.bim Makefile
 	$(BIM2HRB) helloC.bim helloC.hrb 0
 	
-bug1.bim : bug1.obj helloCFunc.obj Makefile
-	$(OBJ2BIM) @$(RULEFILE) out:bug1.bim map:bug1.map bug1.obj helloCFunc.obj
+bug1.bim : bug1.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:bug1.bim map:bug1.map bug1.obj apiFunc.obj
 
 bug1.hrb : bug1.bim Makefile
 	$(BIM2HRB) bug1.bim bug1.hrb 0
@@ -92,40 +107,75 @@ bug2.bim : bug2.obj Makefile
 bug2.hrb : bug2.bim Makefile
 	$(BIM2HRB) bug2.bim bug2.hrb 0
 
-bug3.bim : bug3.obj helloCFunc.obj Makefile
-	$(OBJ2BIM) @$(RULEFILE) out:bug3.bim map:bug3.map bug3.obj helloCFunc.obj
+bug3.bim : bug3.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:bug3.bim map:bug3.map bug3.obj apiFunc.obj
 
 bug3.hrb : bug3.bim Makefile
 	$(BIM2HRB) bug3.bim bug3.hrb 0
 	
-helloCS.bim : helloCS.obj helloCFunc.obj Makefile
+helloCS.bim : helloCS.obj apiFunc.obj Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:helloCS.bim stack:1k map:helloCS.map \
-		helloCS.obj helloCFunc.obj
+		helloCS.obj apiFunc.obj
 	
 helloCS.hrb : helloCS.bim Makefile
 	$(BIM2HRB) helloCS.bim helloCS.hrb 0
 	
-winHelo.bim : winHelo.obj helloCFunc.obj Makefile
+winHelo.bim : winHelo.obj apiFunc.obj Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:winHelo.bim stack:1k map:winHelo.map \
-		winHelo.obj helloCFunc.obj
+		winHelo.obj apiFunc.obj
 
 winHelo.hrb : winHelo.bim Makefile
 	$(BIM2HRB) winHelo.bim winHelo.hrb 0
 
-winHelo2.bim : winHelo2.obj helloCFunc.obj Makefile
+winHelo2.bim : winHelo2.obj apiFunc.obj Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:winHelo2.bim stack:1k map:winHelo2.map \
-		winHelo2.obj helloCFunc.obj
+		winHelo2.obj apiFunc.obj
 
 winHelo2.hrb : winHelo2.bim Makefile
 	$(BIM2HRB) winHelo2.bim winHelo2.hrb 0
+	
+winHelo3.bim : winHelo3.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:winHelo3.bim stack:1k map:winHelo3.map \
+		winHelo3.obj apiFunc.obj
+
+winHelo3.hrb : winHelo3.bim Makefile
+	$(BIM2HRB) winHelo3.bim winHelo3.hrb 40k
+
+star1.bim : star1.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:star1.bim stack:1k map:star1.map \
+		star1.obj apiFunc.obj
+
+star1.hrb : star1.bim Makefile
+	$(BIM2HRB) star1.bim star1.hrb 47k
+	
+star2.bim : star2.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:star2.bim stack:1k map:star2.map \
+		star2.obj apiFunc.obj
+
+star2.hrb : star2.bim Makefile
+	$(BIM2HRB) star2.bim star2.hrb 47k
+
+stars.bim : stars.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:stars.bim stack:1k map:stars.map \
+		stars.obj apiFunc.obj
+
+stars.hrb : stars.bim Makefile
+	$(BIM2HRB) stars.bim stars.hrb 47k
+
+line.bim : line.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:line.bim stack:1k map:line.map \
+		line.obj apiFunc.obj
+
+line.hrb : line.bim Makefile
+	$(BIM2HRB) line.bim line.hrb 48k
 
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
 dickos.img : ipl.bin dickos.sys Makefile \
-		hello.hrb helloStr.hrb helloC.hrb winHelo.hrb\
-		bug1.hrb bug2.hrb bug3.hrb winHelo2.hrb\
-		helloCS.hrb
+		hello.hrb helloStr.hrb helloC.hrb winHelo.hrb line.hrb\
+		bug1.hrb bug2.hrb bug3.hrb winHelo2.hrb star2.hrb\
+		helloCS.hrb winHelo3.hrb star1.hrb stars.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
 		copy from:dickos.sys to:@: \
@@ -140,6 +190,11 @@ dickos.img : ipl.bin dickos.sys Makefile \
 		copy from:helloCS.hrb to:@: \
 		copy from:winHelo.hrb to:@: \
 		copy from:winHelo2.hrb to:@: \
+		copy from:winHelo3.hrb to:@: \
+		copy from:star1.hrb to:@: \
+		copy from:stars.hrb to:@: \
+		copy from:star2.hrb to:@: \
+		copy from:line.hrb to:@: \
 		imgout:dickos.img
 
 # 通用规则
