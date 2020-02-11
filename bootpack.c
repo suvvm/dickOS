@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.6.0
+* @Version: 0.6.1
 * @Date: 2020-02-11
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -28,13 +28,13 @@ void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
 	int	buf[128], keyCmdBuf[32];	// s保存要输出的变量信息 buf为总缓冲区
-	int mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
+	int i, x, y, mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
 	int keyShift = 0, keyTo = 0, keyLeds, keyCmdWait = -1;	// shift按下标识	活动窗口标识
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHTCTL *shtctl;	// 图层控制块指针
-	struct SHEET *sheetBack, *sheetMouse, *sheetWin, *sheetCons;	// 背景图层 鼠标图层 窗口图层 控制台图层
+	struct SHEET *sheetBack, *sheetMouse, *sheetWin, *sheetCons, *sheet;	// 背景图层 鼠标图层 窗口图层 控制台图层
 	unsigned char *bufBack, bufMouse[256], *bufWin, *bufCons;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区 控制台图像缓冲区
 	struct QUEUE queue, keyCmd;	// 总缓冲区 存储欲向键盘控制电路发送的数据的缓冲区
 	struct TIMER *timer;	// 四个定时器指针
@@ -273,7 +273,18 @@ void Main(){
 					sprintf(s, "[lcr %4d %4d]", mdec.x, mdec.y);
 					if ((mdec.btn & 0x01) != 0) {	// 按下左键
 						s[1] = 'L';
-						sheetSlide(sheetWin, mx - 80, my - 8);
+						// sheetSlide(sheetWin, mx - 80, my - 8);
+						for (i = shtctl->top - 1; i > 0; i--) {	// 由鼠标下第一层开始，自顶向下遍历图层
+							sheet = shtctl->sheetsAcs[i];
+							x = mx - sheet->locationX;
+							y = my - sheet->locationY;
+							if (0 <= x && x < sheet->width && 0 <= y && y < sheet->height) {	// 鼠标点中的区域属于该图层
+								if (sheet->buf[y * sheet->width + x] != sheet->colInvNum) {	// 当前鼠标点中的区域不为该图层透明色
+									sheetUpdown(sheet, shtctl->top - 1);	// 将鼠标点中的图层移植鼠标下最高层
+									break;
+								}
+							}
+						}
 					}
 					if ((mdec.btn & 0x02) != 0) {	// 按下右键
 						s[3] = 'R';
