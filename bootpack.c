@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.6.1
+* @Version: 0.6.2
 * @Date: 2020-02-11
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -28,7 +28,7 @@ void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
 	int	buf[128], keyCmdBuf[32];	// s保存要输出的变量信息 buf为总缓冲区
-	int i, x, y, mx, my, bufval, cursorX, cursorC; //鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色
+	int i, x, y, mx, my, bufval, cursorX, cursorC, mmx = -1, mmy = -1; // 鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色 移动模式x坐标 移动模式y坐标
 	int keyShift = 0, keyTo = 0, keyLeds, keyCmdWait = -1;	// shift按下标识	活动窗口标识
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
@@ -274,17 +274,44 @@ void Main(){
 					if ((mdec.btn & 0x01) != 0) {	// 按下左键
 						s[1] = 'L';
 						// sheetSlide(sheetWin, mx - 80, my - 8);
-						for (i = shtctl->top - 1; i > 0; i--) {	// 由鼠标下第一层开始，自顶向下遍历图层
-							sheet = shtctl->sheetsAcs[i];
-							x = mx - sheet->locationX;
-							y = my - sheet->locationY;
-							if (0 <= x && x < sheet->width && 0 <= y && y < sheet->height) {	// 鼠标点中的区域属于该图层
-								if (sheet->buf[y * sheet->width + x] != sheet->colInvNum) {	// 当前鼠标点中的区域不为该图层透明色
-									sheetUpdown(sheet, shtctl->top - 1);	// 将鼠标点中的图层移植鼠标下最高层
-									break;
+						if (mmx < 0) {	// mmx = -1 mmy = -1 时不处于移动模式
+							for (i = shtctl->top - 1; i > 0; i--) {	// 由鼠标下第一层开始，自顶向下遍历图层
+								sheet = shtctl->sheetsAcs[i];
+								x = mx - sheet->locationX;
+								y = my - sheet->locationY;
+								if (0 <= x && x < sheet->width && 0 <= y && y < sheet->height) {	// 鼠标点中的区域属于该图层
+									if (sheet->buf[y * sheet->width + x] != sheet->colInvNum) {	// 当前鼠标点中的区域不为该图层透明色
+										sheetUpdown(sheet, shtctl->top - 1);	// 将鼠标点中的图层移植鼠标下最高层
+										if (3 <= x && x < sheet->width - 3 && 3 <= y && y < 21) {	// 当前鼠标点中的为窗口标题栏
+											mmx = mx;	// 移动模式记录鼠标当前坐标
+											mmy = my;
+										}
+										if (sheet->width - 21 <= x && x < sheet->width - 5 && 5 <= y && y < 19) {	// 当前鼠标点中的为窗口关闭按钮
+											if (sheet->process != 0) {	// 该窗口隶属某一进程
+												console = (struct CONSOLE *) *((int *) 0x0fec);
+												consolePutstr0(console, "\n Break(mouse) :\n");
+												io_cli();	// 强制结束处理时关中断
+												processConsole->tss.eax = (int) &(processConsole->tss.esp0);
+												processConsole->tss.eip = (int) asm_endApp;
+												io_sti();	// 开中断
+												
+											}
+										}
+										break;
+									}
 								}
 							}
+						} else {
+							// 计算鼠标移动的距离
+							x = mx - mmx;
+							y = my - mmy;
+							sheetSlide(sheet, sheet->locationX + x, sheet->locationY + y);	// 移动图层
+							// 更新移动后的坐标
+							mmx = mx;
+							mmy = my;
 						}
+					} else {	// 没有按下左键
+						mmx = mmy = -1;	// 推出移动模式
 					}
 					if ((mdec.btn & 0x02) != 0) {	// 按下右键
 						s[3] = 'R';
