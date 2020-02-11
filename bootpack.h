@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.4.5
-* @Date: 2020-02-10
+* @Version: 0.4.6
+* @Date: 2020-02-11
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -518,11 +518,12 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline);
 void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned int memsegTotalCnt);
 void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt);
 void dickApiLineWin(struct SHEET * sheet, int startX, int startY, int endX, int endY, int col);
+int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 
 // window.c 函数声明
 void makeTextBox(struct SHEET *sheet, int startX, int startY, int width, int height, int c);
 void makeWindowTitle(unsigned char *buf, int width, char *title, char act);
 void makeWindow(unsigned char *buf, int width, int height, char *title, char act);
-int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
+void changeWinTitle(struct SHEET *sheet, char act);
 
 #endif // BOOTPACK_H
