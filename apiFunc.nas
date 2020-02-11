@@ -4,6 +4,7 @@
 [FILE "helloCFunc.nas"]			; 源文件名信息
 
 		GLOBAL	_apiPutchar, _apiPutstr0, _apiOpenWindow, _apiPutStrWin, _apiBoxFillWin, _apiInitMalloc, _apiMalloc, _apiFree
+		GLOBAL	_apiAllocTimer, _apiInitTimer, _apiSetTimer, _apiFreeTimer
 		GLOBAL	_apiGetKey, _apiCloseWin, _apiLineWin, _apiPoint, _apiEnd, _apiRefreshWin
 		
 [SECTION .text]
@@ -169,6 +170,37 @@ _apiGetKey:						; int apiGetKey(int mode);
 		MOV		EDX,15
 		MOV		EAX,[ESP+4]		; mode
 		INT		0x40
+		RET
+
+_apiAllocTimer:					; int apiAllocTimer();
+		MOV		EDX,16			; 功能号16
+		INT		0x40
+		RET
+		
+_apiInitTimer:					; void apiInitTimer(int timer, int data);
+		PUSH	EBX
+		MOV		EDX,17			; 功能号17
+		MOV		EBX,[ESP+8]		; timer
+		MOV		EAX,[ESP+12]	; data
+		INT		0x40
+		POP		EBX
+		RET
+		
+_apiSetTimer:					; void apiSetTimer(int timer, int time);
+		PUSH	EBX
+		MOV		EDX,18			; 功能号18
+		MOV		EBX,[ESP+8]		; timer
+		MOV		EAX,[ESP+12]	; time
+		INT		0x40
+		POP		EBX
+		RET
+
+_apiFreeTimer:					; void apiFreeTimer(int timer);
+		PUSH	EBX
+		MOV		EDX,19			; 功能号19
+		MOV		EBX,[ESP+8]		; timer
+		INT		0x40
+		POP		EBX
 		RET
 
 _apiEnd:						; void apiEnd()
