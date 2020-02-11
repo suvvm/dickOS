@@ -329,6 +329,11 @@ void Main(){
 								if (0 <= x && x < sheet->width && 0 <= y && y < sheet->height) {	// 鼠标点中的区域属于该图层
 									if (sheet->buf[y * sheet->width + x] != sheet->colInvNum) {	// 当前鼠标点中的区域不为该图层透明色
 										sheetUpdown(sheet, shtctl->top - 1);	// 将鼠标点中的图层移植鼠标下最高层
+										if (sheet != keyWin) {
+											cursorC = keyWinOff(keyWin, sheetWin, cursorC, cursorX);
+											keyWin = sheet;
+											cursorC = keyWinOn(keyWin, sheetWin, cursorC);
+										}
 										if (3 <= x && x < sheet->width - 3 && 3 <= y && y < 21) {	// 当前鼠标点中的为窗口标题栏
 											mmx = mx;	// 移动模式记录鼠标当前坐标
 											mmy = my;
