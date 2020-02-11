@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.1.4
-* @Date: 2020-02-10
+* @Version: 0.1.5
+* @Date: 2020-02-11
 * @Description: 实现控制台相关函数
 ********************************************************************************/
 
@@ -264,7 +264,7 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 			shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
 			for (i = 0; i < MAX_SHEETS; i++) {	// 遍历所有图层找到属于该应用程序进程的图层并关闭
 				sheet = &(shtctl->sheets[i]);
-				if (sheet->status != 0 && sheet->process == process) {
+				if ((sheet->status & 0x11) == 0x11 && sheet->process == process) {
 					sheetFree(sheet);
 				}
 			}
@@ -425,6 +425,7 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 	} else if (edx == 5) {	// 功能号5 显示窗口
 		sheet = sheetAlloc(shtctl);
 		sheet->process = process;
+		sheet->status |= 0x10;	// 标记为应用程序窗口
 		sheetSetbuf(sheet, (char *) ebx + csBase, esi, edi, eax); // 缓冲区地址为ebx + csBase 宽度esi 高度edi 透明色号 eax
 		makeWindow((char *) ebx + csBase, esi, edi, (char *)ecx + csBase, 0);	// 缓冲区ebx + csBase 宽度esi 高度edi 窗口标题首位地址 ecx+csBase 非活动窗口
 		sheetSlide(sheet, 100, 50);
