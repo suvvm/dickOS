@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.5.9
-* @Date: 2020-02-09
+* @Version: 0.6.0
+* @Date: 2020-02-11
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -259,6 +259,9 @@ void Main(){
 					if (keyTo != 0) {	// 发送至控制台窗口
 						QueuePush(&processConsole->queue, 10 + 256);
 					}
+				}
+				if (bufval == 256 + 0x57 && shtctl->top > 2) {	// 按下F11 且最上层图层索引大于2 除去鼠标和背景还存在至少2个图层
+					sheetUpdown(shtctl->sheetsAcs[1], shtctl->top - 1);	// 将除去背景层之外处于最下层的图层放在鼠标下最高层
 				}
 				// 重新显示光标
 				if (cursorC > 0) {
