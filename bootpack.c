@@ -20,6 +20,56 @@
 
 /*******************************************************
 *
+* Function name: keyWinOff
+* Description: 使当前正在获取键盘数据的窗口停止获取键盘数据
+* Parameter:
+*	@keyWin		当前正在接收键盘数据的窗口指针				struct SHEET *
+*	@sheetWin	主进程ProcessA输入框窗口					struct SHEET *
+*	@cursorC	当前主进程ProcessA输入框窗口光标颜色状态	int
+*	@cursorX	当前主进程ProcessA输入框窗口光标位置		int
+* Return:
+*	返回应为主进程processA中的输入框设置的光标颜色状态
+*
+**********************************************************/
+int keyWinOff(struct SHEET *keyWin, struct SHEET *sheetWin, int cursorC, int cursorX) {
+	changeWinTitle(keyWin, 0);	// 改变keyWin窗口标题栏为非活动颜色
+	if (keyWin == sheetWin) {
+		cursorC = -1;	// sheetWin光标隐藏
+		boxFill8(sheetWin->buf, sheetWin->width, COL8_FFFFFF, cursorX, 28, cursorX + 7, 43);	// 覆盖先前光标
+	} else {
+		if ((keyWin->status & 0x20) != 0) {	// 目标窗口有光标
+			QueuePush(&keyWin->process->queue, 3);	// 向要停止接收键盘输入的窗口进程缓冲区发送光标隐藏信息
+		}
+	}
+	return cursorC;	// 返回应为sheetWin设置的光标颜色
+}
+
+/*******************************************************
+*
+* Function name: keyWinOn
+* Description: 使指定窗口开始接收键盘数据
+* Parameter:
+*	@keyWin		指定的窗口窗口指针							struct SHEET *
+*	@sheetWin	主进程ProcessA输入框窗口					struct SHEET *
+*	@cursorC	当前主进程ProcessA输入框窗口光标颜色状态	int
+* Return:
+*	返回应为主进程processA中的输入框设置的光标颜色状态
+*
+**********************************************************/
+int keyWinOn(struct SHEET *keyWin, struct SHEET *sheetWin, int cursorC) {
+	changeWinTitle(keyWin, 1);	// 改变keyWin窗口标题栏为活动颜色
+	if (keyWin == sheetWin) {	// 指定窗口为主进程ProcessA输入框窗口
+		cursorC = COL8_000000;	// sheetWin显示光标
+	} else {
+		if ((keyWin->status & 0x20) != 0) {	// 目标窗口有光标
+			QueuePush(&keyWin->process->queue, 2);	// 向要接收键盘输入的窗口进程缓冲区发送光标显示信息
+		}
+	}
+	return cursorC;
+}
+
+/*******************************************************
+*
 * Function name:Main
 * Description: 主函数
 *
@@ -29,12 +79,12 @@ void Main(){
 	char s[40];
 	int	buf[128], keyCmdBuf[32];	// s保存要输出的变量信息 buf为总缓冲区
 	int i, x, y, mx, my, bufval, cursorX, cursorC, mmx = -1, mmy = -1; // 鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色 移动模式x坐标 移动模式y坐标
-	int keyShift = 0, keyTo = 0, keyLeds, keyCmdWait = -1;	// shift按下标识	活动窗口标识
+	int keyShift = 0, keyLeds, keyCmdWait = -1;	// shift按下标识 键盘对应按键灯状态
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHTCTL *shtctl;	// 图层控制块指针
-	struct SHEET *sheetBack, *sheetMouse, *sheetWin, *sheetCons, *sheet;	// 背景图层 鼠标图层 窗口图层 控制台图层
+	struct SHEET *sheetBack, *sheetMouse, *sheetWin, *sheetCons, *sheet = 0, *keyWin;	// 背景图层 鼠标图层 窗口图层 控制台图层 遍历用图层指针 当前处于输入模式的窗口指针
 	unsigned char *bufBack, bufMouse[256], *bufWin, *bufCons;	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区 控制台图像缓冲区
 	struct QUEUE queue, keyCmd;	// 总缓冲区 存储欲向键盘控制电路发送的数据的缓冲区
 	struct TIMER *timer;	// 四个定时器指针
@@ -130,10 +180,11 @@ void Main(){
 	putFont8AscSheet(sheetBack, 0, 32, COL8_FFFFFF, COL8_008484,  "Welcome to DickOS", 17);	// 将DickOS写入背景层
 	sprintf(s, "(%3d, %3d)", mx, my);	// 将鼠标位置存入s
 	putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484,  s, 10);	// 将s写入背景层
-	/*
-	sprintf(s, "memory %dMB free : %dKB", memtest(0x00400000, 0xbfffffff) / (1024 * 1024), memsegTotal(memsegtable) / 1024);	// 将内存信息存入s
-	putFont8AscSheet(sheetBack, 0, 48, COL8_FFFFFF, COL8_008484,  s, 26);	// 将s写入背景层
-	*/
+	
+	keyWin = sheetWin;
+	sheetCons->process = processConsole;
+	sheetCons->status |= 0x20;	// 有光标	（status 0x10位标识窗口是否由应用程序生成 0x20位判断是否需要光标）
+	
 	// 为了避免和键盘当前状态冲突，在一开始先进行设置指示灯状态
 	QueuePush(&keyCmd, KEYCMD_LED);	// 0xed
 	QueuePush(&keyCmd, keyLeds);
@@ -151,6 +202,10 @@ void Main(){
 		} else {
 			bufval = QueuePop(&queue);	// 取出缓冲区队列队首数据
 			io_sti();	// 开中断
+			if (keyWin->status == 0) {	// 输入窗口被关闭
+				keyWin = shtctl->sheetsAcs[shtctl->top - 1];	// 输入窗口设为当前最顶层窗口
+				cursorC = keyWinOn(keyWin, sheetWin, cursorC);
+			}
 			if (256 <= bufval && bufval <= 511) {	// 键盘中断数据
 				sprintf(s, "%02X", bufval - 256);
 				putFont8AscSheet(sheetBack, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);	// 将键盘中断信息打印至背景层
@@ -171,44 +226,36 @@ void Main(){
 				}
 				
 				if (s[0] != 0) {	// 普通字符
-					if (keyTo == 0) {	// processA 窗口
+					if (keyWin == sheetWin) {	// processA 窗口
 						if (cursorX < 128) {
 							s[1] = 0;
 							putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, s, 1);	// 将字符打印至窗口层
 							cursorX += 8;	// 光标后移一个字符
 						}
 					} else {
-						QueuePush(&processConsole->queue, s[0] + 256);
+						QueuePush(&keyWin->process->queue, s[0] + 256);
 					}
 				}
 				if (bufval == 256 + 0x0e) {	// 按下退格键且光标不在输入框起始位置
-					if (keyTo == 0) {
+					if (keyWin == sheetWin) {
 						if (cursorX > 8) {
 							putFont8AscSheet(sheetWin, cursorX, 28, COL8_000000, COL8_FFFFFF, " ", 1);	// 用空格消去当前光标
 							cursorX -= 8;	// 光标前移一个字符
 						}
 					} else {
-						QueuePush(&processConsole->queue, 8 + 256);
+						QueuePush(&keyWin->process->queue, 8 + 256);
 					}
 					
 				}
 				if (bufval == 256 + 0x0f) {	// 按下tab键
-					if (keyTo == 0) {
-						keyTo = 1;
-						makeWindowTitle(bufWin, sheetWin->width, "processA", 0);
-						makeWindowTitle(bufCons, sheetCons->width, "console", 1);
-						cursorC = -1;	// 不显示光标
-						boxFill8(sheetWin->buf, sheetWin->width, COL8_FFFFFF, cursorX, 28, cursorX + 7, 43);
-						QueuePush(&processConsole->queue, 2);	// 向控制台进程缓冲区写入3 通知其显示光标
-					} else {
-						keyTo = 0;
-						makeWindowTitle(bufWin, sheetWin->width, "processA", 1);
-						makeWindowTitle(bufCons, sheetCons->width, "console", 0);
-						cursorC = COL8_000000;	// 显示光标
-						QueuePush(&processConsole->queue, 3);	// 向控制台进程缓冲区写入2 通知其隐藏光标
+					cursorC = keyWinOff(keyWin, sheetWin, cursorC, cursorX);
+					i = keyWin->index - 1;	// 找到下一层图层索引号
+					
+					if (i == 0) {	// 如果下一层为背景层
+						i = shtctl->top - 1;	// 将下一次索引置为鼠标下最高层
 					}
-					sheetRefresh(sheetWin, 0, 0, sheetWin->width, 21);
-					sheetRefresh(sheetCons, 0, 0, sheetCons->width, 21);
+					keyWin = shtctl->sheetsAcs[i];	// 获取当前接收键盘数据的图层
+					cursorC = keyWinOn(keyWin, sheetWin, cursorC);
 				}
 				if (bufval == 256 + 0x2a) {	// 左shift按下
 					keyShift |= 1;
@@ -256,15 +303,15 @@ void Main(){
 					io_out8(PORT_KEYDAT, keyCmdWait);	// 重新向键盘控制电路发送8位数据
 				}
 				if (bufval == 256 + 0x1c) {	// 回车
-					if (keyTo != 0) {	// 发送至控制台窗口
-						QueuePush(&processConsole->queue, 10 + 256);
+					if (keyWin != sheetWin) {	// 发送至控制台窗口
+						QueuePush(&keyWin->process->queue, 10 + 256);
 					}
 				}
 				if (bufval == 256 + 0x57 && shtctl->top > 2) {	// 按下F11 且最上层图层索引大于2 除去鼠标和背景还存在至少2个图层
 					sheetUpdown(shtctl->sheetsAcs[1], shtctl->top - 1);	// 将除去背景层之外处于最下层的图层放在鼠标下最高层
 				}
 				// 重新显示光标
-				if (cursorC > 0) {
+				if (cursorC >= 0) {
 					boxFill8(sheetWin->buf, sheetWin->width, cursorC, cursorX, 28, cursorX + 7, 43);
 				}
 				sheetRefresh(sheetWin, cursorX, 28, cursorX + 8, 44);
@@ -287,14 +334,13 @@ void Main(){
 											mmy = my;
 										}
 										if (sheet->width - 21 <= x && x < sheet->width - 5 && 5 <= y && y < 19) {	// 当前鼠标点中的为窗口关闭按钮
-											if (sheet->process != 0) {	// 该窗口隶属某一进程
+											if ((sheet->status & 0x10) != 0) {	// 该窗口隶属某一应用程序
 												console = (struct CONSOLE *) *((int *) 0x0fec);
 												consolePutstr0(console, "\n Break(mouse) :\n");
 												io_cli();	// 强制结束处理时关中断
 												processConsole->tss.eax = (int) &(processConsole->tss.esp0);
 												processConsole->tss.eip = (int) asm_endApp;
-												io_sti();	// 开中断
-												
+												io_sti();	// 开中断	
 											}
 										}
 										break;
