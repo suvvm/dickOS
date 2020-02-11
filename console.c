@@ -268,6 +268,7 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 					sheetFree(sheet);
 				}
 			}
+			timerCancelAllFlags(&process->queue);
 			memsegFree4K(memsegtable, (int) q, segsiz);	// 释放应用程序专有内存
 		} else {
 			consolePutstr0(console, ".hrb file format error\n");
@@ -501,6 +502,7 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		}
 	} else if (edx == 16) {	// 功能号16 定时器分配 alloc
 		reg[7] = (int) timerAlloc();	// EAX设置为定时器句柄
+		((struct TIMER *) reg[7])->flags = 1;	// 应用程序结束时自动取消
 	} else if (edx == 17) {	// 功能号17 定时器初始化 init
 		timerInit((struct TIMER *) ebx, &process->queue, eax + 256);	// 定时器句柄ebx 发送数据eax
 	} else if (edx == 18) {	// 功能号18 设置定时器时间 set
