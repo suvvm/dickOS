@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: window.c
 * @Author: suvvm
-* @Version: 0.0.1
-* @Date: 2020-02-06
+* @Version: 0.0.2
+* @Date: 2020-02-11
 * @Description: 实现窗口相关函数
 ********************************************************************************/
 
@@ -118,6 +118,43 @@ void makeWindow(unsigned char *buf, int width, int height, char *title, char act
 	boxFill8(buf, width, COL8_848484, 1, height - 2, width - 2, height - 2);	// 暗灰色(1,height-2)~(width-2,height-2)底部横线
 	boxFill8(buf, width, COL8_000000, 0, height - 1, width - 1, height - 1);	// 黑色(0,height-1)~(width-1,height-1)底部横线
 	makeWindowTitle(buf, width, title, act);
+}
+
+/*******************************************************
+*
+* Function name: changeWinTitle
+* Description: 修改窗口标题栏状态
+* Parameter:
+*	@sheet	窗口图层指针	struct SHEET *
+*	@act	活动标识		char
+*
+**********************************************************/
+void changeWinTitle(struct SHEET *sheet, char act) {
+	int x, y, width = sheet->width;
+	char c, tcOld, tbcOld, tcNew, tbcNew;	// closeBtn对应位置字符 title文字颜色旧 窗口标题栏颜色旧 title文字颜色新 窗口标题栏颜色新
+	if (act != 0) {	// 窗口为活动窗口
+		tcNew = COL8_FFFFFF;	// 白色
+		tbcNew = COL8_000084;	// 暗青色
+		tcOld = COL8_C6C6C6;	// 亮灰色
+		tbcOld = COL8_848484;	// 暗灰色
+	} else {	// 窗口不为活动窗口
+		tcNew = COL8_C6C6C6;	// 亮灰色
+		tbcNew = COL8_848484;	// 暗灰色
+		tcOld = COL8_FFFFFF;	// 白色
+		tbcOld = COL8_000084;	// 暗青色
+	}
+	for (y = 3; y < 20; y++) {	// 将老颜色转换为新颜色
+		for (x = 3; x < width - 4; x++) {
+			c = sheet->buf[y * width + x];
+			if (c == tcOld && x <= width - 22) {
+				c = tcNew;
+			} else if (c == tbcOld) {
+				c = tbcNew;
+			}
+			sheet->buf[y * width + x] = c; 
+		}
+	}
+	sheetRefresh(sheet, 3, 3, width, 21);
 }
 
 #endif	// WINDOW_C
