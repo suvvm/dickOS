@@ -1,4 +1,4 @@
-text size :    492(0x001EC)
+text size :    550(0x00226)
 data size :      5(0x00005)
 bss  size :      0(0x00000)
 
@@ -18,7 +18,11 @@ bss  size :      0(0x00000)
 0x000001C7 : _apiLineWin
 0x000001EF : _apiCloseWin
 0x000001FD : _apiGetKey
-0x00000209 : _apiEnd
+0x00000209 : _apiAllocTimer
+0x00000211 : _apiInitTimer
+0x00000223 : _apiSetTimer
+0x00000235 : _apiFreeTimer
+0x00000243 : _apiEnd
 0x00000000 : (.data)
 0x00000400 : (.data)
 0x00000000 : (.bss)
