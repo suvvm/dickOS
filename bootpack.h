@@ -337,7 +337,7 @@ struct TIMER {
 	struct TIMER *next;
 	unsigned int timeout, status;
 	struct QUEUE *queue;
-	unsigned char data;
+	int data;
 };
 
 /********************************************************************************
@@ -484,7 +484,7 @@ void sheetRefreshMap(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 // timer.c 函数声明
 void initPit();
 void timerSetTime(struct TIMER *timer, unsigned int timeout);
-void timerInit(struct TIMER *timer, struct QUEUE *queue, unsigned char data);
+void timerInit(struct TIMER *timer, struct QUEUE *queue, int data);
 void timerFree(struct TIMER *timer);
 struct TIMER *timerAlloc();
 

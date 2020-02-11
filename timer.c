@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: timer.c
 * @Author: suvvm
-* @Version: 0.0.6
-* @Date: 2020-01-31
+* @Version: 0.0.7
+* @Date: 2020-02-11
 * @Description: 定义定时器相关函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -76,7 +76,7 @@ void timerFree(struct TIMER *timer) {
 *	@data	定时器超时信息		unsigned char
 *
 **********************************************************/
-void timerInit(struct TIMER *timer, struct QUEUE *queue, unsigned char data) {
+void timerInit(struct TIMER *timer, struct QUEUE *queue, int data) {
 	timer->queue = queue;
 	timer->data = data;
 }
@@ -107,10 +107,7 @@ void timerSetTime(struct TIMER *timer, unsigned int timeout) {
 	}
 	for (;;) {	// 插入链表中间对应位置
 		s = t;
-		t = t->next;
-		if (t == 0) {	// 链表尾
-			break;
-		}		
+		t = t->next;		
 		if (timer->timeout <= t->timeout) {	// 找到位置，插入s与t之间
 			s->next = timer;
 			timer->next = t;
@@ -118,7 +115,6 @@ void timerSetTime(struct TIMER *timer, unsigned int timeout) {
 			return;
 		}
 	}
-	io_store_eflags(eflags);	// 恢复eflags（恢复中断位开放中断）
 }
 
 #endif // TIMER_C
