@@ -470,7 +470,7 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		}
 	} else if (edx == 14) {	// 功能号14 关闭窗口
 		sheetFree((struct SHEET *) ebx);
-	} else if (edx == 15) {	// 功能号15 接收键盘输入
+	} else if (edx == 15) {	// 功能号15 接收键盘输入数据与定时器中断数据
 		for (;;) {
 			io_cli();	// 关中断
 			if (QueueSize(&process->queue) == 0) {
@@ -494,11 +494,19 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 			if (bufval == 3) {	// 隐藏光标通知
 				console->cursorC = -1;
 			}
-			if (256 <= bufval && bufval <= 511) {	// 键盘数据（由进程A发生）
+			if (bufval >= 256) {	// 键盘数据与定时器超时数据（由进程A发生）
 				reg[7] = bufval - 256;	// 将键盘数据信息存入先前保存的EAX中
 				return 0;
 			}
 		}
+	} else if (edx == 16) {	// 功能号16 定时器分配 alloc
+		reg[7] = (int) timerAlloc();	// EAX设置为定时器句柄
+	} else if (edx == 17) {	// 功能号17 定时器初始化 init
+		timerInit((struct TIMER *) ebx, &process->queue, eax + 256);	// 定时器句柄ebx 发送数据eax
+	} else if (edx == 18) {	// 功能号18 设置定时器时间 set
+		timerSetTime((struct TIMER *) ebx, eax);	// 定时器句柄ebx 时间eax
+	} else if (edx == 19) {	// 功能号19 释放定时器 free
+		timerFree((struct TIMER *) ebx);	// 定时器句柄ebx
 	}
 	return 0;
 }
