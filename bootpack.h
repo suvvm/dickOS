@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.4.6
+* @Version: 0.4.7
 * @Date: 2020-02-11
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -325,17 +325,19 @@ struct SHTCTL {
 *
 * timer 定时器
 * Parameter:
-*	@next		指向下一个定时器的指针	struct TIMER *
+*	@next		指向下一个定时器的指针				struct TIMER *
 *				定时器现为链表结构
-*	@status		记录定时器状态			unsigned int
-*	@timeout	超时限制				unsigned int
-*	@queue		缓冲区					struct QUEUE *
-*	@data		超时信息				unsigned char		
+*	@status		记录定时器状态						char
+*	@flags		标记是否在应用程序结束时自动取消	char
+*	@timeout	超时限制							unsigned int
+*	@queue		缓冲区								struct QUEUE *
+*	@data		超时信息							unsigned char		
 *
 ********************************************************************************/
 struct TIMER {
 	struct TIMER *next;
-	unsigned int timeout, status;
+	unsigned int timeout;
+	char status, flags;
 	struct QUEUE *queue;
 	int data;
 };
@@ -487,6 +489,8 @@ void timerSetTime(struct TIMER *timer, unsigned int timeout);
 void timerInit(struct TIMER *timer, struct QUEUE *queue, int data);
 void timerFree(struct TIMER *timer);
 struct TIMER *timerAlloc();
+int timerCancle(struct TIMER *timer);
+void timerCancelAllFlags(struct QUEUE *queue);
 
 // multiProcess.c 函数声明
 void processIdle();
