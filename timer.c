@@ -48,6 +48,7 @@ struct TIMER *timerAlloc() {
 	for (i = 0; i < MAX_TIMER; i++) {
 		if (timerctl.timer[i].status == 0) {
 			timerctl.timer[i].status = TIMER_ALLOC;
+			timerctl.timer[i].flags = 0;
 			return &timerctl.timer[i];
 		}
 	}
@@ -117,4 +118,65 @@ void timerSetTime(struct TIMER *timer, unsigned int timeout) {
 	}
 }
 
+
+/********************************************************
+*
+* Function name:	timerCancle
+* Description: 取消定时器运行
+* Parameter:
+*	@timer	要取消定时器指针	struct TIMER *
+* Return:
+*	取消成功返回1不需要取消返回0
+*
+**********************************************************/
+int timerCancle(struct TIMER *timer) {
+	int eflags;
+	struct TIMER *t;
+	eflags = io_load_eflags();
+	io_cli();
+	if (timer->status == TIMER_USING) {	// 处于运行态
+		if (timer == timerctl.timerHead) { // 要取消的定时器处于链表头
+			t = timer->next;
+			timerctl.timerHead = t;
+			timerctl.next = t->timeout;
+		} else {
+			t = timerctl.timerHead;
+			for (;;) {
+				if (t->next == timer) {
+					break;
+				}
+				t = t->next;
+			}
+			t->next = timer->next;
+		}
+		timer->status = TIMER_ALLOC;
+		io_store_eflags(eflags);
+		return 1;
+	}
+	io_store_eflags(eflags);
+	return 0;
+}
+
+/********************************************************
+*
+* Function name:	timerCancelAllFlags
+* Description: 取消指定缓冲区所有flags不为0的定时器
+* Parameter:
+*	@queue	要取消定时器的缓冲区	struct QUEUE *
+*
+**********************************************************/
+void timerCancelAllFlags(struct QUEUE *queue) {
+	int eflags, i;
+	struct TIMER *t;
+	eflags = io_load_eflags();
+	io_cli();
+	for (i = 0; i < MAX_TIMER; i++) {
+		t = &timerctl.timer[i];
+		if (t->status != 0 && t->flags != 0 && t->queue == queue) {
+			timerCancle(t);
+			timerFree(t);
+		}
+	}
+	io_store_eflags(eflags);
+}
 #endif // TIMER_C
