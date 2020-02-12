@@ -429,8 +429,8 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		sheet->status |= 0x10;	// 标记为应用程序窗口
 		sheetSetbuf(sheet, (char *) ebx + csBase, esi, edi, eax); // 缓冲区地址为ebx + csBase 宽度esi 高度edi 透明色号 eax
 		makeWindow((char *) ebx + csBase, esi, edi, (char *)ecx + csBase, 0);	// 缓冲区ebx + csBase 宽度esi 高度edi 窗口标题首位地址 ecx+csBase 非活动窗口
-		sheetSlide(sheet, 100, 50);
-		sheetUpdown(sheet, 3);
+		sheetSlide(sheet, (shtctl->xSize - esi) / 2, (shtctl->ySize - edi) / 2);
+		sheetUpdown(sheet, shtctl->top);
 		reg[7] = (int) sheet;	// 将先前保存的EAX寄存器的值更换为sheet
 	} else if (edx == 6) {	// 功能号6 在图层中显示字符
 		sheet = (struct SHEET *) (ebx & 0xfffffffe);	// 图层句柄
