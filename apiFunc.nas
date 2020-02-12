@@ -4,7 +4,7 @@
 [FILE "helloCFunc.nas"]			; 源文件名信息
 
 		GLOBAL	_apiPutchar, _apiPutstr0, _apiOpenWindow, _apiPutStrWin, _apiBoxFillWin, _apiInitMalloc, _apiMalloc, _apiFree
-		GLOBAL	_apiAllocTimer, _apiInitTimer, _apiSetTimer, _apiFreeTimer
+		GLOBAL	_apiAllocTimer, _apiInitTimer, _apiSetTimer, _apiFreeTimer, _apiBeep
 		GLOBAL	_apiGetKey, _apiCloseWin, _apiLineWin, _apiPoint, _apiEnd, _apiRefreshWin
 		
 [SECTION .text]
@@ -201,6 +201,12 @@ _apiFreeTimer:					; void apiFreeTimer(int timer);
 		MOV		EBX,[ESP+8]		; timer
 		INT		0x40
 		POP		EBX
+		RET
+		
+_apiBeep:						; void apiBeep(int tone);
+		MOV		EDX,20			; 功能号20
+		MOV		EAX,[ESP+4]		; tone
+		INT		0x40
 		RET
 
 _apiEnd:						; void apiEnd()
