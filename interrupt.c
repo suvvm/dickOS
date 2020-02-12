@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: interrupt.c
 * @Author: suvvm
-* @Version: 0.1.2
-* @Date: 2020-02-09
+* @Version: 0.1.3
+* @Date: 2020-02-12
 * @Description: 中断操作
 ********************************************************************************/
 
@@ -139,8 +139,10 @@ void interruptHandler20(int *esp) {
 *
 **********************************************************/
 int *interruptHandler0d(int *esp) {
-	struct CONSOLE *console = (struct CONSOLE *) *((int *)0x0fec);	// 在内存中获取控制台信息
+	// struct CONSOLE *console = (struct CONSOLE *) *((int *)0x0fec);	
+	// 在内存中获取控制台信息
 	struct PCB *process = processNow();
+	struct CONSOLE *console = process->console;
 	char s[30];
 	consolePutstr0(console, "\nINT 0D :\n General Protected Exception.\n");
 	sprintf(s, "EIP = %08X\n", esp[11]);	// 将esp11号元素（eip）引发异常的地址显示出来
@@ -157,8 +159,10 @@ int *interruptHandler0d(int *esp) {
 *
 **********************************************************/
 int *interruptHandler0c(int *esp) {
-	struct CONSOLE *console = (struct CONSOLE *) *((int *)0x0fec);	// 在内存中获取控制台信息
+	// struct CONSOLE *console = (struct CONSOLE *) *((int *)0x0fec);	
+	// 在内存中获取控制台信息
 	struct PCB *process = processNow();
+	struct CONSOLE *console = process->console;
 	char s[30];
 	consolePutstr0(console, "\nINT 0C :\n Struct Exception.\n");	// 显示异常信息
 	sprintf(s, "EIP = %08X\n", esp[11]);	// 将esp11号元素（eip）引发异常的地址显示出来

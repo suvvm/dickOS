@@ -253,13 +253,15 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 			datasiz	= *((int *) (p + 0x0010));	// 获取hrb文件内数据部分的大小
 			dathrb	= *((int *) (p + 0x0014));	// 获取hrb文件数据部分开始的位置
 			q = (char *) memsegAlloc4K(memsegtable, segsiz);	// 为应用程序分配专属内存空间
-			*((int *) 0xfe8) = (int) q;	// 将q的地址存入内存0xfe8的位置以供dickApi使用
-			setSegmdesc(gdt + 1003, fileInfo->size - 1, (int) p, AR_CODE32_ER + 0x60);	// 注册应用程序代码段 +0x60将段设置为应用程序 应用程序若想写入操作系统的段地址就会发生异常
-			setSegmdesc(gdt + 1004, segsiz - 1, (int) q, AR_DATA32_RW + 0x60);	// 注册应用程序运行段
+			process->dsBase = (int) q;
+			//*((int *) 0xfe8) = (int) q;	
+			// 将q的地址存入内存0xfe8的位置以供dickApi使用
+			setSegmdesc(gdt + process->pid / 8 + 1000, fileInfo->size - 1, (int) p, AR_CODE32_ER + 0x60);	// 注册应用程序代码段 +0x60将段设置为应用程序 应用程序若想写入操作系统的段地址就会发生异常
+			setSegmdesc(gdt + process->pid / 8 + 2000, segsiz - 1, (int) q, AR_DATA32_RW + 0x60);	// 注册应用程序运行段
 			for (i = 0; i < datasiz; i++) {	// 将数据部分送至目的地址
 				q[esp + i] = p[dathrb + i];
 			}
-			startApp(0x1b, 1003 * 8, esp, 1004 * 8, &(process->tss.esp0));	// 启动应用程序并设置ESP与DS.SS
+			startApp(0x1b, process->pid + 1000 * 8, esp, process->pid + 2000 * 8, &(process->tss.esp0));	// 启动应用程序并设置ESP与DS.SS
 			// 应用程序结束后
 			shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
 			for (i = 0; i < MAX_SHEETS; i++) {	// 遍历所有图层找到属于该应用程序进程的图层并关闭
@@ -324,7 +326,9 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	console.cursorY = 28;
 	console.cursorX = 8;
 	console.cursorC = -1;
-	*((int *) 0x0fec) = (int) &console;	// 将console信息存入内存指定位置0x0fec
+	process->console = &console;
+	//*((int *) 0x0fec) = (int) &console;	
+	// 将console信息存入内存指定位置0x0fec
 	
 	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
 	console.timer = timerAlloc();
@@ -407,9 +411,11 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 *
 **********************************************************/
 int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax) {
-	int csBase = *((int *) 0xfe8);	// 获取应用程序文件所在内存地址
-	struct CONSOLE *console = (struct CONSOLE *) *((int *) 0x0fec);	// 在指定内存地址获取控制台信息
 	struct PCB *process = processNow();
+	int dsBase = process->dsBase;	// 获取应用程序文件所在内存地址
+	struct CONSOLE *console = process->console;
+	//struct CONSOLE *console = (struct CONSOLE *) *((int *) 0x0fec);	
+	// 在指定内存地址获取控制台信息
 	struct SHTCTL *shtctl = (struct SHTCTL *)  *((int *)0x0fe4);	// 在指定内存读取图层控制信息
 	struct SHEET *sheet;
 	int *reg = &eax + 1; // 两次pushad 找到第一次pushad就可以修改先前保存的寄存器的值
@@ -418,23 +424,23 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 	if (edx == 1) {	// 功能号1 显示单个字符
 		consolePutchar(console, eax & 0xff, 1); 	// AL中存放字符ascii码
 	} else if (edx == 2) {	// 功能号2 显示字符串到0为止
-		consolePutstr0(console, (char *) ebx + csBase);	// ebx  + csBase中存放msg字符串首地址
+		consolePutstr0(console, (char *) ebx + dsBase);	// ebx  + dsBase中存放msg字符串首地址
 	} else if (edx == 3) {	// 功能号3 显示指定长度字符串
-		consolePutstr1(console, (char *) ebx + csBase, ecx);	// ebx  + csBase中存放msg字符串首地址 ecx中存放长度
+		consolePutstr1(console, (char *) ebx + dsBase, ecx);	// ebx  + dsBase中存放msg字符串首地址 ecx中存放长度
 	} else if (edx == 4) {	// 功能号4 结束应用程序
 		return &(process->tss.esp0);
 	} else if (edx == 5) {	// 功能号5 显示窗口
 		sheet = sheetAlloc(shtctl);
 		sheet->process = process;
 		sheet->status |= 0x10;	// 标记为应用程序窗口
-		sheetSetbuf(sheet, (char *) ebx + csBase, esi, edi, eax); // 缓冲区地址为ebx + csBase 宽度esi 高度edi 透明色号 eax
-		makeWindow((char *) ebx + csBase, esi, edi, (char *)ecx + csBase, 0);	// 缓冲区ebx + csBase 宽度esi 高度edi 窗口标题首位地址 ecx+csBase 非活动窗口
+		sheetSetbuf(sheet, (char *) ebx + dsBase, esi, edi, eax); // 缓冲区地址为ebx + dsBase 宽度esi 高度edi 透明色号 eax
+		makeWindow((char *) ebx + dsBase, esi, edi, (char *)ecx + dsBase, 0);	// 缓冲区ebx + dsBase 宽度esi 高度edi 窗口标题首位地址 ecx+dsBase 非活动窗口
 		sheetSlide(sheet, (shtctl->xSize - esi) / 2, (shtctl->ySize - edi) / 2);
 		sheetUpdown(sheet, shtctl->top);
 		reg[7] = (int) sheet;	// 将先前保存的EAX寄存器的值更换为sheet
 	} else if (edx == 6) {	// 功能号6 在图层中显示字符
 		sheet = (struct SHEET *) (ebx & 0xfffffffe);	// 图层句柄
-		putFont8_asc(sheet->buf, sheet->width, esi, edi, eax, (char *)ebp + csBase);	// 缓冲区sheet->buf 宽度sheet->width x轴起始位置esi y轴起始位置edi 颜色eax 字符串首地址ebp + csBase
+		putFont8_asc(sheet->buf, sheet->width, esi, edi, eax, (char *)ebp + dsBase);	// 缓冲区sheet->buf 宽度sheet->width x轴起始位置esi y轴起始位置edi 颜色eax 字符串首地址ebp + dsBase
 		if ((ebx & 1) == 0) {	// 奇数不刷新
 			sheetRefresh(sheet, esi, edi, esi + ecx * 8, edi + 16);	// 图层sheet x轴起始位置esi y轴起始位置edi 字数ecx 高度16
 		}
@@ -445,15 +451,15 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 			sheetRefresh(sheet, eax, ecx, esi + 1, edi + 1);
 		}
 	} else if (edx == 8) {	// 功能号8 memseg初始化
-		memsegInit((struct MEMSEGTABLE *) (ebx + csBase));	// 内存段表 ebx + csBase
+		memsegInit((struct MEMSEGTABLE *) (ebx + dsBase));	// 内存段表 ebx + dsBase
 		ecx &= 0xfffffff0; // 以16字节为单位
-		memsegFree((struct MEMSEGTABLE *) (ebx + csBase), eax, ecx);	// 释放首地址eax 偏移量ecx
+		memsegFree((struct MEMSEGTABLE *) (ebx + dsBase), eax, ecx);	// 释放首地址eax 偏移量ecx
 	} else if (edx == 9) {	// 功能号9 malloc 分配内存
 		ecx = (ecx + 0x0f) & 0xfffffff0;	// 以16字节为单位
-		reg[7] = memsegAlloc((struct MEMSEGTABLE *) (ebx + csBase), ecx);	// 将先前保存的EAX寄存器的值更换为分配的首地址 分配大小为ecx
+		reg[7] = memsegAlloc((struct MEMSEGTABLE *) (ebx + dsBase), ecx);	// 将先前保存的EAX寄存器的值更换为分配的首地址 分配大小为ecx
 	} else if (edx == 10) { // 功能号10 free 释放内存
 		ecx = (ecx + 0x0f) & 0xfffffff0;	// 以16字节为单位
-		memsegFree((struct MEMSEGTABLE *) (ebx + csBase), eax, ecx);	// 释放首地址eax 偏移量ecx
+		memsegFree((struct MEMSEGTABLE *) (ebx + dsBase), eax, ecx);	// 释放首地址eax 偏移量ecx
 	} else if (edx == 11) {	// 功能号11 绘制1 * 1小矩形实现绘制像素点功能
 		sheet = (struct SHEET *) (ebx & 0xfffffffe);	// 图层句柄
 		sheet->buf[sheet->width * edi + esi] = eax;	// x轴起始位置esi y轴起始位置edi 颜色eax
