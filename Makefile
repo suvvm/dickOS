@@ -73,6 +73,16 @@ walk.gas : walk.c Makefile
 noodle.gas : noodle.c Makefile
 	$(CC1) -o noodle.gas noodle.c 
 
+beepDown.gas : beepDown.c Makefile
+	$(CC1) -o beepDown.gas beepDown.c 
+
+color.gas : color.c Makefile
+	$(CC1) -o color.gas color.c
+
+color2.gas : color2.c Makefile
+	$(CC1) -o color2.gas color2.c	
+
+
 func.obj : func.nas Makefile
 	$(NASK) func.nas func.obj func.lst
 	
@@ -188,14 +198,35 @@ noodle.bim : noodle.obj apiFunc.obj Makefile
 
 noodle.hrb : noodle.bim Makefile
 	$(BIM2HRB) noodle.bim noodle.hrb 40k
+	
+beepDown.bim : beepDown.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:beepDown.bim stack:1k map:beepDown.map \
+		beepDown.obj apiFunc.obj
+
+beepDown.hrb : beepDown.bim Makefile
+	$(BIM2HRB) beepDown.bim beepDown.hrb 40k
+	
+color.bim : color.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:color.bim stack:1k map:color.map \
+		color.obj apiFunc.obj
+
+color.hrb : color.bim Makefile
+	$(BIM2HRB) color.bim color.hrb 56k
+
+color2.bim : color2.obj apiFunc.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:color2.bim stack:1k map:color2.map \
+		color2.obj apiFunc.obj
+
+color2.hrb : color2.bim Makefile
+	$(BIM2HRB) color2.bim color2.hrb 56k
 
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
 dickos.img : ipl.bin dickos.sys Makefile \
-		hello.hrb helloStr.hrb helloC.hrb winHelo.hrb line.hrb \
+		hello.hrb helloStr.hrb helloC.hrb winHelo.hrb line.hrb color.hrb color2.hrb \
 		bug1.hrb bug2.hrb bug3.hrb winHelo2.hrb star2.hrb walk.hrb \
-		helloCS.hrb winHelo3.hrb star1.hrb stars.hrb noodle.hrb
+		helloCS.hrb winHelo3.hrb star1.hrb stars.hrb noodle.hrb beepDown.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
 		copy from:dickos.sys to:@: \
@@ -217,6 +248,9 @@ dickos.img : ipl.bin dickos.sys Makefile \
 		copy from:line.hrb to:@: \
 		copy from:walk.hrb to:@: \
 		copy from:noodle.hrb to:@: \
+		copy from:beepDown.hrb to:@: \
+		copy from:color.hrb to:@: \
+		copy from:color2.hrb to:@: \
 		imgout:dickos.img
 
 # 通用规则
