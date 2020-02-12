@@ -318,7 +318,7 @@ void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned i
 void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	struct PCB *process = processNow();	// 取得当前占有处理机的进程
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
-	int bufval, buf[128], *fat = (int *) memsegAlloc4K(memsegtable, 4 * 2880);
+	int bufval, *fat = (int *) memsegAlloc4K(memsegtable, 4 * 2880);
 	struct CONSOLE console;
 	char cmdline[30];
 	// 初始化控制台信息
@@ -330,7 +330,6 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	//*((int *) 0x0fec) = (int) &console;	
 	// 将console信息存入内存指定位置0x0fec
 	
-	QueueInit(&process->queue, 128, buf, process);	// 初始化缓冲区队列
 	console.timer = timerAlloc();
 	timerInit(console.timer, &process->queue, 1);
 	timerSetTime(console.timer, 50);	// 0.5秒超时
