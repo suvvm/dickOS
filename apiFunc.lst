@@ -4,7 +4,7 @@
      4 00000000                                 [FILE "helloCFunc.nas"]			; 源文件名信息
      5 00000000                                 
      6 00000000                                 		GLOBAL	_apiPutchar, _apiPutstr0, _apiOpenWindow, _apiPutStrWin, _apiBoxFillWin, _apiInitMalloc, _apiMalloc, _apiFree
-     7 00000000                                 		GLOBAL	_apiAllocTimer, _apiInitTimer, _apiSetTimer, _apiFreeTimer
+     7 00000000                                 		GLOBAL	_apiAllocTimer, _apiInitTimer, _apiSetTimer, _apiFreeTimer, _apiBeep
      8 00000000                                 		GLOBAL	_apiGetKey, _apiCloseWin, _apiLineWin, _apiPoint, _apiEnd, _apiRefreshWin
      9 00000000                                 		
     10                                          [SECTION .text]
@@ -202,7 +202,13 @@
    202 00000193 CD 40                           		INT		0x40
    203 00000195 5B                              		POP		EBX
    204 00000196 C3                              		RET
-   205 00000197                                 
-   206 00000197                                 _apiEnd:						; void apiEnd()
-   207 00000197 BA 00000004                     		MOV		EDX,4
-   208 0000019C CD 40                           		INT		0x40
+   205 00000197                                 		
+   206 00000197                                 _apiBeep:						; void apiBeep(int tone);
+   207 00000197 BA 00000014                     		MOV		EDX,20			; 功能号20
+   208 0000019C 8B 44 24 04                     		MOV		EAX,[ESP+4]		; tone
+   209 000001A0 CD 40                           		INT		0x40
+   210 000001A2 C3                              		RET
+   211 000001A3                                 
+   212 000001A3                                 _apiEnd:						; void apiEnd()
+   213 000001A3 BA 00000004                     		MOV		EDX,4
+   214 000001A8 CD 40                           		INT		0x40

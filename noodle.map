@@ -1,4 +1,4 @@
-text size :   1856(0x00740)
+text size :   1868(0x0074C)
 data size :     53(0x00035)
 bss  size :      0(0x00000)
 
@@ -22,13 +22,14 @@ bss  size :      0(0x00000)
 0x0000024E : _apiInitTimer
 0x00000260 : _apiSetTimer
 0x00000272 : _apiFreeTimer
-0x00000280 : _apiEnd
-0x00000287 : _sprintf
-0x00000287 : (.text)
-0x0000029B : (.text)
-0x000002D7 : _strtoul0
-0x000003AA : (.text)
-0x000003D2 : _vsprintf
+0x00000280 : _apiBeep
+0x0000028C : _apiEnd
+0x00000293 : _sprintf
+0x00000293 : (.text)
+0x000002A7 : (.text)
+0x000002E3 : _strtoul0
+0x000003B6 : (.text)
+0x000003DE : _vsprintf
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000000 : (.data)

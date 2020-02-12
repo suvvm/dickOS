@@ -1,4 +1,4 @@
-text size :    461(0x001CD)
+text size :    473(0x001D9)
 data size :      0(0x00000)
 bss  size :      0(0x00000)
 
@@ -22,7 +22,8 @@ bss  size :      0(0x00000)
 0x000001B8 : _apiInitTimer
 0x000001CA : _apiSetTimer
 0x000001DC : _apiFreeTimer
-0x000001EA : _apiEnd
+0x000001EA : _apiBeep
+0x000001F6 : _apiEnd
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000000 : (.bss)
