@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.1.5
-* @Date: 2020-02-11
+* @Version: 0.1.6
+* @Date: 2020-02-12
 * @Description: 实现控制台相关函数
 ********************************************************************************/
 
@@ -413,7 +413,7 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 	struct SHTCTL *shtctl = (struct SHTCTL *)  *((int *)0x0fe4);	// 在指定内存读取图层控制信息
 	struct SHEET *sheet;
 	int *reg = &eax + 1; // 两次pushad 找到第一次pushad就可以修改先前保存的寄存器的值
-	int bufval;
+	int bufval, i;
 	
 	if (edx == 1) {	// 功能号1 显示单个字符
 		consolePutchar(console, eax & 0xff, 1); 	// AL中存放字符ascii码
@@ -509,6 +509,22 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		timerSetTime((struct TIMER *) ebx, eax);	// 定时器句柄ebx 时间eax
 	} else if (edx == 19) {	// 功能号19 释放定时器 free
 		timerFree((struct TIMER *) ebx);	// 定时器句柄ebx
+	} else if (edx == 20) {	// 功能号20 控制蜂鸣器发声
+		if (eax == 0) {	// eax声音频率0mHz
+			i = io_in8(0x61);	// 在I/O端口0x61读入数据
+			io_out8(0x61, i & 0x0d);	// 向I/O端口0x61发送数据使蜂鸣器关闭
+		} else {
+			// 设置音高
+			i = 11938000 / eax;
+			io_out8(0x43, 0xb6);
+			
+			io_out8(0x42, i & 0xff);	// 设定值低8位
+			io_out8(0x42, i >> 8);		// 设定值高8位
+			
+			// 向I/O端口0x61发送数据使蜂鸣器开启
+			i = io_in8(0x61);
+			io_out8(0x61, (i | 0x03) & 0x0f);
+		}
 	}
 	return 0;
 }
