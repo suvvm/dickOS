@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.4.8
-* @Date: 2020-02-12
+* @Version: 0.4.9
+* @Date: 2020-02-13
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
 
@@ -512,6 +512,7 @@ void loadFile(int closterNum, int size, char *buf, int *fat, char *img);
 struct FILEINFO *searchFile(char *name, struct FILEINFO *fileInfo, int max);
 
 // console.c 函数声明
+struct SHEET *openConsole(struct SHTCTL *shtctl, unsigned int memtotal);
 void consoleNewLine(struct CONSOLE *console);
 void consolePutchar(struct CONSOLE *console, int chr, char move);
 void consolePutstr0(struct CONSOLE *console, char *str);
