@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.h
 * @Author: suvvm
-* @Version: 0.4.9
+* @Version: 0.5.0
 * @Date: 2020-02-13
 * @Description: 函数结构体声明与宏定义
 ********************************************************************************/
@@ -515,6 +515,7 @@ void loadFile(int closterNum, int size, char *buf, int *fat, char *img);
 struct FILEINFO *searchFile(char *name, struct FILEINFO *fileInfo, int max);
 
 // console.c 函数声明
+struct PCB *openConsoleProcess(struct SHEET *sheet, unsigned int memtotal);
 struct SHEET *openConsole(struct SHTCTL *shtctl, unsigned int memtotal);
 void closeConsoleProcess(struct PCB *process);
 void closeConsole(struct SHEET *sheet);
@@ -528,6 +529,8 @@ void cmdCls(struct CONSOLE *console);
 void cmdDir(struct CONSOLE *console);
 void cmdType(struct CONSOLE *console, int *fat, char *cmdline);
 int cmdApp(struct CONSOLE *console, int *fat, char *cmdline);
+void cmdStart(struct CONSOLE *console, char *cmdline, int memtotal);
+void cmdNcst(struct CONSOLE *console, char *cmdline, int memtotal);
 void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned int memsegTotalCnt);
 void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt);
 void dickApiLineWin(struct SHEET * sheet, int startX, int startY, int endX, int endY, int col);
