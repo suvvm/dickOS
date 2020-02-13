@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.6.5
+* @Version: 0.6.7
 * @Date: 2020-02-13
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -41,7 +41,7 @@ void keyWinOff(struct SHEET *keyWin) {
 *	@keyWin	指定的窗口窗口指针	struct SHEET *
 *
 **********************************************************/
-int keyWinOn(struct SHEET *keyWin) {
+void keyWinOn(struct SHEET *keyWin) {
 	changeWinTitle(keyWin, 1);	// 改变keyWin窗口标题栏为活动颜色
 	if ((keyWin->status & 0x20) != 0) {	// 目标窗口有光标
 		QueuePush(&keyWin->process->queue, 2);	// 向要接收键盘输入的窗口进程缓冲区发送光标显示信息
@@ -57,18 +57,18 @@ int keyWinOn(struct SHEET *keyWin) {
 void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
-	int	buf[128], keyCmdBuf[32], *consoleBuf[2];	// s保存要输出的变量信息 buf为总缓冲区
+	int	buf[128], keyCmdBuf[32];	// s保存要输出的变量信息 buf为总缓冲区
 	int i, x, y, mx, my, bufval, mmx = -1, mmy = -1, mmx2 = 0, newMy = -1, newMx = 0, newWx = 0x7fffffff, newWy = 0; // 鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色 移动模式x坐标 移动模式y坐标 移动模式图层x坐标
 	int keyShift = 0, keyLeds, keyCmdWait = -1;	// shift按下标识 键盘对应按键灯状态
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHTCTL *shtctl;	// 图层控制块指针
-	struct SHEET *sheetBack, *sheetMouse, *sheetCons[2], *sheet = 0, *keyWin;	// 背景图层 鼠标图层 窗口图层 控制台图层 遍历用图层指针 当前处于输入模式的窗口指针
-	unsigned char *bufBack, bufMouse[256], *bufCons[2];	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区 控制台图像缓冲区
+	struct SHEET *sheetBack, *sheetMouse, *sheet = 0, *keyWin;	// 背景图层 鼠标图层 窗口图层 控制台图层 遍历用图层指针 当前处于输入模式的窗口指针
+	unsigned char *bufBack, bufMouse[256];	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区 控制台图像缓冲区
 	struct QUEUE queue, keyCmd;	// 总缓冲区 存储欲向键盘控制电路发送的数据的缓冲区
-	struct PCB *processA, *processConsole[2], *process;
-	struct CONSOLE *console;
+	struct PCB *processA, *process;
+	
 	binfo = (struct BOOTINFO *) ADR_BOOTINFO;	// 获取启动信息
 	keyLeds = (binfo->leds >> 4) & 7;	// 获取键盘各锁定键状态 binfo->leds的4~6位
 	
@@ -106,33 +106,7 @@ void Main(){
 	sheetSetbuf(sheetBack, bufBack, binfo->scrnx, binfo->scrny, -1);	// 设置背景图层缓冲区，背景不需要透明色设为-1
 	init_GUI(bufBack, binfo->scrnx, binfo->scrny);	// 初始化GUI至bufBack
 	
-	for (i = 0; i < 2; i ++) {	// 为控制台分配图层
-		sheetCons[i] = sheetAlloc(shtctl);	
-		bufCons[i] = (unsigned char *) memsegAlloc4K(memsegtable, 256 * 165);
-		sheetSetbuf(sheetCons[i], bufCons[i], 256, 165, -1);	// 设置控制台图层缓冲区，控制台不需要透明色
-		makeWindow(bufCons[i], 256, 165, "console", 0);	// 创建控制台窗口
-		makeTextBox(sheetCons[i], 8, 28, 240, 128, COL8_000000);	// 创建控制台黑色输入框
-		
-		processConsole[i] = processAlloc();	// 分配控制台进程
-		processConsole[i]->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 12;	// 为控制台进程栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
-		*((int *) (processConsole[i]->tss.esp + 4)) = (int) sheetCons[i];	// 将sheetCons地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
-		*((int *) (processConsole[i]->tss.esp + 8)) = memtotal;
-		processConsole[i]->tss.eip = (int) &consoleMain;	// 控制台进程的下一条指令执行consoleMain
-		
-		processConsole[i]->tss.es = 1 * 8;
-		processConsole[i]->tss.cs = 2 * 8;
-		processConsole[i]->tss.ss = 1 * 8;
-		processConsole[i]->tss.ds = 1 * 8;
-		processConsole[i]->tss.fs = 1 * 8;
-		processConsole[i]->tss.gs = 1 * 8;
-		
-		processRun(processConsole[i], 2, 2);
-		// 控制台进程 level2 2 进入就绪队列
-		sheetCons[i]->process = processConsole[i];
-		sheetCons[i]->status |= 0x20;	// 有光标	（status 0x10位标识窗口是否由应用程序生成 0x20位判断是否需要光标）
-		consoleBuf[i] = (int *) memsegAlloc4K(memsegtable, 128 * 4);
-		QueueInit(&processConsole[i]->queue, 128, consoleBuf[i], processConsole[i]);
-	}
+	keyWin = openConsole(shtctl, memtotal);
 	
 	sheetMouse = sheetAlloc(shtctl);
 	sheetSetbuf(sheetMouse, bufMouse, 16, 16, 99);	// 设置鼠标图层缓冲区与透明色
@@ -142,20 +116,21 @@ void Main(){
 	my = (binfo->scrny - 28 - 16) / 2;	// 鼠标y轴位置
 	
 	sheetSlide(sheetBack, 0, 0);	// 背景图层起始坐标(0,0)
-	sheetSlide(sheetCons[1], 168, 64);	// 控制台进程窗口起始坐标(168, 56)
-	sheetSlide(sheetCons[0], 8, 2);	// 控制台进程窗口起始坐标(168, 56)
+	sheetSlide(keyWin, 168, 64);	// 控制台进程窗口起始坐标(168, 56)
+	// sheetSlide(sheetCons[1], 8, 2);	
+	// 控制台进程窗口起始坐标(168, 56)
 	sheetSlide(sheetMouse, mx, my);	// 将鼠标图层滑动至对应位置
 	
 	sheetUpdown(sheetBack, 0);	// 将背景图层置于索引0
-	sheetUpdown(sheetCons[1], 1);	// 将控制台进程窗口图层置于索引1
-	sheetUpdown(sheetCons[0], 2);	// 将控制台进程窗口图层置于索引1
-	sheetUpdown(sheetMouse, 3);	// 将鼠标图层置于索引5
+	// sheetUpdown(sheetCons[1], 1);	
+	// 将控制台进程窗口图层置于索引1
+	sheetUpdown(keyWin, 1);	// 将控制台进程窗口图层置于索引1
+	sheetUpdown(sheetMouse, 2);	// 将鼠标图层置于索引5
 	
 	putFont8AscSheet(sheetBack, 0, 32, COL8_FFFFFF, COL8_008484,  "Welcome to DickOS", 17);	// 将DickOS写入背景层
 	sprintf(s, "(%3d, %3d)", mx, my);	// 将鼠标位置存入s
 	putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484,  s, 10);	// 将s写入背景层
 	
-	keyWin = sheetCons[0];
 	keyWinOn(keyWin);
 	
 	// 为了避免和键盘当前状态冲突，在一开始先进行设置指示灯状态
@@ -268,6 +243,13 @@ void Main(){
 						io_sti();	// 开中断
 					}					
 				}
+				if (bufval == 256 + 0x3c && keyShift != 0) {	// shift + F2 开启新的控制台
+					keyWinOff(keyWin);	// 当前窗口停止接收键盘数据
+					keyWin = openConsole(shtctl, memtotal);
+					sheetSlide(keyWin, 32, 4);
+					sheetUpdown(keyWin, shtctl->top);
+					keyWinOn(keyWin);
+				}
 				if (bufval == 256 + 0xfa) {	// 键盘控制电路返回成功数据
 					keyCmdWait = -1; // 等待进行下一次发送
 				}
@@ -356,8 +338,6 @@ void Main(){
 						s[2] = 'C';
 					}
 					putFont8AscSheet(sheetBack, 32, 16, COL8_FFFFFF, COL8_008484, s, 15);	// 在背景层打印鼠标按键信息
-					
-					
 					
 					sprintf(s, "(%4d, %4d)", mx, my);
 					putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484, s, 12);	// 在背景层打印鼠标坐标信息
