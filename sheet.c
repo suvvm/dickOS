@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: sheet.c
 * @Author: suvvm
-* @Version: 0.0.7
+* @Version: 0.0.8
 * @Date: 2020-02-13
 * @Description: 定义图层相关函数
 ********************************************************************************/
@@ -101,7 +101,7 @@ void sheetSetbuf(struct SHEET *sheet, unsigned char *buf, int width, int height,
 *
 **********************************************************/
 void sheetRefreshMap(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY, int startIndex) {	
-	int i, sheetX, sheetY, locationX, locationY, relativeStartX, relativeStartY, relativeEndX, relativeEndY;
+	int i, sheetX, sheetY, locationX, locationY, relativeStartX, relativeStartY, relativeEndX, relativeEndY, sid4, *p;
 	unsigned char *buf, sid, *map = shtctl->map;
 	struct SHEET *sheet;
 	if (startX < 0) {	// 欲刷新区域x轴起始位置超边界修正
@@ -138,11 +138,24 @@ void sheetRefreshMap(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 			relativeEndY = sheet->height;
 		}
 		if (sheet->colInvNum == -1) {	// 图层无透明色
-			for (sheetY = relativeStartY; sheetY < relativeEndY; sheetY++) {
-				locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
-				for (sheetX = relativeStartX; sheetX < relativeEndX; sheetX++) {
-					locationX = sheet->locationX + sheetX;	// 找到图像在vram x轴映射的位置
-					map[locationY * shtctl->xSize + locationX] = sid;	// 将对应点归属记为对应图层
+			if ((sheet->locationX & 3) == 0 && (relativeStartX & 3) == 0 && (relativeEndX & 3) == 0) {	// 地址4的倍数
+				relativeEndX = (relativeEndX - relativeStartX) / 4;	// 复制次数
+				sid4 = sid | sid << 8 | sid << 16 | sid << 24;
+				for (sheetY = relativeStartY; sheetY < relativeEndY; sheetY++) {
+					locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
+					locationX = sheet->locationX + relativeStartX;	// 找到图像在vram x轴映射的位置
+					p = (int *) &map[locationY * shtctl->xSize + locationX];
+					for (sheetX = 0; sheetX < relativeEndX; sheetX++) {
+						p[sheetX] = sid4;
+					}
+				}
+			} else {
+				for (sheetY = relativeStartY; sheetY < relativeEndY; sheetY++) {
+					locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
+					for (sheetX = relativeStartX; sheetX < relativeEndX; sheetX++) {
+						locationX = sheet->locationX + sheetX;	// 找到图像在vram x轴映射的位置
+						map[locationY * shtctl->xSize + locationX] = sid;	// 将对应点归属记为对应图层
+					}
 				}
 			}
 		} else {	// 有透明色
