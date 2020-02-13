@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.1.7
+* @Version: 0.1.8
 * @Date: 2020-02-13
 * @Description: 实现控制台相关函数
 ********************************************************************************/
@@ -11,6 +11,48 @@
 #include "bootpack.h"
 #include "window.c"
 #include "multiProcess.c"
+
+/*******************************************************
+*
+* Function name: openConsole
+* Description: 创建新的控制台
+* Parameter:
+*	@shtctl		图层控信息指针	struct SHTCTL *
+*	@memtotal	内存总量		unsigned int
+* Return:
+*	返回控制台图层指针
+*
+**********************************************************/
+struct SHEET *openConsole(struct SHTCTL *shtctl, unsigned int memtotal) {
+	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
+	struct SHEET *sheet = sheetAlloc(shtctl);
+	unsigned char *buf = (unsigned char *) memsegAlloc4K(memsegtable, 256 * 165);
+	struct PCB *process = processAlloc();	// 分配控制台进程
+	int *consBuf = (int *) memsegAlloc4K(memsegtable, 128 * 4);
+	sheetSetbuf(sheet, buf, 256, 165, -1);	// 无透明色
+	
+	makeWindow(buf, 256, 165, "console", 0);	// 创建控制台窗口
+	makeTextBox(sheet, 8, 28, 240, 128, COL8_000000);	// 创建控制台黑色输入框	
+	process->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 12;	// 为控制台进程栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
+	*((int *) (process->tss.esp + 4)) = (int) sheet;	// 将sheet地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
+	*((int *) (process->tss.esp + 8)) = memtotal;
+	process->tss.eip = (int) &consoleMain;	// 控制台进程的下一条指令执行consoleMain
+		
+	process->tss.es = 1 * 8;
+	process->tss.cs = 2 * 8;
+	process->tss.ss = 1 * 8;
+	process->tss.ds = 1 * 8;
+	process->tss.fs = 1 * 8;
+	process->tss.gs = 1 * 8;
+	
+	processRun(process, 2, 2);
+	// 控制台进程 level2 2 进入就绪队列
+	sheet->process = process;
+	sheet->status |= 0x20;	// 有光标	（status 0x10位标识窗口是否由应用程序生成 0x20位判断是否需要光标）
+	
+	QueueInit(&process->queue, 128, consBuf, process);
+	return sheet;
+}
 
 /*******************************************************
 *
