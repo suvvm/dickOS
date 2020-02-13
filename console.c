@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.1.6
-* @Date: 2020-02-12
+* @Version: 0.1.7
+* @Date: 2020-02-13
 * @Description: 实现控制台相关函数
 ********************************************************************************/
 
@@ -434,7 +434,7 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 		sheet->status |= 0x10;	// 标记为应用程序窗口
 		sheetSetbuf(sheet, (char *) ebx + dsBase, esi, edi, eax); // 缓冲区地址为ebx + dsBase 宽度esi 高度edi 透明色号 eax
 		makeWindow((char *) ebx + dsBase, esi, edi, (char *)ecx + dsBase, 0);	// 缓冲区ebx + dsBase 宽度esi 高度edi 窗口标题首位地址 ecx+dsBase 非活动窗口
-		sheetSlide(sheet, (shtctl->xSize - esi) / 2, (shtctl->ySize - edi) / 2);
+		sheetSlide(sheet, ((shtctl->xSize - esi) / 2) & ~3, (shtctl->ySize - edi) / 2); // 使窗口在x坐标为4的倍数以加速图层刷新速度
 		sheetUpdown(sheet, shtctl->top);
 		reg[7] = (int) sheet;	// 将先前保存的EAX寄存器的值更换为sheet
 	} else if (edx == 6) {	// 功能号6 在图层中显示字符
