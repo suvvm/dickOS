@@ -357,6 +357,8 @@ void Main(){
 				} 			
 			} else if (768 <= bufval && bufval <= 1023) {	// 命令行关闭处理
 				closeConsole(shtctl->sheets + (bufval - 768));
+			} else if (1024 <= bufval && bufval <= 2023) {
+				closeConsoleProcess(processctl->processes + (bufval - 1024));
 			}
 		}
 	}

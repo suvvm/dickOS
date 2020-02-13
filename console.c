@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.1.8
+* @Version: 0.1.9
 * @Date: 2020-02-13
 * @Description: 实现控制台相关函数
 ********************************************************************************/
@@ -11,6 +11,40 @@
 #include "bootpack.h"
 #include "window.c"
 #include "multiProcess.c"
+
+/*******************************************************
+*
+* Function name: openConsole
+* Description: 创建新的不显示窗口的控制台进程
+* Parameter:
+*	@shtctl		图层控信息指针	struct SHTCTL *
+*	@memtotal	内存总量		unsigned int
+* Return:
+*	返回控制台进程控制块指针
+*
+**********************************************************/
+struct PCB *openConsoleProcess(struct SHEET *sheet, unsigned int memtotal) {
+	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
+	struct PCB *process = processAlloc();	// 分配控制台进程
+	int *consBuf = (int *) memsegAlloc4K(memsegtable, 128 * 4);
+	process->stack = memsegAlloc4K(memsegtable, 64 * 1024);	// 为控制台进程栈分配64KB内存
+	process->tss.esp = process->stack + 64 * 1024 - 12;	// 计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
+	*((int *) (process->tss.esp + 4)) = (int) sheet;	// 将sheet地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
+	*((int *) (process->tss.esp + 8)) = memtotal;
+	process->tss.eip = (int) &consoleMain;	// 控制台进程的下一条指令执行consoleMain
+		
+	process->tss.es = 1 * 8;
+	process->tss.cs = 2 * 8;
+	process->tss.ss = 1 * 8;
+	process->tss.ds = 1 * 8;
+	process->tss.fs = 1 * 8;
+	process->tss.gs = 1 * 8;
+	
+	processRun(process, 2, 2);
+	// 控制台进程 level2 2 进入就绪队列
+	QueueInit(&process->queue, 128, consBuf, process);
+	return process;
+}
 
 /*******************************************************
 *
@@ -27,31 +61,14 @@ struct SHEET *openConsole(struct SHTCTL *shtctl, unsigned int memtotal) {
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHEET *sheet = sheetAlloc(shtctl);
 	unsigned char *buf = (unsigned char *) memsegAlloc4K(memsegtable, 256 * 165);
-	struct PCB *process = processAlloc();	// 分配控制台进程
-	int *consBuf = (int *) memsegAlloc4K(memsegtable, 128 * 4);
 	sheetSetbuf(sheet, buf, 256, 165, -1);	// 无透明色
 	
 	makeWindow(buf, 256, 165, "console", 0);	// 创建控制台窗口
 	makeTextBox(sheet, 8, 28, 240, 128, COL8_000000);	// 创建控制台黑色输入框	
-	process->stack = memsegAlloc4K(memsegtable, 64 * 1024);	// 为控制台进程栈分配64KB内存
-	process->tss.esp = process->stack + 64 * 1024 - 12;	// 计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
-	*((int *) (process->tss.esp + 4)) = (int) sheet;	// 将sheet地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
-	*((int *) (process->tss.esp + 8)) = memtotal;
-	process->tss.eip = (int) &consoleMain;	// 控制台进程的下一条指令执行consoleMain
-		
-	process->tss.es = 1 * 8;
-	process->tss.cs = 2 * 8;
-	process->tss.ss = 1 * 8;
-	process->tss.ds = 1 * 8;
-	process->tss.fs = 1 * 8;
-	process->tss.gs = 1 * 8;
 	
-	processRun(process, 2, 2);
 	// 控制台进程 level2 2 进入就绪队列
-	sheet->process = process;
+	sheet->process = openConsoleProcess(sheet, memtotal);
 	sheet->status |= 0x20;	// 有光标	（status 0x10位标识窗口是否由应用程序生成 0x20位判断是否需要光标）
-	
-	QueueInit(&process->queue, 128, consBuf, process);
 	return sheet;
 }
 
@@ -100,17 +117,19 @@ void consoleNewLine(struct CONSOLE *console) {
 	if (console->cursorY < 28 + 112) { // 未触底不需要滚动
 		console->cursorY += 16;
 	} else {
-		for (y = 28; y < 28 + 112; y ++) {	// 将第二行至最后一行上移
-			for (x = 8; x < 8 + 240; x ++) {	
-				sheet->buf[x + y * sheet->width] = sheet->buf[x + (y + 16) * sheet->width];
+		if (sheet != 0) {
+			for (y = 28; y < 28 + 112; y ++) {	// 将第二行至最后一行上移
+				for (x = 8; x < 8 + 240; x ++) {	
+					sheet->buf[x + y * sheet->width] = sheet->buf[x + (y + 16) * sheet->width];
+				}
 			}
-		}
-		for (y = 28 + 112; y < 28 + 128; y ++) {	// 将最后一行绘制为黑色
-			for (x = 8; x < 8 + 240; x ++) {
-				sheet->buf[x + y * sheet->width] = COL8_000000;
+			for (y = 28 + 112; y < 28 + 128; y ++) {	// 将最后一行绘制为黑色
+				for (x = 8; x < 8 + 240; x ++) {
+					sheet->buf[x + y * sheet->width] = COL8_000000;
+				}
 			}
+			sheetRefresh(sheet, 8, 28, 8 + 240, 28 + 128);
 		}
-		sheetRefresh(sheet, 8, 28, 8 + 240, 28 + 128);
 	}
 	console->cursorX = 8;
 }
@@ -145,7 +164,9 @@ void consolePutchar(struct CONSOLE *console, int chr, char move) {
 	} else if (s[0] == 0x0d) {	// 回车
 		// 暂无操作
 	}else {	// 一般字符
-		putFont8AscSheet(console->sheet, console->cursorX, console->cursorY, COL8_FFFFFF, COL8_000000, s, 1);
+		if (console->sheet != 0) {
+			putFont8AscSheet(console->sheet, console->cursorX, console->cursorY, COL8_FFFFFF, COL8_000000, s, 1);	
+		}
 		if (move != 0) {	// move为0时光标不后移动
 			console->cursorX += 8;
 			if (console->cursorX == 8 + 240) {
@@ -373,11 +394,61 @@ void cmdExit(struct CONSOLE *console, int *fat) {
 	timerCancle(console->timer);	// 取消光标定时器
 	memsegFree4K(memsegtable, (int) fat, 4 * 2880);	// 释放内存中的fat表
 	io_cli();
-	QueuePush(queue, console->sheet - shtctl->sheets + 768);	// 向主进程发送数据 768 ~ 1023 
+	if (console->sheet != 0) {
+		QueuePush(queue, console->sheet - shtctl->sheets + 768);	// 向主进程发送数据 768 ~ 1023 
+	} else {
+		QueuePush(queue, process - processctl->processes + 1024);	// 向主进程发送数据 1024 ~ 2023 
+	}
 	io_sti();
 	for(;;) {
 		processSleep(process);
 	}
+}
+
+/*******************************************************
+*
+* Function name: cmdStart
+* Description: 打开新的控制台并在新的控制台中执行目标指令
+* Parameter:
+*	@console		控制台信息指针		struct CONSOLE *
+*	@cmdline		指令信息			char *
+*	@memtotal		内存容量大小		int
+*
+**********************************************************/
+void cmdStart(struct CONSOLE *console, char *cmdline, int memtotal) {
+	struct SHTCTL *shtctl = (struct SHTCTL *) *((int *) 0x0fe4);	// 获取图层控制信息
+	struct SHEET *sheet = openConsole(shtctl, memtotal);	// 打开新的控制台窗口
+	struct QUEUE *queue = &sheet->process->queue;
+	int i;
+	sheetSlide(sheet, 32, 4);
+	sheetUpdown(sheet, shtctl->top);
+	for (i = 6; cmdline[i] != 0; i++) {
+		QueuePush(queue, cmdline[i] + 256);
+	}
+	QueuePush(queue, 10 + 256);	// 回车
+	consoleNewLine(console);
+	
+}
+
+/*******************************************************
+*
+* Function name: cmdNcst
+* Description: 不打开新的控制台执行目标指令
+* Parameter:
+*	@console		控制台信息指针		struct CONSOLE *
+*	@cmdline		指令信息			char *
+*	@memtotal		内存容量大小		int
+*
+**********************************************************/
+void cmdNcst(struct CONSOLE *console, char *cmdline, int memtotal) {
+	struct PCB *process = openConsoleProcess(0, memtotal);	// 打开新的控制台窗口
+	struct QUEUE *queue = &process->queue;
+	int i;
+	for (i = 5; cmdline[i] != 0; i++) {
+		QueuePush(queue, cmdline[i] + 256);
+	}
+	QueuePush(queue, 10 + 256);	// 回车
+	consoleNewLine(console);
 }
 
 /*******************************************************
@@ -402,6 +473,10 @@ void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned i
 		cmdType(console, fat, cmdline);
 	} else if (strcmp(cmdline, "exit") == 0) {
 		cmdExit(console, fat);
+	} else if (strncmp(cmdline, "start ", 6) == 0) {
+		cmdStart(console, cmdline, memsegTotalCnt);
+	} else if (strncmp(cmdline, "ncst ", 5) == 0){
+		cmdNcst(console, cmdline, memsegTotalCnt);
 	} else if (cmdline[0] != 0) {	// 不是指令 不是空行
 		if (cmdApp(console, fat, cmdline) == 0) {	// 不是应用程序
 			consolePutstr0(console, "command not found\n\n");
@@ -430,9 +505,11 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	//*((int *) 0x0fec) = (int) &console;	
 	// 将console信息存入内存指定位置0x0fec
 	
-	console.timer = timerAlloc();
-	timerInit(console.timer, &process->queue, 1);
-	timerSetTime(console.timer, 50);	// 0.5秒超时
+	if (sheet != 0) {
+		console.timer = timerAlloc();
+		timerInit(console.timer, &process->queue, 1);
+		timerSetTime(console.timer, 50);	// 0.5秒超时		
+	}
 	readFat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));	// 在磁盘对应地址解压fat数据至对应内存地址
 	
 	consolePutchar(&console, '>', 1); // 打印提示符
@@ -480,6 +557,9 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 					cmdline[console.cursorX / 8 - 2] = 0;
 					consoleNewLine(&console);
 					consoleRunCmd(cmdline, &console, fat, memsegTotalCnt);	// 执行命令行语句
+					if (sheet == 0) {
+						cmdExit(&console, fat);
+					}
 					consolePutchar(&console, '>', 1);	// 打印提示符	
 				} else {	// 普通字符
 					if (console.cursorX < 240) {
@@ -489,10 +569,12 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 				}
 			}
 			// 重新显示光标
-			if (console.cursorC >= 0) {
-				boxFill8(sheet->buf, sheet->width, console.cursorC, console.cursorX, console.cursorY, console.cursorX + 7, console.cursorY + 15);	// 重新绘制光标
-			}
-			sheetRefresh(sheet, console.cursorX, console.cursorY, console.cursorX + 8, console.cursorY + 16);
+			if (sheet != 0) {
+				if (console.cursorC >= 0) {
+					boxFill8(sheet->buf, sheet->width, console.cursorC, console.cursorX, console.cursorY, console.cursorX + 7, console.cursorY + 15);	// 重新绘制光标
+				}
+				sheetRefresh(sheet, console.cursorX, console.cursorY, console.cursorX + 8, console.cursorY + 16);
+			}			
 		}
 	}
 }
