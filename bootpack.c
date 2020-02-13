@@ -100,6 +100,7 @@ void Main(){
 	processRun(processA, 1, 2);	// 进程A（主进程）处于level 1 刷新率（优先级）0.02s
 	
 	*((int *) 0x0fe4) = (int) shtctl;
+	*((int *) 0x0fec) = (int) &queue;
 	
 	sheetBack = sheetAlloc(shtctl);
 	bufBack = (unsigned char *) memsegAlloc4K(memsegtable, binfo->scrnx * binfo->scrny);	// 以4KB为单位为背景分配内存
@@ -160,9 +161,13 @@ void Main(){
 		} else {
 			bufval = QueuePop(&queue);	// 取出缓冲区队列队首数据
 			io_sti();	// 开中断
-			if (keyWin->status == 0) {	// 输入窗口被关闭
-				keyWin = shtctl->sheetsAcs[shtctl->top - 1];	// 输入窗口设为当前最顶层窗口
-				keyWinOn(keyWin);
+			if (keyWin != 0 && keyWin->status == 0) {	// 输入窗口被关闭
+				if (shtctl->top == 1) {	// 当前无窗口
+					keyWin = 0;
+				} else {
+					keyWin = shtctl->sheetsAcs[shtctl->top - 1];	// 输入窗口设为当前最顶层窗口
+					keyWinOn(keyWin);
+				}
 			}
 			if (256 <= bufval && bufval <= 511) {	// 键盘中断数据
 				sprintf(s, "%02X", bufval - 256);
@@ -183,16 +188,16 @@ void Main(){
 					}
 				}
 				
-				if (s[0] != 0) {	// 普通字符 回车 退格
+				if (s[0] != 0 && keyWin != 0) {	// 普通字符 回车 退格
 					QueuePush(&keyWin->process->queue, s[0] + 256);
 				}
-				if (bufval == 256 + 0x0e) {
+				if (bufval == 256 + 0x0e && keyWin != 0) {
 					QueuePush(&keyWin->process->queue, 8 + 256);
 				}
-				if (bufval == 256 + 0x1c) {
+				if (bufval == 256 + 0x1c && keyWin != 0) {
 					QueuePush(&keyWin->process->queue, 10 + 256);
 				}
-				if (bufval == 256 + 0x0f) {	// 按下tab键
+				if (bufval == 256 + 0x0f && keyWin != 0) {	// 按下tab键
 					
 					keyWinOff(keyWin);
 					i = keyWin->index - 1;	// 找到下一层图层索引号
@@ -233,7 +238,7 @@ void Main(){
 					QueuePush(&keyCmd, keyLeds);
 					// 将0xed keyLeds存入缓冲区等待向键盘控制电路发送
 				}
-				if (bufval == 256 + 0x3b && keyShift != 0) {	// shift + F1
+				if (bufval == 256 + 0x3b && keyShift != 0 && keyWin != 0) {	// shift + F1
 					process = keyWin->process;
 					if (process != 0 && process->tss.ss0 != 0) {
 						consolePutstr0(process->console, "\nBreak(key) :\n");
@@ -244,7 +249,9 @@ void Main(){
 					}					
 				}
 				if (bufval == 256 + 0x3c && keyShift != 0) {	// shift + F2 开启新的控制台
-					keyWinOff(keyWin);	// 当前窗口停止接收键盘数据
+					if (keyWin != 0) {
+						keyWinOff(keyWin);	// 当前窗口停止接收键盘数据
+					}
 					keyWin = openConsole(shtctl, memtotal);
 					sheetSlide(keyWin, 32, 4);
 					sheetUpdown(keyWin, shtctl->top);
@@ -343,6 +350,8 @@ void Main(){
 					putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484, s, 12);	// 在背景层打印鼠标坐标信息
 					sheetSlide(sheetMouse, mx, my);
 				} 			
+			} else if (768 <= bufval && bufval <= 1023) {	// 命令行关闭处理
+				closeConsole(shtctl->sheets + (bufval - 768));
 			}
 		}
 	}
