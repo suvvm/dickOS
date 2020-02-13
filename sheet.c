@@ -265,28 +265,7 @@ void sheetRefresh(struct SHEET *sheet, int startX, int startY, int endX, int end
 *
 **********************************************************/
 void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, int endY, int startIndex) {
-	/*
-	int i, sheetX, sheetY, locationX, locationY;
-	unsigned char *buf, c, *vram = shtctl->vram;
-	struct SHEET *sheet;
-	for (i = 0; i <= shtctl->top; i++){
-		sheet = shtctl->sheetsAcs[i];
-		buf = sheet->buf;
-		for (sheetY = 0; sheetY < sheet->height; sheetY++) {
-			locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
-			for (sheetX = 0; sheetX < sheet->width; sheetX++) {
-				locationX = sheet->locationX + sheetX;	// 找到图像在vram x轴映射的位置
-				if(startX <= locationX && locationX < endX && startY <= locationY && locationY < endY) {	// 判断是否在欲刷新区域内
-					c = buf[sheetY * sheet->width + sheetX];
-					if (c != sheet->colInvNum) {	// c不为图层透明色
-						vram[locationY * shtctl->xSize + locationX] = c;
-					}
-				}
-			}
-		}
-	}
-	*/
-	int i, sheetX, sheetY, locationX, locationY, relativeStartX, relativeStartY, relativeEndX, relativeEndY;
+	int i, sheetX, sheetY, locationX, locationY, relativeStartX, relativeStartY, relativeEndX, relativeEndY, sheetX2, sid4, i1, i2, *p, *q, *r;
 	unsigned char *buf, *vram = shtctl->vram, *map = shtctl->map, sid;
 	struct SHEET *sheet;
 	if (startX < 0) {
@@ -322,12 +301,58 @@ void sheetRefreshSub(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 		if (relativeEndY > sheet->height) {
 			relativeEndY = sheet->height;
 		}
-		for (sheetY = relativeStartY; sheetY < relativeEndY; sheetY++) {
-			locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
-			for (sheetX = relativeStartX; sheetX < relativeEndX; sheetX++) {
-				locationX = sheet->locationX + sheetX;	// 找到图像在vram x轴映射的位置
-				if (map[locationY * shtctl->xSize + locationX] == sid) {	// 欲刷新位置当前属于该图层
-					vram[locationY * shtctl->xSize + locationX] = buf[sheetY * sheet->width + sheetX];
+		if ((sheet->locationX & 3) == 0) {
+			i1 = (relativeStartX + 3) / 4;	// 除4小数进位
+			i2 = relativeEndX / 4;	// 除4小数舍去
+			i2 = i2 - i1;	// 每行赋值次数
+			sid4 = sid | sid << 8 | sid << 16 | sid << 24;
+			for (sheetY = relativeStartY; sheetY < relativeEndY; sheetY++) {
+				locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
+				for (sheetX = relativeStartX; sheetX < relativeEndX && (sheetX & 3) != 0; sheetX++) {	// 前面四字节为单位 多余的部分逐字节写入
+					locationX = sheet->locationX + sheetX;	// 找到图像在vram x轴映射的位置
+					if (map[locationY * shtctl->xSize + locationX] == sid) {	// 欲刷新位置当前属于该图层
+						vram[locationY * shtctl->xSize + locationX] = buf[sheetY * sheet->width + sheetX];
+					}
+				}
+				locationX = sheet->locationX + sheetX;
+				p = (int *) &map[locationY * shtctl->xSize + locationX];
+				q = (int *) &vram[locationY * shtctl->xSize + locationX];
+				r = (int *)	&buf[sheetY * sheet->width + sheetX];
+				for (i1 = 0; i1 < i2; i1++) {	// 4字节为单位赋值
+					if (p[i1] == sid4) {
+						q[i1] = r[i1];
+					} else {
+						sheetX2 = sheetX + i1 * 4;
+						locationX = sheet->locationX + sheetX2;
+						if (map[locationY * shtctl->xSize + locationX + 0] == sid) {
+							vram[locationY * shtctl->xSize + locationX + 0] = buf[sheetY * sheet->width + sheetX2 + 0];
+						}
+						if (map[locationY * shtctl->xSize + locationX + 1] == sid) {
+							vram[locationY * shtctl->xSize + locationX + 1] = buf[sheetY * sheet->width + sheetX2 + 1];
+						}
+						if (map[locationY * shtctl->xSize + locationX + 2] == sid) {
+							vram[locationY * shtctl->xSize + locationX + 2] = buf[sheetY * sheet->width + sheetX2 + 2];
+						}
+						if (map[locationY * shtctl->xSize + locationX + 3] == sid) {
+							vram[locationY * shtctl->xSize + locationX + 3] = buf[sheetY * sheet->width + sheetX2 + 3];
+						}
+					}
+				}
+				for (sheetX += i1 * 4; sheetX < relativeEndX; sheetX++) {	// 被4整除后多余的部分
+					locationX = sheet->locationX + sheetX;
+					if (map[locationY * shtctl->xSize + locationX] == sid) {
+						vram[locationY * shtctl->xSize + locationX] = buf[sheetY * sheet->width + sheetX];
+					}
+				}
+			}
+		} else {			
+			for (sheetY = relativeStartY; sheetY < relativeEndY; sheetY++) {
+				locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
+				for (sheetX = relativeStartX; sheetX < relativeEndX; sheetX++) {
+					locationX = sheet->locationX + sheetX;	// 找到图像在vram x轴映射的位置
+					if (map[locationY * shtctl->xSize + locationX] == sid) {	// 欲刷新位置当前属于该图层
+						vram[locationY * shtctl->xSize + locationX] = buf[sheetY * sheet->width + sheetX];
+					}
 				}
 			}
 		}
