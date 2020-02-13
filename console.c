@@ -465,6 +465,9 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 				boxFill8(sheet->buf,  sheet->width, COL8_000000, console.cursorX, console.cursorY, console.cursorX + 7, console.cursorY + 15);
 				console.cursorC = -1;
 			}
+			if (bufval == 4) {
+				cmdExit(&console, fat);
+			}
 			if (256 < bufval && bufval <= 511) {	// 键盘数据
 				if (bufval == 8 + 256) {	// 退格
 					if (console.cursorX > 16) {

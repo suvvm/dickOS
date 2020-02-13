@@ -316,6 +316,11 @@ void Main(){
 												process->tss.eax = (int) &(process->tss.esp0);
 												process->tss.eip = (int) asm_endApp;
 												io_sti();	// ¿ªÖÐ¶Ï	
+											} else {
+												process = sheet->process;
+												io_cli();
+												QueuePush(&process->queue, 4);
+												io_sti();
 											}
 										}
 										break;
