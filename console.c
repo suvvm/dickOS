@@ -24,7 +24,7 @@
 *
 **********************************************************/
 struct SHEET *openConsole(struct SHTCTL *shtctl, unsigned int memtotal) {
-	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
+	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHEET *sheet = sheetAlloc(shtctl);
 	unsigned char *buf = (unsigned char *) memsegAlloc4K(memsegtable, 256 * 165);
 	struct PCB *process = processAlloc();	// 分配控制台进程
@@ -33,7 +33,8 @@ struct SHEET *openConsole(struct SHTCTL *shtctl, unsigned int memtotal) {
 	
 	makeWindow(buf, 256, 165, "console", 0);	// 创建控制台窗口
 	makeTextBox(sheet, 8, 28, 240, 128, COL8_000000);	// 创建控制台黑色输入框	
-	process->tss.esp = memsegAlloc4K(memsegtable, 64 * 1024) + 64 * 1024 - 12;	// 为控制台进程栈分配64KB内存并计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
+	process->stack = memsegAlloc4K(memsegtable, 64 * 1024);	// 为控制台进程栈分配64KB内存
+	process->tss.esp = process->stack + 64 * 1024 - 12;	// 计算栈底地址给B的ESP 为了下方传值时不超内存范围 这里减去8	
 	*((int *) (process->tss.esp + 4)) = (int) sheet;	// 将sheet地址存入内存地址 esp + 4 c语言函数指定的参数在ESP+4的位置
 	*((int *) (process->tss.esp + 8)) = memtotal;
 	process->tss.eip = (int) &consoleMain;	// 控制台进程的下一条指令执行consoleMain
@@ -52,6 +53,37 @@ struct SHEET *openConsole(struct SHTCTL *shtctl, unsigned int memtotal) {
 	
 	QueueInit(&process->queue, 128, consBuf, process);
 	return sheet;
+}
+
+/*******************************************************
+*
+* Function name: closeConsoleProcess
+* Description: 关闭控制台进程
+* Parameter:
+*	@process	控制台进程控制块	struct PCB *
+*
+*********************************************************/
+void closeConsoleProcess(struct PCB *process) {
+	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
+	processSleep(process);
+	memsegFree4K(memsegtable, process->stack, 64 * 1024);	// 释放进程栈
+	memsegFree4K(memsegtable, (int) process->queue.buf, 128 * 4);	// 释放进程缓冲区
+	process->status = 0;
+}
+
+/*******************************************************
+*
+* Function name: closeConsole
+* Description: 关闭控制台
+* Parameter:
+*	@sheet	控制台图层指针	struct SHEET *
+*
+*********************************************************/
+void closeConsole(struct SHEET *sheet) {
+	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
+	memsegFree4K(memsegtable, (int) sheet->buf, 256 * 165);	// 释放控制台图层缓冲区
+	sheetFree(sheet);
+	closeConsoleProcess(sheet->process);
 }
 
 /*******************************************************
@@ -326,6 +358,30 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 
 /*******************************************************
 *
+* Function name: cmdExit
+* Description: 退出控制台
+* Parameter:
+*	@console		控制台信息指针		struct CONSOLE *
+*	@fat			内存fat表记录指针	int *
+*
+**********************************************************/
+void cmdExit(struct CONSOLE *console, int *fat) {
+	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
+	struct PCB *process = processNow();
+	struct SHTCTL *shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
+	struct QUEUE *queue = (struct QUEUE *) *((int *) 0x0fec);
+	timerCancle(console->timer);	// 取消光标定时器
+	memsegFree4K(memsegtable, (int) fat, 4 * 2880);	// 释放内存中的fat表
+	io_cli();
+	QueuePush(queue, console->sheet - shtctl->sheets + 768);	// 向主进程发送数据 768 ~ 1023 
+	io_sti();
+	for(;;) {
+		processSleep(process);
+	}
+}
+
+/*******************************************************
+*
 * Function name: consoleRunCmd
 * Description: 控制台执行指令
 * Parameter:
@@ -344,6 +400,8 @@ void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned i
 		cmdDir(console);
 	} else if (strncmp(cmdline, "type ", 5) == 0) {	// type 显示文件内容指令
 		cmdType(console, fat, cmdline);
+	} else if (strcmp(cmdline, "exit") == 0) {
+		cmdExit(console, fat);
 	} else if (cmdline[0] != 0) {	// 不是指令 不是空行
 		if (cmdApp(console, fat, cmdline) == 0) {	// 不是应用程序
 			consolePutstr0(console, "command not found\n\n");
