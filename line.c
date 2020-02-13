@@ -130,6 +130,17 @@ void apiLineWin(int sheet, int startX, int startY, int endX, int endY, int col);
 **********************************************************/
 void apiEnd();
 
+/*******************************************************
+*
+* Function name: apiGetKey
+* Description: 获取键盘输入
+* Parameter:
+*	@mode	模式0没有键盘输入时返回-1不休眠	int
+*			模式1休眠直到发生键盘中断
+*
+**********************************************************/
+int apiGetKey(int mode);
+
 void Main() {
 	char *buf;
 	int win, i;
@@ -141,5 +152,10 @@ void Main() {
 		apiLineWin(win + 1, 88, 26, i * 9 + 88, 89, i);
 	}
 	apiRefreshWin(win, 6, 26, 154, 90);	// 手动刷新图层
+	for (;;) {
+		if (apiGetKey(1) == 0x0a) {
+			break;
+		}
+	}
 	apiEnd();
 }
