@@ -1,7 +1,7 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.6.4
+* @Version: 0.6.5
 * @Date: 2020-02-13
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
@@ -58,7 +58,7 @@ void Main(){
 	struct BOOTINFO *binfo;
 	char s[40];
 	int	buf[128], keyCmdBuf[32], *consoleBuf[2];	// s保存要输出的变量信息 buf为总缓冲区
-	int i, x, y, mx, my, bufval, mmx = -1, mmy = -1, mmx2 = 0; // 鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色 移动模式x坐标 移动模式y坐标 移动模式图层x坐标
+	int i, x, y, mx, my, bufval, mmx = -1, mmy = -1, mmx2 = 0, newMy = -1, newMx = 0, newWx = 0x7fffffff, newWy = 0; // 鼠标x轴位置 鼠标y轴位置 光标x轴位置 光标颜色 移动模式x坐标 移动模式y坐标 移动模式图层x坐标
 	int keyShift = 0, keyLeds, keyCmdWait = -1;	// shift按下标识 键盘对应按键灯状态
 	struct MouseDec mdec;	// 保存鼠标信息
 	unsigned int memtotal;
@@ -169,9 +169,19 @@ void Main(){
 		}
 		io_cli();	// 关中断
 		if(QueueSize(&queue) == 0) {	// 只有缓冲区没有数据时才能开启中断
-			processSleep(processA);	
-			// 进程A休眠 若A不休眠则永远不会调度至进程B
-			io_sti();	// 开中断
+			if (newMx >= 0) {
+				io_sti();
+				sheetSlide(sheetMouse, newMx, newMy);
+				newMx = -1;
+			} else if (newWx != 0x7fffffff) {
+				io_sti();
+				sheetSlide(sheet, newWx, newWy);
+				newWx = 0x7fffffff;
+			} else {
+				processSleep(processA);	
+				// 进程A休眠 若A不休眠则永远不会调度至进程B
+				io_sti();	// 开中断
+			}
 		} else {
 			bufval = QueuePop(&queue);	// 取出缓冲区队列队首数据
 			io_sti();	// 开中断
@@ -270,6 +280,22 @@ void Main(){
 				}
 			} else if (512 <= bufval && bufval <= 767) {	// 鼠标中断数据
 				if (mouseDecode(&mdec, bufval - 512) != 0) {	// 完成一波三个字节数据的接收或者出现未知差错
+					// 鼠标坐标加上偏移量
+					mx += mdec.x;
+					my += mdec.y;
+					
+					// 超边界处理
+					if (mx < 0)
+						mx = 0;
+					if (my < 0)
+						my = 0;
+					if (mx > binfo->scrnx - 1)
+						mx = binfo->scrnx - 1;
+					if (my > binfo->scrny - 1)
+						my = binfo->scrny - 1;
+					
+					newMx = mx;
+					newMy = my;
 					sprintf(s, "[lcr %4d %4d]", mdec.x, mdec.y);
 					if ((mdec.btn & 0x01) != 0) {	// 按下左键
 						s[1] = 'L';
@@ -291,6 +317,7 @@ void Main(){
 											mmx = mx;	// 移动模式记录鼠标当前坐标
 											mmy = my;
 											mmx2 = sheet->locationX;
+											newWy = sheet->locationY;
 										}
 										if (sheet->width - 21 <= x && x < sheet->width - 5 && 5 <= y && y < 19) {	// 当前鼠标点中的为窗口关闭按钮
 											if ((sheet->status & 0x10) != 0) {	// 该窗口隶属某一应用程序
@@ -310,13 +337,17 @@ void Main(){
 							// 计算鼠标移动的距离
 							x = mx - mmx;
 							y = my - mmy;
-							sheetSlide(sheet, (sheet->locationX + x + 2) & ~3, sheet->locationY + y);	// 移动图层
+							newWx = (mmx2 + x + 2) & ~3;
+							newWy += y;
+							// sheetSlide(sheet, (sheet->locationX + x + 2) & ~3, sheet->locationY + y);	// 移动图层
 							// 更新移动后的坐标
-							mmx = mx;
 							mmy = my;
 						}
 					} else {	// 没有按下左键
-						mmx = mmy = -1;	// 推出移动模式
+						mmx = -1;	// 退出移动模式
+						if (newWx != 0x7fffffff) {
+							sheetSlide(sheet, newWx, newWy);
+							newWx = 0x7fffffff;						}
 					}
 					if ((mdec.btn & 0x02) != 0) {	// 按下右键
 						s[3] = 'R';
@@ -326,22 +357,10 @@ void Main(){
 					}
 					putFont8AscSheet(sheetBack, 32, 16, COL8_FFFFFF, COL8_008484, s, 15);	// 在背景层打印鼠标按键信息
 					
-					// 鼠标坐标加上偏移量
-					mx += mdec.x;
-					my += mdec.y;
 					
-					// 超边界处理
-					if (mx < 0)
-						mx = 0;
-					if (my < 0)
-						my = 0;
-					if (mx > binfo->scrnx - 1)
-						mx = binfo->scrnx - 1;
-					if (my > binfo->scrny - 1)
-						my = binfo->scrny - 1;
 					
-					sprintf(s, "(%3d, %3d)", mx, my);
-					putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484, s, 10);	// 在背景层打印鼠标坐标信息
+					sprintf(s, "(%4d, %4d)", mx, my);
+					putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484, s, 12);	// 在背景层打印鼠标坐标信息
 					sheetSlide(sheetMouse, mx, my);
 				} 			
 			}
