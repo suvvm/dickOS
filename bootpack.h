@@ -185,12 +185,15 @@ struct TSS32 {
 * Processing Control Block	进程控制块
 * Description: 记录进程的外部特征，描述进程的运动变化过程
 * Parameter:
-*	@pid		进程GDT编号直接作为pid使用		int
-*	@status		记录进程状态					int
-*	@level		分级反馈等级					int
-*	@priority	进程优先级（定时器超时时间）	int
-*	@queue		进程缓冲区						struct QUEUE
-*	@tss		尽量进程相关设置于寄存器信息	TSS32
+*	@pid			进程GDT编号直接作为pid使用		int
+*	@status			记录进程状态					int
+*	@level			分级反馈等级					int
+*	@priority		进程优先级（定时器超时时间）	int
+*	@queue			进程缓冲区						struct QUEUE
+*	@tss			尽量进程相关设置于寄存器信息	TSS32
+*	@console		进程所属控制台指针				struct CONSOLE *
+*	@dsBase			进程所属应用程序地址			int
+*	@stack			进程栈地址						int
 *
 ********************************************************************************/
 struct PCB {
@@ -199,7 +202,7 @@ struct PCB {
 	struct QUEUE queue;
 	struct TSS32 tss;
 	struct CONSOLE *console;
-	int dsBase;
+	int dsBase, stack;
 };
 
 /********************************************************************************
@@ -513,6 +516,9 @@ struct FILEINFO *searchFile(char *name, struct FILEINFO *fileInfo, int max);
 
 // console.c 函数声明
 struct SHEET *openConsole(struct SHTCTL *shtctl, unsigned int memtotal);
+void closeConsoleProcess(struct PCB *process);
+void closeConsole(struct SHEET *sheet);
+void cmdExit(struct CONSOLE *console, int *fat);
 void consoleNewLine(struct CONSOLE *console);
 void consolePutchar(struct CONSOLE *console, int chr, char move);
 void consolePutstr0(struct CONSOLE *console, char *str);
