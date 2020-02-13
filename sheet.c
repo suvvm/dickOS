@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: sheet.c
 * @Author: suvvm
-* @Version: 0.0.6
-* @Date: 2020-01-29
+* @Version: 0.0.7
+* @Date: 2020-02-13
 * @Description: 定义图层相关函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -137,12 +137,22 @@ void sheetRefreshMap(struct SHTCTL *shtctl, int startX, int startY, int endX, in
 		if (relativeEndY > sheet->height) {
 			relativeEndY = sheet->height;
 		}
-		for (sheetY = relativeStartY; sheetY < relativeEndY; sheetY++) {
-			locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
-			for (sheetX = relativeStartX; sheetX < relativeEndX; sheetX++) {
-				locationX = sheet->locationX + sheetX;	// 找到图像在vram x轴映射的位置
-				if (buf[sheetY * sheet->width + sheetX] != sheet->colInvNum) {	// 对应位置不为图层透明色
+		if (sheet->colInvNum == -1) {	// 图层无透明色
+			for (sheetY = relativeStartY; sheetY < relativeEndY; sheetY++) {
+				locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
+				for (sheetX = relativeStartX; sheetX < relativeEndX; sheetX++) {
+					locationX = sheet->locationX + sheetX;	// 找到图像在vram x轴映射的位置
 					map[locationY * shtctl->xSize + locationX] = sid;	// 将对应点归属记为对应图层
+				}
+			}
+		} else {	// 有透明色
+			for (sheetY = relativeStartY; sheetY < relativeEndY; sheetY++) {
+				locationY = sheet->locationY + sheetY;	// 找到图像在vram y轴映射的位置
+				for (sheetX = relativeStartX; sheetX < relativeEndX; sheetX++) {
+					locationX = sheet->locationX + sheetX;	// 找到图像在vram x轴映射的位置
+					if (buf[sheetY * sheet->width + sheetX] != sheet->colInvNum) {	// 对应位置不为图层透明色
+						map[locationY * shtctl->xSize + locationX] = sid;	// 将对应点归属记为对应图层
+					}
 				}
 			}
 		}
