@@ -17,6 +17,7 @@ BIM2HRB  = $(TOOLPATH)bim2hrb.exe
 RULEFILE = $(TOOLPATH)include/haribote.rul
 EDIMG    = $(TOOLPATH)edimg.exe
 IMGTOL   = $(TOOLPATH)imgtol.com
+GOLIB    = $(TOOLPATH)golib00.exe
 COPY     = copy
 DEL      = del
 
@@ -103,6 +104,9 @@ bootpack.bim : bootpack.obj func.obj font.obj Makefile
 # 3MB+64KB=3136KB
 bootpack.hrb : bootpack.bim Makefile
 	$(BIM2HRB) bootpack.bim bootpack.hrb 0
+	
+apilib.lib : Makefile $(OBJS_API)
+	$(GOLIB) $(OBJS_API) out:apilib.lib
 
 hello.hrb : hello.nas Makefile
 	$(NASK) hello.nas hello.hrb hello.lst
@@ -110,14 +114,14 @@ hello.hrb : hello.nas Makefile
 helloStr.hrb : helloStr.nas Makefile
 	$(NASK) helloStr.nas helloStr.hrb helloStr.lst
 
-helloC.bim : helloC.obj $(OBJS_API) Makefile
-	$(OBJ2BIM) @$(RULEFILE) out:helloC.bim map:helloC.map helloC.obj $(OBJS_API)
+helloC.bim : helloC.obj apilib.lib Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:helloC.bim map:helloC.map helloC.obj apilib.lib
 
 helloC.hrb : helloC.bim Makefile
 	$(BIM2HRB) helloC.bim helloC.hrb 0
 	
-bug1.bim : bug1.obj $(OBJS_API) Makefile
-	$(OBJ2BIM) @$(RULEFILE) out:bug1.bim map:bug1.map bug1.obj $(OBJS_API)
+bug1.bim : bug1.obj apilib.lib Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:bug1.bim map:bug1.map bug1.obj apilib.lib
 
 bug1.hrb : bug1.bim Makefile
 	$(BIM2HRB) bug1.bim bug1.hrb 0
@@ -128,99 +132,99 @@ bug2.bim : bug2.obj Makefile
 bug2.hrb : bug2.bim Makefile
 	$(BIM2HRB) bug2.bim bug2.hrb 0
 
-bug3.bim : bug3.obj $(OBJS_API) Makefile
-	$(OBJ2BIM) @$(RULEFILE) out:bug3.bim map:bug3.map bug3.obj $(OBJS_API)
+bug3.bim : bug3.obj apilib.lib Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:bug3.bim map:bug3.map bug3.obj apilib.lib
 
 bug3.hrb : bug3.bim Makefile
 	$(BIM2HRB) bug3.bim bug3.hrb 0
 	
-helloCS.bim : helloCS.obj $(OBJS_API) Makefile
+helloCS.bim : helloCS.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:helloCS.bim stack:1k map:helloCS.map \
-		helloCS.obj $(OBJS_API)
+		helloCS.obj apilib.lib
 	
 helloCS.hrb : helloCS.bim Makefile
 	$(BIM2HRB) helloCS.bim helloCS.hrb 0
 	
-winHelo.bim : winHelo.obj $(OBJS_API) Makefile
+winHelo.bim : winHelo.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:winHelo.bim stack:1k map:winHelo.map \
-		winHelo.obj $(OBJS_API)
+		winHelo.obj apilib.lib
 
 winHelo.hrb : winHelo.bim Makefile
 	$(BIM2HRB) winHelo.bim winHelo.hrb 0
 
-winHelo2.bim : winHelo2.obj $(OBJS_API) Makefile
+winHelo2.bim : winHelo2.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:winHelo2.bim stack:1k map:winHelo2.map \
-		winHelo2.obj $(OBJS_API)
+		winHelo2.obj apilib.lib
 
 winHelo2.hrb : winHelo2.bim Makefile
 	$(BIM2HRB) winHelo2.bim winHelo2.hrb 0
 	
-winHelo3.bim : winHelo3.obj $(OBJS_API) Makefile
+winHelo3.bim : winHelo3.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:winHelo3.bim stack:1k map:winHelo3.map \
-		winHelo3.obj $(OBJS_API)
+		winHelo3.obj apilib.lib
 
 winHelo3.hrb : winHelo3.bim Makefile
 	$(BIM2HRB) winHelo3.bim winHelo3.hrb 40k
 
-star1.bim : star1.obj $(OBJS_API) Makefile
+star1.bim : star1.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:star1.bim stack:1k map:star1.map \
-		star1.obj $(OBJS_API)
+		star1.obj apilib.lib
 
 star1.hrb : star1.bim Makefile
 	$(BIM2HRB) star1.bim star1.hrb 47k
 	
-star2.bim : star2.obj $(OBJS_API) Makefile
+star2.bim : star2.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:star2.bim stack:1k map:star2.map \
-		star2.obj $(OBJS_API)
+		star2.obj apilib.lib
 
 star2.hrb : star2.bim Makefile
 	$(BIM2HRB) star2.bim star2.hrb 47k
 
-stars.bim : stars.obj $(OBJS_API) Makefile
+stars.bim : stars.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:stars.bim stack:1k map:stars.map \
-		stars.obj $(OBJS_API)
+		stars.obj apilib.lib
 
 stars.hrb : stars.bim Makefile
 	$(BIM2HRB) stars.bim stars.hrb 47k
 
-line.bim : line.obj $(OBJS_API) Makefile
+line.bim : line.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:line.bim stack:1k map:line.map \
-		line.obj $(OBJS_API)
+		line.obj apilib.lib
 
 line.hrb : line.bim Makefile
 	$(BIM2HRB) line.bim line.hrb 48k
 
-walk.bim : walk.obj $(OBJS_API) Makefile
+walk.bim : walk.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:walk.bim stack:1k map:walk.map \
-		walk.obj $(OBJS_API)
+		walk.obj apilib.lib
 
 walk.hrb : walk.bim Makefile
 	$(BIM2HRB) walk.bim walk.hrb 48k
 	
-noodle.bim : noodle.obj $(OBJS_API) Makefile
+noodle.bim : noodle.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:noodle.bim stack:1k map:noodle.map \
-		noodle.obj $(OBJS_API)
+		noodle.obj apilib.lib
 
 noodle.hrb : noodle.bim Makefile
 	$(BIM2HRB) noodle.bim noodle.hrb 40k
 	
-beepDown.bim : beepDown.obj $(OBJS_API) Makefile
+beepDown.bim : beepDown.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:beepDown.bim stack:1k map:beepDown.map \
-		beepDown.obj $(OBJS_API)
+		beepDown.obj apilib.lib
 
 beepDown.hrb : beepDown.bim Makefile
 	$(BIM2HRB) beepDown.bim beepDown.hrb 40k
 	
-color.bim : color.obj $(OBJS_API) Makefile
+color.bim : color.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:color.bim stack:1k map:color.map \
-		color.obj $(OBJS_API)
+		color.obj apilib.lib
 
 color.hrb : color.bim Makefile
 	$(BIM2HRB) color.bim color.hrb 56k
 
-color2.bim : color2.obj $(OBJS_API) Makefile
+color2.bim : color2.obj apilib.lib Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:color2.bim stack:1k map:color2.map \
-		color2.obj $(OBJS_API)
+		color2.obj apilib.lib
 
 color2.hrb : color2.bim Makefile
 	$(BIM2HRB) color2.bim color2.hrb 56k
@@ -295,6 +299,7 @@ clean :
 	-$(DEL) *.bim
 	-$(DEL) *.hrb
 	-$(DEL) dickos.sys
+	-$(DEL) apilib.lib
 
 src_only :
 	$(MAKE) clean
