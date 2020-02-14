@@ -1,0 +1,17 @@
+     1 00000000                                 [FORMAT "WCOFF"]				; 生成对象文件的模式
+     2 00000000                                 [INSTRSET "i486p"]				; 使用486兼容指令集
+     3 00000000                                 [BITS 32]						; 生成32为模式机器语言
+     4 00000000                                 [FILE "api018.nas"]				; 源文件名信息
+     5 00000000                                 
+     6 00000000                                 		GLOBAL	_apiSetTimer
+     7 00000000                                 		
+     8                                          [SECTION .text]
+     9 00000000                                 
+    10 00000000                                 _apiSetTimer:					; void apiSetTimer(int timer, int time);
+    11 00000000 53                              		PUSH	EBX
+    12 00000001 BA 00000012                     		MOV		EDX,18			; 功能号18
+    13 00000006 8B 5C 24 08                     		MOV		EBX,[ESP+8]		; timer
+    14 0000000A 8B 44 24 0C                     		MOV		EAX,[ESP+12]	; time
+    15 0000000E CD 40                           		INT		0x40
+    16 00000010 5B                              		POP		EBX
+    17 00000011 C3                              		RET
