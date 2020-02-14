@@ -246,6 +246,7 @@ void Main(){
 						process->tss.eax = (int) &(process->tss.esp0);
 						process->tss.eip = (int) asm_endApp;
 						io_sti();	// 开中断
+						processRun(process, -1, 0);	// 如果进程处于休眠态将其唤醒（否则结束任务的处理用于不会执行） 不改变先前的level与优先级
 					}					
 				}
 				if (bufval == 256 + 0x3c && keyShift != 0) {	// shift + F2 开启新的控制台
@@ -315,7 +316,8 @@ void Main(){
 												io_cli();	// 强制结束处理时关中断
 												process->tss.eax = (int) &(process->tss.esp0);
 												process->tss.eip = (int) asm_endApp;
-												io_sti();	// 开中断	
+												io_sti();	// 开中断
+												processRun(process, -1, 0);	// 如果进程处于休眠态将其唤醒（否则结束任务的处理用于不会执行）
 											} else {
 												process = sheet->process;
 												io_cli();
