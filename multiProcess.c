@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: multiProcess.c
 * @Author: suvvm
-* @Version: 0.0.7
-* @Date: 2020-02-09
+* @Version: 0.0.8
+* @Date: 2020-02-14
 * @Description: 定义启动多进程操作相关变量与函数
 ********************************************************************************/
 
@@ -118,7 +118,9 @@ struct PCB *processInit(struct MEMSEGTABLE *memsegtable) {
 	for (i = 0; i < MAX_PROCESS; i++) {
 		processctl->processes[i].status = 0;	// 所有进程标记为未运行
 		processctl->processes[i].pid = (PROCESS_GDT0 + i) * 8;	// 记录进程GDT编号为pid
+		processctl->processes[i].tss.ldtr = (PROCESS_GDT0 + MAX_PROCESS + i) * 8;	// 记录进程局部描述符表位置
 		setSegmdesc(gdt + PROCESS_GDT0 + i, 103, (int)&processctl->processes[i].tss, AR_TSS32); // 在全局描述符表中定义每个进程状态段 限长103字节
+		setSegmdesc(gdt + PROCESS_GDT0 + MAX_PROCESS + i, 15, (int)&processctl->processes[i].ldt, AR_LDT); // 在全局描述符表中定义每个进程的局部描述符表 限长15字节
 	}
 	
 	for (i = 0; i < MAX_PROCESSLEVELS; i++) {	// 初始化分级反馈队列
@@ -181,7 +183,6 @@ struct PCB *processAlloc() {
 			process->tss.fs = 0;
 			process->tss.gs = 0;
 			
-			process->tss.ldtr = 0;
 			process->tss.iomap = 0x40000000;
 			process->tss.ss0 = 0;
 			return process;

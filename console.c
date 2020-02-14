@@ -3,7 +3,7 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.2.0
+* @Version: 0.2.1
 * @Date: 2020-02-14
 * @Description: 实现控制台相关函数
 ********************************************************************************/
@@ -351,12 +351,12 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 			process->dsBase = (int) q;
 			//*((int *) 0xfe8) = (int) q;	
 			// 将q的地址存入内存0xfe8的位置以供dickApi使用
-			setSegmdesc(gdt + process->pid / 8 + 1000, fileInfo->size - 1, (int) p, AR_CODE32_ER + 0x60);	// 注册应用程序代码段 +0x60将段设置为应用程序 应用程序若想写入操作系统的段地址就会发生异常
-			setSegmdesc(gdt + process->pid / 8 + 2000, segsiz - 1, (int) q, AR_DATA32_RW + 0x60);	// 注册应用程序运行段
+			setSegmdesc(process->ldt + 0, fileInfo->size - 1, (int) p, AR_CODE32_ER + 0x60);	// 注册应用程序代码段至该进程局部描述符表 +0x60将段设置为应用程序 应用程序若想写入操作系统的段地址就会发生异常
+			setSegmdesc(process->ldt + 1, segsiz - 1, (int) q, AR_DATA32_RW + 0x60);	// 注册应用程序运行段至该进程局部描述符表
 			for (i = 0; i < datasiz; i++) {	// 将数据部分送至目的地址
 				q[esp + i] = p[dathrb + i];
 			}
-			startApp(0x1b, process->pid + 1000 * 8, esp, process->pid + 2000 * 8, &(process->tss.esp0));	// 启动应用程序并设置ESP与DS.SS
+			startApp(0x1b, 0 * 8 + 4, esp, 1 * 8 + 4, &(process->tss.esp0));	// 启动应用程序并设置ESP与DS.SS
 			// 应用程序结束后
 			shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
 			for (i = 0; i < MAX_SHEETS; i++) {	// 遍历所有图层找到属于该应用程序进程的图层并关闭

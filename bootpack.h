@@ -38,6 +38,7 @@
 #define LIMIT_BOTPAK	0x0007ffff
 #define AR_DATA32_RW	0x4092
 #define AR_CODE32_ER	0x409a
+#define AR_LDT			0x0082
 #define AR_TSS32		0x0089
 #define AR_INTGATE32	0x008e
 
@@ -191,6 +192,8 @@ struct TSS32 {
 *	@priority		进程优先级（定时器超时时间）	int
 *	@queue			进程缓冲区						struct QUEUE
 *	@tss			尽量进程相关设置于寄存器信息	TSS32
+*	@ldt[2]			进程使用的局部描述符段表		struct SEGMENT_DESCRIPTOR
+*					ldt中的段设置只对当前进程有效
 *	@console		进程所属控制台指针				struct CONSOLE *
 *	@dsBase			进程所属应用程序地址			int
 *	@stack			进程栈地址						int
@@ -201,6 +204,7 @@ struct PCB {
 	int level, priority;
 	struct QUEUE queue;
 	struct TSS32 tss;
+	struct SEGMENT_DESCRIPTOR ldt[2];
 	struct CONSOLE *console;
 	int dsBase, stack;
 };
