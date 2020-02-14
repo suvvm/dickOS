@@ -1,0 +1,32 @@
+text size :    269(0x0010D)
+data size :     19(0x00013)
+bss  size :      0(0x00000)
+
+0x00000024 : (.text)
+0x00000024 : _Main
+0x00000082 : _apiEnd
+0x00000082 : (.text)
+0x00000089 : _apiOpenWindow
+0x00000089 : (.text)
+0x000000AB : _apiPutStrWin
+0x000000AB : (.text)
+0x000000D3 : _apiBoxFillWin
+0x000000D3 : (.text)
+0x000000FB : _apiInitMalloc
+0x000000FB : (.text)
+0x0000011C : _apiMalloc
+0x0000011C : (.text)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000400 : (.data)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
