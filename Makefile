@@ -220,12 +220,18 @@ color2.bim : color2.obj apiFunc.obj Makefile
 color2.hrb : color2.bim Makefile
 	$(BIM2HRB) color2.bim color2.hrb 56k
 
+crack6.bim : crack6.obj Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:crack6.bim stack:1k map:crack6.map crack6.obj
+
+crack6.hrb : crack6.bim Makefile
+	$(BIM2HRB) crack6.bim crack6.hrb 0k
+
 dickos.sys :  asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb dickos.sys
 	
 dickos.img : ipl.bin dickos.sys Makefile \
 		hello.hrb helloStr.hrb helloC.hrb winHelo.hrb line.hrb color.hrb color2.hrb \
-		bug1.hrb bug2.hrb bug3.hrb winHelo2.hrb star2.hrb walk.hrb \
+		bug1.hrb bug2.hrb bug3.hrb winHelo2.hrb star2.hrb walk.hrb crack6.hrb \
 		helloCS.hrb winHelo3.hrb star1.hrb stars.hrb noodle.hrb beepDown.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
 		wbinimg src:ipl.bin len:512 from:0 to:0 \
@@ -250,6 +256,7 @@ dickos.img : ipl.bin dickos.sys Makefile \
 		copy from:noodle.hrb to:@: \
 		copy from:beepDown.hrb to:@: \
 		copy from:color.hrb to:@: \
+		copy from:crack6.hrb to:@: \
 		copy from:color2.hrb to:@: \
 		imgout:dickos.img
 
