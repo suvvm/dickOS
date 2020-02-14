@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: bootpack.c
 * @Author: suvvm
-* @Version: 0.6.7
-* @Date: 2020-02-13
+* @Version: 0.6.8
+* @Date: 2020-02-14
 * @Description: 包含启动后要使用的功能函数
 ********************************************************************************/
 #include "bootpack.h"
@@ -64,7 +64,7 @@ void Main(){
 	unsigned int memtotal;
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct SHTCTL *shtctl;	// 图层控制块指针
-	struct SHEET *sheetBack, *sheetMouse, *sheet = 0, *keyWin;	// 背景图层 鼠标图层 窗口图层 控制台图层 遍历用图层指针 当前处于输入模式的窗口指针
+	struct SHEET *sheetBack, *sheetMouse, *sheet = 0, *keyWin, *sheet2;	// 背景图层 鼠标图层 窗口图层 控制台图层 遍历用图层指针 当前处于输入模式的窗口指针
 	unsigned char *bufBack, bufMouse[256];	// 背景图像缓冲区 鼠标图像缓冲区 窗口图像缓冲区 控制台图像缓冲区
 	struct QUEUE queue, keyCmd;	// 总缓冲区 存储欲向键盘控制电路发送的数据的缓冲区
 	struct PCB *processA, *process;
@@ -318,8 +318,13 @@ void Main(){
 												process->tss.eip = (int) asm_endApp;
 												io_sti();	// 开中断
 												processRun(process, -1, 0);	// 如果进程处于休眠态将其唤醒（否则结束任务的处理用于不会执行）
-											} else {
+											} else {	// 该窗口不为应用程序窗口
 												process = sheet->process;
+												sheetUpdown(sheet, -1);	// 暂时隐藏该窗口
+												// 更换为最顶层图层接收键盘数据
+												keyWinOff(keyWin);
+												keyWin = shtctl->sheetsAcs[shtctl->top - 1];
+												keyWinOn(keyWin);
 												io_cli();
 												QueuePush(&process->queue, 4);
 												io_sti();
@@ -361,6 +366,10 @@ void Main(){
 				closeConsole(shtctl->sheets + (bufval - 768));
 			} else if (1024 <= bufval && bufval <= 2023) {
 				closeConsoleProcess(processctl->processes + (bufval - 1024));
+			} else if (2024 <= bufval && bufval <= 2279) {	// 只关闭控制台窗口
+				sheet2 = shtctl->sheets + (bufval - 2024);
+				memsegFree4K(memsegtable, (int) sheet2->buf, 256 * 165);	// 释放目标控制台图层缓冲区
+				sheetFree(sheet2);	// 释放目标控制台图层
 			}
 		}
 	}

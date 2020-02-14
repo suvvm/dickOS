@@ -3,8 +3,8 @@
 /********************************************************************************
 * @File name: console.c
 * @Author: suvvm
-* @Version: 0.1.9
-* @Date: 2020-02-13
+* @Version: 0.2.0
+* @Date: 2020-02-14
 * @Description: 实现控制台相关函数
 ********************************************************************************/
 
@@ -505,7 +505,7 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	//*((int *) 0x0fec) = (int) &console;	
 	// 将console信息存入内存指定位置0x0fec
 	
-	if (sheet != 0) {
+	if (console.sheet != 0) {
 		console.timer = timerAlloc();
 		timerInit(console.timer, &process->queue, 1);
 		timerSetTime(console.timer, 50);	// 0.5秒超时		
@@ -521,7 +521,7 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 		} else {
 			bufval = QueuePop(&process->queue);
 			io_sti();	// 开中断
-			if (bufval <= 1) {	// 光标定时器超时
+			if (bufval <= 1 && console.sheet != 0) {	// 光标定时器超时
 				if (bufval != 0) {
 					timerInit(console.timer, &process->queue, 0);
 					if (console.cursorC >= 0) {	// 光标处于显示状态
@@ -539,7 +539,9 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 				console.cursorC = COL8_FFFFFF;
 			}
 			if (bufval == 3) {	// 由进程A写入的隐藏光标通知
-				boxFill8(sheet->buf,  sheet->width, COL8_000000, console.cursorX, console.cursorY, console.cursorX + 7, console.cursorY + 15);
+				if (console.sheet != 0) {
+					boxFill8(console.sheet->buf, console.sheet->width, COL8_000000, console.cursorX, console.cursorY, console.cursorX + 7, console.cursorY + 15);
+				}
 				console.cursorC = -1;
 			}
 			if (bufval == 4) {
@@ -557,7 +559,7 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 					cmdline[console.cursorX / 8 - 2] = 0;
 					consoleNewLine(&console);
 					consoleRunCmd(cmdline, &console, fat, memsegTotalCnt);	// 执行命令行语句
-					if (sheet == 0) {
+					if (console.sheet == 0) {
 						cmdExit(&console, fat);
 					}
 					consolePutchar(&console, '>', 1);	// 打印提示符	
@@ -569,11 +571,11 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 				}
 			}
 			// 重新显示光标
-			if (sheet != 0) {
+			if (console.sheet != 0) {
 				if (console.cursorC >= 0) {
-					boxFill8(sheet->buf, sheet->width, console.cursorC, console.cursorX, console.cursorY, console.cursorX + 7, console.cursorY + 15);	// 重新绘制光标
+					boxFill8(console.sheet->buf, console.sheet->width, console.cursorC, console.cursorX, console.cursorY, console.cursorX + 7, console.cursorY + 15);	// 重新绘制光标
 				}
-				sheetRefresh(sheet, console.cursorX, console.cursorY, console.cursorX + 8, console.cursorY + 16);
+				sheetRefresh(console.sheet, console.cursorX, console.cursorY, console.cursorX + 8, console.cursorY + 16);
 			}			
 		}
 	}
@@ -602,6 +604,7 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 	// 在指定内存地址获取控制台信息
 	struct SHTCTL *shtctl = (struct SHTCTL *)  *((int *)0x0fe4);	// 在指定内存读取图层控制信息
 	struct SHEET *sheet;
+	struct QUEUE *sysQueue = (struct QUEUE *) *((int *) 0x0fec);
 	int *reg = &eax + 1; // 两次pushad 找到第一次pushad就可以修改先前保存的寄存器的值
 	int bufval, i;
 	
@@ -684,6 +687,13 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 			}
 			if (bufval == 3) {	// 隐藏光标通知
 				console->cursorC = -1;
+			}
+			if (bufval == 4) {
+				timerCancle(console->timer);
+				io_cli();
+				QueuePush(sysQueue, console->sheet - shtctl->sheets + 2024);
+				console->sheet = 0;
+				io_sti();
 			}
 			if (bufval >= 256) {	// 键盘数据与定时器超时数据（由进程A发生）
 				reg[7] = bufval - 256;	// 将键盘数据信息存入先前保存的EAX中
