@@ -1,30 +1,32 @@
-text size :    617(0x00269)
+text size :    332(0x0014C)
 data size :      6(0x00006)
 bss  size :      0(0x00000)
 
 0x00000024 : (.text)
 0x00000024 : _Main
+0x000000E3 : _apiEnd
 0x000000E3 : (.text)
-0x000000E3 : _apiPutchar
-0x000000EF : _apiPutstr0
-0x000000FD : _apiOpenWindow
-0x0000011F : _apiPutStrWin
-0x00000147 : _apiBoxFillWin
-0x0000016F : _apiInitMalloc
-0x00000190 : _apiMalloc
-0x000001A5 : _apiFree
-0x000001BE : _apiPoint
-0x000001DC : _apiRefreshWin
-0x000001FE : _apiLineWin
-0x00000226 : _apiCloseWin
-0x00000234 : _apiGetKey
-0x00000240 : _apiAllocTimer
-0x00000248 : _apiInitTimer
-0x0000025A : _apiSetTimer
-0x0000026C : _apiFreeTimer
-0x0000027A : _apiBeep
-0x00000286 : _apiEnd
+0x000000EA : _apiOpenWindow
+0x000000EA : (.text)
+0x0000010C : _apiInitMalloc
+0x0000010C : (.text)
+0x0000012D : _apiMalloc
+0x0000012D : (.text)
+0x00000142 : _apiRefreshWin
+0x00000142 : (.text)
+0x00000164 : _apiGetKey
+0x00000164 : (.text)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000400 : (.data)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)

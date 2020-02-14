@@ -1,35 +1,41 @@
-text size :    619(0x0026B)
+text size :    392(0x00188)
 data size :     12(0x0000C)
 bss  size :      0(0x00000)
 
 0x00000024 : (.text)
 0x00000024 : _Main
+0x000000C4 : _apiEnd
 0x000000C4 : (.text)
-0x000000C4 : _apiPutchar
-0x000000D0 : _apiPutstr0
-0x000000DE : _apiOpenWindow
-0x00000100 : _apiPutStrWin
-0x00000128 : _apiBoxFillWin
-0x00000150 : _apiInitMalloc
-0x00000171 : _apiMalloc
-0x00000186 : _apiFree
-0x0000019F : _apiPoint
-0x000001BD : _apiRefreshWin
-0x000001DF : _apiLineWin
-0x00000207 : _apiCloseWin
-0x00000215 : _apiGetKey
-0x00000221 : _apiAllocTimer
-0x00000229 : _apiInitTimer
-0x0000023B : _apiSetTimer
-0x0000024D : _apiFreeTimer
-0x0000025B : _apiBeep
-0x00000267 : _apiEnd
-0x0000026E : _rand
-0x0000026E : (.text)
+0x000000CB : _apiOpenWindow
+0x000000CB : (.text)
+0x000000ED : _apiBoxFillWin
+0x000000ED : (.text)
+0x00000115 : _apiInitMalloc
+0x00000115 : (.text)
+0x00000136 : _apiMalloc
+0x00000136 : (.text)
+0x0000014B : _apiPoint
+0x0000014B : (.text)
+0x00000169 : _apiRefreshWin
+0x00000169 : (.text)
+0x0000018B : _rand
+0x0000018B : (.text)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000400 : (.data)
 0x00000408 : (.data)
 0x00000408 : _rand_seed
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
