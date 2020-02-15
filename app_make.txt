@@ -18,12 +18,12 @@ GOLIB    = $(TOOLPATH)golib00.exe
 COPY     = copy
 DEL      = del
 
-# 嘁??嶌
+# 默认动作
 
 default :
 	$(MAKE) $(APP).hrb
 
-# 暥審惗惉??
+# 文件生成规则
 
 $(APP).bim : $(APP).obj $(APILIBPATH)apilib.lib Makefile ../app_make.txt
 	$(OBJ2BIM) @$(RULEFILE) out:$(APP).bim map:$(APP).map stack:$(STACK) \
@@ -40,7 +40,7 @@ dickos.img : ../dickos/ipl10.bin ../dickos/dickos.sys $(APP).hrb \
 		copy from:$(APP).hrb to:@: \
 		imgout:dickos.img
 
-# 堦斒??
+# 一般规则
 
 %.gas : %.c ../apilib.h Makefile ../app_make.txt
 	$(CC1) -o $*.gas $*.c
@@ -51,7 +51,7 @@ dickos.img : ../dickos/ipl10.bin ../dickos/dickos.sys $(APP).hrb \
 %.obj : %.nas Makefile ../app_make.txt
 	$(NASK) $*.nas $*.obj $*.lst
 
-# 柦椷
+# 命令
 
 run :
 	$(MAKE) dickos.img
