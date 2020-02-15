@@ -1,7 +1,8 @@
 OBJS_API =	api001.obj api002.obj api003.obj api004.obj api005.obj api006.obj \
 			api007.obj api008.obj api009.obj api010.obj api011.obj api012.obj \
 			api013.obj api014.obj api015.obj api016.obj api017.obj api018.obj \
-			api019.obj api020.obj
+			api019.obj api020.obj \
+			alloca.obj
 
 TOOLPATH = ../tools/
 INCPATH  = ../tools/include/
@@ -21,22 +22,22 @@ GOLIB    = $(TOOLPATH)golib00.exe
 COPY     = copy
 DEL      = del
 
-# 嘁??嶌
+# 默认动作
 
 default :
 	$(MAKE) apilib.lib
 
-# 暥審惗惉??
+# 文件生成规则
 
 apilib.lib : Makefile $(OBJS_API)
 	$(GOLIB) $(OBJS_API) out:apilib.lib
 
-# 堦斒??
+# 一般规则
 
 %.obj : %.nas Makefile
 	$(NASK) $*.nas $*.obj $*.lst
 
-# 柦椷
+# 命令
 
 clean :
 	-$(DEL) *.lst
