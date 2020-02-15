@@ -8,10 +8,14 @@
 
 #include "apilib.h"
 
-char buf[150 * 50];
-
 void Main() {
 	int win;
+	char buf[150 * 50];
 	win = apiOpenWindow(buf, 150, 50, -1, "hello");
+	for (;;) {
+		if (apiGetKey(1) == 0x0a) {
+			break;
+		}
+	}
 	apiEnd();
 }

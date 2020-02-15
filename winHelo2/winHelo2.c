@@ -8,12 +8,16 @@
 
 #include "apilib.h"
 
-char buf[150 * 50];
-
 void Main() {
 	int win;
+	char buf[150 * 50];
 	win = apiOpenWindow(buf, 150, 50, -1, "hello");
 	apiBoxFillWin(win, 8, 36, 141, 43, 3);	// 黄色
 	apiPutStrWin(win, 28, 28, 0, 12, "hello, world");
+	for (;;) {
+		if (apiGetKey(1) == 0x0a) {
+			break;
+		}
+	}
 	apiEnd();
 }

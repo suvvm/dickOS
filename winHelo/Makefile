@@ -1,5 +1,5 @@
 APP      = winHelo
-STACK    = 1k
+STACK    = 8k
 MALLOC   = 0k
 
 include ../app_make.txt
