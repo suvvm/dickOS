@@ -15,7 +15,7 @@ default :
 # 文件生成规则
 
 dickos.img : dickos/ipl.bin dickos/dickos.sys Makefile \
-		helloC/helloC.hrb winHelo/winHelo.hrb line/line.hrb color/color.hrb color2/color2.hrb \
+		helloC/helloC.hrb winHelo/winHelo.hrb line/line.hrb color/color.hrb color2/color2.hrb typeipl/typeipl.hrb \
 		winHelo2/winHelo2.hrb star2/star2.hrb walk/walk.hrb prime/prime.hrb prime2/prime2.hrb prime3/prime3.hrb \
 		helloCS/helloCS.hrb winHelo3/winHelo3.hrb star1/star1.hrb stars/stars.hrb noodle/noodle.hrb beepDown/beepDown.hrb
 	$(EDIMG)   imgin:tools/fdimg0at.tek \
@@ -40,6 +40,7 @@ dickos.img : dickos/ipl.bin dickos/dickos.sys Makefile \
 		copy from:prime/prime.hrb to:@: \
 		copy from:prime2/prime2.hrb to:@: \
 		copy from:prime3/prime3.hrb to:@: \
+		copy from:typeipl/typeipl.hrb to:@: \
 		imgout:dickos.img
 # 命令
 
@@ -72,6 +73,7 @@ full :
 	$(MAKE) -C prime
 	$(MAKE) -C prime2
 	$(MAKE) -C prime3
+	$(MAKE) -C typeipl
 	$(MAKE) dickos.img
 
 run_full :
@@ -113,6 +115,7 @@ clean_full :
 	$(MAKE) -C prime		clean
 	$(MAKE) -C prime2		clean
 	$(MAKE) -C prime3		clean
+	$(MAKE) -C typeipl		clean
 
 src_only_full :
 	$(MAKE) -C dickos		src_only
@@ -134,6 +137,7 @@ src_only_full :
 	$(MAKE) -C prime		src_only
 	$(MAKE) -C prime2		src_only
 	$(MAKE) -C prime3		src_only
+	$(MAKE) -C typeipl		src_only
 	-$(DEL) dickos.img
 
 refresh :

@@ -1,7 +1,7 @@
 TOOLPATH = ../tools/
 INCPATH  = ../tools/include/
 APILIBPATH   = ../apilib/
-HARIBOTEPATH = ../dickOS/
+HARIBOTEPATH = ../dickos/
 
 MAKE     = $(TOOLPATH)make.exe -r
 NASK     = $(TOOLPATH)nask.exe
@@ -32,7 +32,7 @@ $(APP).bim : $(APP).obj $(APILIBPATH)apilib.lib Makefile ../app_make.txt
 $(APP).hrb : $(APP).bim Makefile ../app_make.txt
 	$(BIM2HRB) $(APP).bim $(APP).hrb $(MALLOC)
 
-dickos.img : ../dickos/ipl10.bin ../dickos/dickos.sys $(APP).hrb \
+dickos.img : ../dickos/ipl.bin ../dickos/dickos.sys $(APP).hrb \
 		Makefile ../app_make.txt
 	$(EDIMG)   imgin:../tools/fdimg0at.tek \
 		wbinimg src:../dickos/ipl.bin len:512 from:0 to:0 \
@@ -64,7 +64,7 @@ full :
 
 run_full :
 	$(MAKE) -C $(APILIBPATH)
-	$(MAKE) -C ../haribote
+	$(MAKE) -C ../dickos
 	$(MAKE) run
 
 clean :
