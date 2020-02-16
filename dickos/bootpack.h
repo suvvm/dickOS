@@ -183,6 +183,22 @@ struct TSS32 {
 
 /********************************************************************************
 *
+* File Handle	
+* Description: 记录文件信息
+* Parameter:
+*	@buf	文件内容缓冲区指针	char *
+*	@size	文件大小			int
+*	@pos	文件内容位置		int
+*
+********************************************************************************/
+struct FILEHANDLE {
+	char *buf;
+	int size;
+	int pos;
+};
+
+/********************************************************************************
+*
 * Processing Control Block	进程控制块
 * Description: 记录进程的外部特征，描述进程的运动变化过程
 * Parameter:
@@ -197,6 +213,8 @@ struct TSS32 {
 *	@console		进程所属控制台指针				struct CONSOLE *
 *	@dsBase			进程所属应用程序地址			int
 *	@stack			进程栈地址						int
+*	@fileHandle		进程打开的文件信息				struct FILEHANDLE *
+*	@fat			fat表指针						int *
 *
 ********************************************************************************/
 struct PCB {
@@ -207,6 +225,8 @@ struct PCB {
 	struct SEGMENT_DESCRIPTOR ldt[2];
 	struct CONSOLE *console;
 	int dsBase, stack;
+	struct FILEHANDLE *fileHandle;
+	int *fat;
 };
 
 /********************************************************************************
