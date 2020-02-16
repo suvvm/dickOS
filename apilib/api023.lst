@@ -1,0 +1,18 @@
+     1 00000000                                 [FORMAT "WCOFF"]				; 生成对象文件的模式
+     2 00000000                                 [INSTRSET "i486p"]				; 使用486兼容指令集
+     3 00000000                                 [BITS 32]						; 生成32为模式机器语言
+     4 00000000                                 [FILE "api023.nas"]				; 源文件名信息
+     5 00000000                                 
+     6 00000000                                 		GLOBAL	_apiFileSeek
+     7 00000000                                 		
+     8                                          [SECTION .text]
+     9 00000000                                 
+    10 00000000                                 _apiFileSeek:						; void apiFileSeek(int fileHandle, int offset, int mode);
+    11 00000000 53                              		PUSH	EBX
+    12 00000001 BA 00000017                     		MOV		EDX,23				; 功能号23
+    13 00000006 8B 44 24 08                     		MOV		EAX,[ESP+8]			; fileHandle
+    14 0000000A 8B 4C 24 10                     		MOV		ECX,[ESP+16]		; mode
+    15 0000000E 8B 5C 24 0C                     		MOV		EBX,[ESP+12]		; offset
+    16 00000012 CD 40                           		INT		0x40
+    17 00000014 5B                              		POP		EBX
+    18 00000015 C3                              		RET
