@@ -1,17 +1,24 @@
-text size :     77(0x0004D)
-data size :   7516(0x01D5C)
+text size :    123(0x0007B)
+data size :      6(0x00006)
 bss  size :      0(0x00000)
 
 0x00000024 : (.text)
 0x00000024 : _Main
-0x00000048 : _apiEnd
-0x00000048 : (.text)
-0x0000004F : _apiOpenWindow
-0x0000004F : (.text)
+0x00000062 : _apiEnd
+0x00000062 : (.text)
+0x00000069 : _apiOpenWindow
+0x00000069 : (.text)
+0x0000008B : _apiGetKey
+0x0000008B : (.text)
+0x00000097 : __alloca
+0x00000097 : (.text)
 0x00000000 : (.data)
 0x00000000 : (.data)
-0x00000400 : (.data)
-0x00000410 : _buf
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00002000 : (.data)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
