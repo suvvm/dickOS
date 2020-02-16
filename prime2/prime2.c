@@ -11,7 +11,7 @@
 
 #define MAX 10000
 
-void Main() {
+void Main () {
 	int i, j;
 	char *flag, s[8];
 	apiInitMalloc();	// 应用程序栈中的变量若超过4KB则需要调用alloca

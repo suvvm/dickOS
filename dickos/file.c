@@ -91,6 +91,7 @@ struct FILEINFO *searchFile(char *name, struct FILEINFO *fileInfo, int max) {
 		}
 	}
 	// 寻找文件
+	
 	for (i = 0; i < max; ) {
 		if (fileInfo[i].name[0] == 0x00) {	// 不包含任何文件信息
 			break;
@@ -110,6 +111,25 @@ struct FILEINFO *searchFile(char *name, struct FILEINFO *fileInfo, int max) {
 		}
 		return fileInfo + i;
 	}
+	
+/*
+	for (i = 0; i < max; ) {
+		if (fileInfo[i].name[0] == 0x00) {
+			break;
+		}
+		if ((fileInfo[i].type & 0x18) == 0) {
+			for (j = 0; j < 11; j++) {
+				if (fileInfo[i].name != s[j]) {
+					goto next;
+				}
+			}
+			return fileInfo + i;
+		}
+	}
+next:
+		i++;
+	}
+*/
 	return 0;	// 没有找到文件
 }
 

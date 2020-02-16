@@ -54,7 +54,7 @@ void keyWinOn(struct SHEET *keyWin) {
 * Description: 主函数
 *
 **********************************************************/
-void Main(){
+void Main (){
 	struct BOOTINFO *binfo;
 	char s[40];
 	int	buf[128], keyCmdBuf[32];	// s保存要输出的变量信息 buf为总缓冲区
@@ -128,7 +128,7 @@ void Main(){
 	sheetUpdown(keyWin, 1);	// 将控制台进程窗口图层置于索引1
 	sheetUpdown(sheetMouse, 2);	// 将鼠标图层置于索引5
 	
-	putFont8AscSheet(sheetBack, 0, 32, COL8_FFFFFF, COL8_008484,  "Welcome to DickOS", 17);	// 将DickOS写入背景层
+	putFont8AscSheet(sheetBack, 0, 32, COL8_FFFFFF, COL8_008484,  "Welcome to DickOS by suvvm", 26);	// 将DickOS写入背景层
 	sprintf(s, "(%3d, %3d)", mx, my);	// 将鼠标位置存入s
 	putFont8AscSheet(sheetBack, 0, 0, COL8_FFFFFF, COL8_008484,  s, 10);	// 将s写入背景层
 	

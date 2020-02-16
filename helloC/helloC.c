@@ -14,7 +14,7 @@
 * Description: helloC应用程序主函数
 *
 **********************************************************/
-void Main() {
+void Main () {
 	apiPutchar('h');
 	apiPutchar('e');
 	apiPutchar('l');

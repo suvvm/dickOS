@@ -9,7 +9,7 @@
 
 #include "apilib.h"
 
-void Main() {
+void Main () {
 	int i, timer;
 	timer = apiAllocTimer();
 	apiInitTimer(timer, 128);

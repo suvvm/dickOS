@@ -14,7 +14,7 @@
 * Description: bug1应用程序主函数
 *
 **********************************************************/
-void Main() {
+void Main () {
 	apiPutstr0("helloC string\n");
 	apiEnd();
 }

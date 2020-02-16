@@ -11,7 +11,7 @@
 
 #define MAX 1000
 
-void Main() {
+void Main () {
 	int i, j;
 	char flag[MAX], s[8];
 	for (i = 0; i < MAX; i++) {

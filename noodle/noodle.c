@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include "apilib.h"
 
-void Main() {
+void Main () {
 	char *buf, s[12];
 	int win, timer, sec = 0, min = 0, hou = 0;	// 窗口句柄 定时器句柄 秒 分 时
 	apiInitMalloc();

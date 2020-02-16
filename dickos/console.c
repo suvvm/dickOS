@@ -150,7 +150,9 @@ void consolePutchar(struct CONSOLE *console, int chr, char move) {
 	s[1] = 0;
 	if (s[0] == 0x09) {	// 制表符
 		for (;;) {
-			putFont8AscSheet(console->sheet, console->cursorX, console->cursorY, COL8_FFFFFF, COL8_000000, " ", 1);
+			if (console->sheet != 0) {
+				putFont8AscSheet(console->sheet, console->cursorX, console->cursorY, COL8_FFFFFF, COL8_000000, " ", 1);
+			}
 			console->cursorX += 8;
 			if (console->cursorX == 8 + 240) {	// 到控制台一行的末端换行
 				consoleNewLine(console);
@@ -316,7 +318,6 @@ void cmdType(struct CONSOLE *console, int *fat, char *cmdline) {
 int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
 	struct FILEINFO *fileInfo;
-	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;	// 段描述符表GDT地址为 0x270000~0x27ffff
 	struct PCB *process = processNow();
 	struct SHTCTL *shtctl;
 	struct SHEET *sheet;
@@ -363,6 +364,12 @@ int cmdApp(struct CONSOLE *console, int *fat, char *cmdline) {
 				sheet = &(shtctl->sheets[i]);
 				if ((sheet->status & 0x11) == 0x11 && sheet->process == process) {
 					sheetFree(sheet);
+				}
+			}
+			for (i = 0; i < 8; i++) {	// 将未关闭的文件关闭
+				if (process->fileHandle[i].buf != 0) {
+					memsegFree4K(memsegtable, (int) process->fileHandle[i].buf, process->fileHandle[i].size);	// 释放文件缓冲区
+					process->fileHandle[i].buf = 0;	// 标记为未使用
 				}
 			}
 			timerCancelAllFlags(&process->queue);
@@ -463,13 +470,13 @@ void cmdNcst(struct CONSOLE *console, char *cmdline, int memtotal) {
 *
 **********************************************************/
 void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned int memsegTotalCnt) {
-	if (strcmp(cmdline, "mem") == 0) {	// mem内存检测指令
+	if (strcmp(cmdline, "mem") == 0 && console->sheet != 0) {	// mem内存检测指令
 		cmdMem(console, memsegTotalCnt);
-	} else if (strcmp(cmdline, "cls") == 0) {	// cls清屏指令
+	} else if (strcmp(cmdline, "cls") == 0 && console->sheet != 0) {	// cls清屏指令
 		cmdCls(console);
-	} else if (strcmp(cmdline, "dir") == 0) {	// dir显示目录文件信息指令
+	} else if (strcmp(cmdline, "dir") == 0 && console->sheet != 0) {	// dir显示目录文件信息指令
 		cmdDir(console);
-	} else if (strncmp(cmdline, "type ", 5) == 0) {	// type 显示文件内容指令
+	} else if (strncmp(cmdline, "type ", 5) == 0 && console->sheet != 0) {	// type 显示文件内容指令
 		cmdType(console, fat, cmdline);
 	} else if (strcmp(cmdline, "exit") == 0) {
 		cmdExit(console, fat);
@@ -493,8 +500,9 @@ void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned i
 void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	struct PCB *process = processNow();	// 取得当前占有处理机的进程
 	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
-	int bufval, *fat = (int *) memsegAlloc4K(memsegtable, 4 * 2880);
+	int bufval, *fat = (int *) memsegAlloc4K(memsegtable, 4 * 2880), i;
 	struct CONSOLE console;
+	struct FILEHANDLE fileHandle[8];
 	char cmdline[30];
 	// 初始化控制台信息
 	console.sheet = sheet;
@@ -511,6 +519,12 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 		timerSetTime(console.timer, 50);	// 0.5秒超时		
 	}
 	readFat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));	// 在磁盘对应地址解压fat数据至对应内存地址
+	
+	for (i = 0; i < 8; i++) {
+		fileHandle[i].buf = 0;	// 未使用
+	}
+	process->fileHandle = fileHandle;
+	process->fat = fat;
 	
 	consolePutchar(&console, '>', 1); // 打印提示符
 	for(;;) {
@@ -605,6 +619,9 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 	struct SHTCTL *shtctl = (struct SHTCTL *)  *((int *)0x0fe4);	// 在指定内存读取图层控制信息
 	struct SHEET *sheet;
 	struct QUEUE *sysQueue = (struct QUEUE *) *((int *) 0x0fec);
+	struct FILEINFO *fileInfo;
+	struct FILEHANDLE *fileHandle;
+	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;
 	int *reg = &eax + 1; // 两次pushad 找到第一次pushad就可以修改先前保存的寄存器的值
 	int bufval, i;
 	
@@ -725,6 +742,71 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 			i = io_in8(0x61);
 			io_out8(0x61, (i | 0x03) & 0x0f);
 		}
+	} else if (edx == 21) {	// 功能号21 打开文件
+		for (i = 0; i < 8; i++) {
+			if (process->fileHandle[i].buf == 0) {	// 找到可用于存储文件句柄的位置
+				break;
+			}
+		}
+		fileHandle = &process->fileHandle[i];
+		reg[7] = 0;	// EAX初始设置为0
+		if (i < 8) {
+			// 寻找文件信息	EBX文件名
+			fileInfo = searchFile((char *) ebx + dsBase, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
+			if (fileInfo != 0) {	// 找到文件
+				fileHandle->buf = (char *) memsegAlloc4K(memsegtable, fileInfo->size);
+				// 为文件分配内存
+				fileHandle->size = fileInfo->size;
+				// 记录文件大小
+				fileHandle->pos = 0;
+				// 文件当前读取位置为文件首
+				
+				loadFile(fileInfo->clusterNum, fileInfo->size, fileHandle->buf, process->fat, (char *) (ADR_DISKIMG + 0x003e00));	// 加载文件至内存缓冲区
+				reg[7] = (int) fileHandle;	// 文件句柄存入寄存器EAX
+			}
+		}
+	} else if (edx == 22) {	// 功能号22 关闭文件
+		fileHandle = (struct FILEHANDLE *) eax;	// eax为文件句柄
+		memsegFree4K(memsegtable, (int) fileHandle->buf, fileHandle->size);	// 释放文件内存缓冲区
+		fileHandle->buf = 0;	// 未使用
+	} else if (edx == 23) {	// 功能号23 文件定位
+		fileHandle = (struct FILEHANDLE *) eax;	// eax为文件句柄
+		// ecx 定位模式 ebx定位偏移量
+		if (ecx == 0) {	// 起点为文件开头
+			fileHandle->pos = ebx;
+		} else if (ecx == 1) {	// 定位起点为当前访问位置
+			fileHandle->pos += ebx;
+		} else if (ecx == 2) {	// 定位起点为文件结尾
+			fileHandle->pos = fileHandle->size + ebx;
+		}
+		if (fileHandle->pos < 0) {
+			fileHandle->pos = 0;
+		}
+		if (fileHandle->pos > fileHandle->size) {
+			fileHandle->pos = fileHandle->size;
+		}
+	} else if (edx == 24) {	// 功能号24 获取文件大小
+		fileHandle = (struct FILEHANDLE *) eax;	// eax为文件句柄
+		// ecx 文件大小获取模式
+		if(ecx == 0) {	// 文件大小
+			reg[7] = fileHandle->size;
+		} else if (ecx == 1) {	// 文件首到当前位置的大小
+			reg[7] = fileHandle->pos;
+		} else if (ecx == 2) {	// 文件当前位置到文件末尾的大小
+			reg[7] = fileHandle->pos - fileHandle->size;
+		} 
+	} else if (edx == 25) {	// 功能号25 文件读取
+		fileHandle = (struct FILEHANDLE *) eax;	// eax为文件句柄
+		// ecx 最大读取字节数
+		for (i = 0; i < ecx; i++) {
+			if (fileHandle->pos == fileHandle->size) {	// 已读至文件尾
+				break;
+			}
+			// ebx 要写入的缓冲区地址
+			*((char *) ebx + dsBase + i) = fileHandle->buf[fileHandle->pos];
+			fileHandle->pos++;
+		}
+		reg[7] = i;
 	}
 	return 0;
 }

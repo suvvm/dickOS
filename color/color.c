@@ -8,7 +8,7 @@
 
 #include "apilib.h"
 
-void Main() {
+void Main () {
 	char *buf;
 	int win, x, y, r, g, b;
 	apiInitMalloc();

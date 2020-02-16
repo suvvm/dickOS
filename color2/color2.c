@@ -24,7 +24,7 @@ unsigned char rgb2Pal(int r, int g, int b, int x, int y) {
 	return 16 + r + g * 6 + b * 36;
 }
 
-void Main() {
+void Main () {
 	char *buf;
 	int win, x, y;
 	apiInitMalloc();

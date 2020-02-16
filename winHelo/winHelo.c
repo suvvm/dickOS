@@ -8,7 +8,7 @@
 
 #include "apilib.h"
 
-void Main() {
+void Main () {
 	int win;
 	char buf[150 * 50];
 	win = apiOpenWindow(buf, 150, 50, -1, "hello");

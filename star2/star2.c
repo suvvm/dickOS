@@ -10,7 +10,7 @@
 
 int rand();	// 编译器自带函数 0~32767随机数
 
-void Main() {
+void Main () {
 	char *buf;
 	int win, i, x, y;
 	apiInitMalloc();
