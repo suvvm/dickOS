@@ -235,4 +235,65 @@ void apiFreeTimer(int timer);
 **********************************************************/
 void apiBeep(int tone);
 
+/*******************************************************
+*
+* Function name: apiFileOpen
+* Description: 打开文件
+* Parameter:
+*	@fileName	文件名	char *
+*
+**********************************************************/
+int apiFileOpen(char *fileName);
+
+/*******************************************************
+*
+* Function name: apiFileClose
+* Description: 关闭文件
+* Parameter:
+*	@fileHandle	文件句柄	int
+*
+**********************************************************/
+void apiFileClose(int fileHandle);
+
+/*******************************************************
+*
+* Function name: apiFileSeek
+* Description: 文件定位 模式0起点文件开头 模式1 起点为当前访问位置
+*				模式2 起点为文件结尾
+* Parameter:
+*	@fileHandle	文件句柄	int
+*	@offset		定位偏移量	char *
+*	@mode		定位模式	int
+*
+**********************************************************/
+void apiFileSeek(int fileHandle, int offset, int mode);
+
+/*******************************************************
+*
+* Function name: apiFileSize
+* Description: 获取文件大小 模式0文件大小 模式1 文件首到当前位置的大小
+*				模式2 文件当前位置到文件末尾的大小
+* Parameter:
+*	@fileHandle	文件句柄	int
+*	@mode		获取模式	int
+* Return:
+*	返回读取后的文件大小
+*
+**********************************************************/
+int apiFileSize(int fileHandle, int mode);
+
+/*******************************************************
+*
+* Function name: apiFileRead
+* Description: 读取文件
+* Parameter:
+*	@buf		目标缓冲区指针	char *
+*	@maxSize	最大读取字节数	int
+*	@fileHandle	文件句柄		int
+* Return:
+*	返回读取后的文件内容当前位置
+*
+**********************************************************/
+int apiFileRead(char *buf,int maxSize, int fileHandle);
+
 #endif
