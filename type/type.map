@@ -1,0 +1,32 @@
+text size :    202(0x000CA)
+data size :     17(0x00011)
+bss  size :      0(0x00000)
+
+0x00000024 : (.text)
+0x00000024 : _Main
+0x00000097 : _apiPutchar
+0x00000097 : (.text)
+0x000000A3 : _apiPutstr0
+0x000000A3 : (.text)
+0x000000B1 : _apiEnd
+0x000000B1 : (.text)
+0x000000B8 : _apiFileOpen
+0x000000B8 : (.text)
+0x000000C6 : _apiFileRead
+0x000000C6 : (.text)
+0x000000DC : _apiCmdline
+0x000000DC : (.text)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000000 : (.data)
+0x00000400 : (.data)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
+0x00000000 : (.bss)
