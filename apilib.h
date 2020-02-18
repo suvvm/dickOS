@@ -1,8 +1,8 @@
 /********************************************************************************
 * @File name: apilib.h
 * @Author: suvvm
-* @Version: 0.0.1
-* @Date: 2020-02-14
+* @Version: 0.0.2
+* @Date: 2020-02-18
 * @Description: 存放api函数声明
 ********************************************************************************/
 #ifndef APILIB_H
@@ -295,5 +295,16 @@ int apiFileSize(int fileHandle, int mode);
 *
 **********************************************************/
 int apiFileRead(char *buf,int maxSize, int fileHandle);
+
+/*******************************************************
+*
+* Function name: apiCmdline
+* Description: 读取命令行数据
+* Parameter:
+*	@buf		命令行数据地址	char *
+*	@maxSize	最大读取字节数	int
+*
+**********************************************************/
+int apiCmdline(char *buf, int maxSize);
 
 #endif
