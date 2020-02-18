@@ -279,32 +279,6 @@ void cmdDir(struct CONSOLE *console) {
 
 /*******************************************************
 *
-* Function name: cmdType
-* Description: 显示文件内容指令
-* Parameter:
-*	@console		控制台信息指针		struct CONSOLE *
-*	@cmdline		指令信息			char *
-*	@fat			内存fat表记录指针	int *
-*
-**********************************************************/
-void cmdType(struct CONSOLE *console, int *fat, char *cmdline) {
-	struct MEMSEGTABLE *memsegtable = (struct MEMSEGTABLE *) MEMSEG_ADDR;	// 内存段表指针
-	struct FILEINFO *fileInfo = searchFile(cmdline + 5, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);	// 根据文件名找到对应文件信息
-	char *p;
-	int i;
-	if (fileInfo != 0) {	// 文件存在
-		p = (char *) memsegAlloc4K(memsegtable, fileInfo->size);	// 为文件在内存中分配缓冲区
-		loadFile(fileInfo->clusterNum, fileInfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));	// 读取文件内容至内存缓冲区
-		consolePutstr1(console, p, fileInfo->size);	// 输出文件内容
-		memsegFree4K(memsegtable, (int) p, fileInfo->size);	// 释放缓冲区
-	} else {	// 文件不存在
-		consolePutstr0(console, "file not found\n");
-	}
-	consoleNewLine(console);
-}
-
-/*******************************************************
-*
 * Function name: cmdApp
 * Description: 执行应用程序的指令
 * Parameter:
@@ -476,8 +450,6 @@ void consoleRunCmd(char *cmdline, struct CONSOLE * console, int *fat, unsigned i
 		cmdCls(console);
 	} else if (strcmp(cmdline, "dir") == 0 && console->sheet != 0) {	// dir显示目录文件信息指令
 		cmdDir(console);
-	} else if (strncmp(cmdline, "type ", 5) == 0 && console->sheet != 0) {	// type 显示文件内容指令
-		cmdType(console, fat, cmdline);
 	} else if (strcmp(cmdline, "exit") == 0) {
 		cmdExit(console, fat);
 	} else if (strncmp(cmdline, "start ", 6) == 0) {
@@ -510,6 +482,7 @@ void consoleMain(struct SHEET *sheet, unsigned int memsegTotalCnt) {
 	console.cursorX = 8;
 	console.cursorC = -1;
 	process->console = &console;
+	process->cmdline = cmdline;
 	//*((int *) 0x0fec) = (int) &console;	
 	// 将console信息存入内存指定位置0x0fec
 	
@@ -807,6 +780,19 @@ int *dickApi(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 			fileHandle->pos++;
 		}
 		reg[7] = i;
+	} else if (edx == 26) { // 功能号26 接收控制台输入的指令信息
+		i = 0;
+		for (;;) {
+			*((char *) ebx + dsBase + i) = process->cmdline[i];	// 将cmdline第i位存指内存指定位置
+			if (process->cmdline[i] == 0) {	// cmdline全部存完
+				break;
+			}
+			if (i >= ecx) {	// 超出最大存放字节数
+				break;
+			}
+			i++;
+		}
+		reg[7] = i;	// 将最终存放的字节数写入EAX
 	}
 	return 0;
 }
