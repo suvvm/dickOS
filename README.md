@@ -28,7 +28,9 @@
 
 实现多进程，采用时间片轮转+多级反馈进行进程调度，初始由主进程完成各功能与设备的初始化，并创建控制台进程，主进程处理键盘鼠标与中断。
 
-按下tab可将当前切换当前活动窗口，此时普通字符的中断数据将由主进程发送给目标进程以实现在其他窗口接收键盘数据。
+鼠标点击或者按下tab可将当前切换当前活动窗口，此时普通字符的中断数据将由主进程发送给目标进程以实现在其他窗口接收键盘数据。
+
+点击窗口关闭按钮可以关闭对应窗口与进程
 
 完成对fat16文件系统的解析。
 
@@ -56,14 +58,19 @@ helloC					使用C语言编写，在逐个控制台打印hello，用于测试系
 helloCS					使用C语言编写，在控制台输出字符串hello,world用于测试系统调用API中打印字符串
 winHelo					使用C语言编写，创建新的hello窗口，以测试测试系统调用API绘制窗口功能
 winHelo2				使用C语言编写，创建新的hello窗口并在窗口中绘制黄色矩形并显示hello world，以测试测试系统调用API在图层中绘制矩形和在图层中显示字符功能
+winHelo2				使用C语言编写，使用malloc申请内存空间绘制窗口显示hello world
 star1					使用C语言编写，创建新的窗口并打印星星
 star2					使用C语言编写，创建新的窗口并打印星星(不刷新窗口)
 stars					使用C语言编写，创建新的窗口并随机打印星空
 walk					使用C语言编写，接收键盘数据可以通过方向键控制目标移动
+prime					使用C语言编写，1000以内的素数
+prime2					使用C语言编写，10000以内的素数，malloc申请内存空间
+prime2					使用C语言编写，10000以内的素数，_alloc自动申请内存空间
 line					使用C语言编写，打印数条直线
 color					使用C语言编写，打印6色阶调色板
 color2					使用C语言编写，打印21色阶（伪）调色板
 deepDown				启动蜂鸣器 由高音至低音鸣笛
+noodle					使用C语言编写，泡沫伴侣，就是个简单的计时程序
 ```
 
 完成一般异常中断处理与栈异常中断处理以阻止尝试恶意破坏dickOS的应用程序，防御测试已完成，测试使用应用程序源码[crack1.c](https://github.com/suvvm/dickOS/blob/master/crack1.c)、[crack2.nas](https://github.com/suvvm/dickOS/blob/master/crack2.nas)、[crack3.nas](https://github.com/suvvm/dickOS/blob/master/crack3.nas)、[crack4.nas](https://github.com/suvvm/dickOS/blob/master/crack4.nas)、[crack5.nas](https://github.com/suvvm/dickOS/blob/master/crack5.nas)、[crack6.nas](https://github.com/suvvm/dickOS/blob/master/otherApp/crack6.nas)依然存在于otherApp文件夹下。测试死循环，数据访问异常等bug的程序[bug1.c](https://github.com/suvvm/dickOS/blob/master/otherApp/bug1.c)、[bug2.c](https://github.com/suvvm/dickOS/blob/master/otherApp/bug2.c)、[bug3.c](https://github.com/suvvm/dickOS/blob/master/otherApp/bug3.c)于部分老旧程序也依旧存在于otherApp文件夹下，但其生成的应用程序已经在操作系统中移除，若想测试请手动修改Makefile中的文件生成规则，将其编译为应用程序后复制到fat16文件系统根目录便可使用控制台运行（注：Qemu有bug若想测试防御功能需要真机运行）
